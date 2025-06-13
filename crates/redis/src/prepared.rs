@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use crate::error::{ RedisError, RedisResult };
 use crate::connection::RedisConnection;
-use dbx_core::query::{ PreparedQuery, QueryParam, QueryResult };
+use nucleus::query::{ PreparedQuery, QueryParam, QueryResult };
 
 /// Handles Redis prepared statements
 pub struct RedisPrepared {

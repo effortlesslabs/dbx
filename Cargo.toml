@@ -1,10 +1,7 @@
 [workspace]
 members = [
-    "crates/dbx-core",
-    "crates/dbx-sqlite",
-    "crates/dbx-postgres",
-    "crates/dbx-mongo",
-    "crates/dbx-redis", "crates/redis",
+    "crates/core",
+    "crates/redis"
 ]
 
 [workspace.package]

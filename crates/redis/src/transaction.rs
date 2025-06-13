@@ -1,7 +1,7 @@
 use redis::{ AsyncCommands, aio::ConnectionManager };
 use crate::error::{ RedisError, RedisResult };
 use crate::connection::RedisConnection;
-use dbx_core::query::{ QueryResult, QueryParam };
+use nucleus::query::{ QueryResult, QueryParam };
 
 /// Handles Redis transactions
 pub struct RedisTransaction {

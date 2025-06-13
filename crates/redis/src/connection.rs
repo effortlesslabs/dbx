@@ -2,7 +2,7 @@ use redis::{ Client, AsyncCommands, aio::ConnectionManager };
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use crate::error::{ RedisError, RedisResult };
-use dbx_core::config::DbConfig;
+use nucleus::config::DbConfig;
 
 /// Manages Redis connection and connection pool
 pub struct RedisConnection {

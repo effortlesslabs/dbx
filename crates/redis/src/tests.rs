@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use super::*;
-    use dbx_core::config::DbConfig;
+    use nucleus::config::DbConfig;
     use serde_json::json;
     use std::time::Duration;
     use tokio;

@@ -23,7 +23,7 @@ pub use stream::{ RedisStream, StreamMessage };
 pub use hll::RedisHyperLogLog;
 
 // Re-export commonly used types
-pub use dbx_core::{
+pub use nucleus::{
     config::DbConfig,
     error::{ DbError, DbResult },
     metadata::{ DatabaseMetadata, TableMetadata, ColumnMetadata },

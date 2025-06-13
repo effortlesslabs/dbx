@@ -1,5 +1,5 @@
 use thiserror::Error;
-use dbx_core::DbError;
+use nucleus::DbError;
 
 /// Redis-specific error types
 #[derive(Error, Debug)]
