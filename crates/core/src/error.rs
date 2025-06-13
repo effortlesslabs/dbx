@@ -47,6 +47,66 @@ pub enum DbError {
     /// Permission errors
     #[error("Permission denied: {0}")]
     Permission(String),
+
+    /// Pool errors
+    #[error("Pool error: {0}")]
+    Pool(String),
+
+    /// Redis-specific errors
+    #[error("Redis error: {0}")]
+    Redis(String),
+
+    /// Redis key errors
+    #[error("Redis key error: {0}")]
+    RedisKey(String),
+
+    /// Redis command errors
+    #[error("Redis command error: {0}")]
+    RedisCommand(String),
+
+    /// Qdrant-specific errors
+    #[error("Qdrant error: {0}")]
+    Qdrant(String),
+
+    /// Qdrant collection errors
+    #[error("Qdrant collection error: {0}")]
+    QdrantCollection(String),
+
+    /// Qdrant vector errors
+    #[error("Qdrant vector error: {0}")]
+    QdrantVector(String),
+
+    /// Qdrant index errors
+    #[error("Qdrant index error: {0}")]
+    QdrantIndex(String),
+
+    /// PostgreSQL-specific errors
+    #[error("PostgreSQL error: {0}")]
+    Postgres(String),
+
+    /// PostgreSQL schema errors
+    #[error("PostgreSQL schema error: {0}")]
+    PostgresSchema(String),
+
+    /// PostgreSQL table errors
+    #[error("PostgreSQL table error: {0}")]
+    PostgresTable(String),
+
+    /// PostgreSQL constraint errors
+    #[error("PostgreSQL constraint error: {0}")]
+    PostgresConstraint(String),
+
+    /// Generic IO errors
+    #[error("IO error: {0}")]
+    Io(#[from] std::io::Error),
+
+    /// Serialization errors
+    #[error("Serialization error: {0}")]
+    Serialization(#[from] serde_json::Error),
+
+    /// Unknown errors
+    #[error("Unknown error: {0}")]
+    Unknown(String),
 }
 
 /// Result type for database operations
@@ -73,6 +133,25 @@ impl<T> ErrorContext for DbResult<T> {
                 DbError::AlreadyExists(e) =>
                     DbError::AlreadyExists(format!("{}: {}", msg.into(), e)),
                 DbError::Permission(e) => DbError::Permission(format!("{}: {}", msg.into(), e)),
+                DbError::Pool(e) => DbError::Pool(format!("{}: {}", msg.into(), e)),
+                DbError::Redis(e) => DbError::Redis(format!("{}: {}", msg.into(), e)),
+                DbError::RedisKey(e) => DbError::RedisKey(format!("{}: {}", msg.into(), e)),
+                DbError::RedisCommand(e) => DbError::RedisCommand(format!("{}: {}", msg.into(), e)),
+                DbError::Qdrant(e) => DbError::Qdrant(format!("{}: {}", msg.into(), e)),
+                DbError::QdrantCollection(e) =>
+                    DbError::QdrantCollection(format!("{}: {}", msg.into(), e)),
+                DbError::QdrantVector(e) => DbError::QdrantVector(format!("{}: {}", msg.into(), e)),
+                DbError::QdrantIndex(e) => DbError::QdrantIndex(format!("{}: {}", msg.into(), e)),
+                DbError::Postgres(e) => DbError::Postgres(format!("{}: {}", msg.into(), e)),
+                DbError::PostgresSchema(e) =>
+                    DbError::PostgresSchema(format!("{}: {}", msg.into(), e)),
+                DbError::PostgresTable(e) =>
+                    DbError::PostgresTable(format!("{}: {}", msg.into(), e)),
+                DbError::PostgresConstraint(e) =>
+                    DbError::PostgresConstraint(format!("{}: {}", msg.into(), e)),
+                DbError::Io(e) => DbError::Io(e),
+                DbError::Serialization(e) => DbError::Serialization(e),
+                DbError::Unknown(e) => DbError::Unknown(format!("{}: {}", msg.into(), e)),
             }
         })
     }
