@@ -1,265 +1,296 @@
-mod error;
 mod connection;
-mod commands;
-mod transaction;
-mod prepared;
-mod metadata;
-mod pubsub;
-mod script;
-mod pipeline;
-mod stream;
-mod hll;
+mod error;
 
-pub use error::{ RedisError, RedisResult };
 pub use connection::RedisConnection;
-pub use commands::RedisCommands;
-pub use transaction::RedisTransaction;
-pub use prepared::RedisPrepared;
-pub use metadata::RedisMetadata;
-pub use pubsub::{ RedisPubSub, PubSubMessage };
-pub use script::RedisScript;
-pub use pipeline::RedisPipeline;
-pub use stream::{ RedisStream, StreamMessage };
-pub use hll::RedisHyperLogLog;
+pub use error::{ RedisError, RedisResult };
 
 // Re-export commonly used types
 pub use nucleus::{
-    config::DbConfig,
-    error::{ DbError, DbResult },
-    metadata::{ DatabaseMetadata, TableMetadata, ColumnMetadata },
-    query::{ QueryResult, PreparedQuery, QueryParam },
-    traits::{ DbxDatabase, PreparedStatementSupport, TransactionSupport, ConnectionPoolSupport },
+    DbConfig,
+    DatabaseMetadata,
+    DbError,
+    DbxDatabase,
+    QueryResult,
+    DatabaseType,
+    RedisDatabaseMetadata,
 };
-use redis::{ Client, AsyncCommands, aio::ConnectionManager };
+
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use thiserror::Error;
-use serde_json::Value;
-use std::time::Duration;
+use redis::{ Client, AsyncCommands, aio::ConnectionManager };
+use std::collections::HashMap;
 
-#[derive(Error, Debug)]
-pub enum RedisError {
-    #[error("Connection error: {0}")] Connection(String),
-    #[error("Query error: {0}")] Query(String),
-    #[error("Invalid data type: {0}")] InvalidDataType(String),
-    #[error("Not connected to Redis")]
-    NotConnected,
-    #[error("Transaction error: {0}")] Transaction(String),
-    #[error("Prepared statement error: {0}")] PreparedStatement(String),
+/// Redis data type enum
+#[derive(Debug, Clone, PartialEq)]
+pub enum RedisDataType {
+    String,
+    List,
+    Set,
+    Hash,
+    SortedSet,
+    Stream,
+    Bitmap,
+    HyperLogLog,
+    Geo,
+    Module,
 }
 
-impl From<RedisError> for DbError {
-    fn from(err: RedisError) -> Self {
-        match err {
-            RedisError::Connection(e) => DbError::Connection(e),
-            RedisError::Query(e) => DbError::Query(e),
-            RedisError::InvalidDataType(e) => DbError::DataType(e),
-            RedisError::NotConnected => DbError::Connection("Not connected to Redis".to_string()),
-            RedisError::Transaction(e) => DbError::Transaction(e),
-            RedisError::PreparedStatement(e) => DbError::Query(e),
-        }
-    }
+/// Redis key pattern metadata
+#[derive(Debug, Clone)]
+pub struct RedisKeyPattern {
+    /// Pattern string (e.g., "user:*")
+    pub pattern: String,
+
+    /// Data type of keys matching this pattern
+    pub data_type: RedisDataType,
+
+    /// Time-to-live in seconds (if set)
+    pub ttl: Option<u64>,
+
+    /// Number of keys matching this pattern
+    pub key_count: u64,
+
+    /// Total memory used by keys matching this pattern
+    pub memory_usage: u64,
+
+    /// Additional pattern-specific metadata
+    pub extra: HashMap<String, serde_json::Value>,
 }
 
 /// Redis database implementation
 pub struct RedisDatabase {
     connection: Arc<Mutex<RedisConnection>>,
-    commands: Arc<Mutex<RedisCommands>>,
-    transaction: Arc<Mutex<RedisTransaction>>,
-    prepared: Arc<Mutex<RedisPrepared>>,
-    metadata: Arc<Mutex<RedisMetadata>>,
-    pubsub: Arc<Mutex<RedisPubSub>>,
-    script: Arc<Mutex<RedisScript>>,
-    pipeline: Arc<Mutex<RedisPipeline>>,
-    stream: Arc<Mutex<RedisStream>>,
-    hll: Arc<Mutex<RedisHyperLogLog>>,
+}
+
+#[async_trait::async_trait]
+impl DbxDatabase for RedisDatabase {
+    async fn connect(&self, config: &DbConfig) -> Result<(), DbError> {
+        let mut manager_guard = self.connection.lock().await;
+        manager_guard.connect(config).await.map_err(|e| DbError::Connection(e.to_string()))
+    }
+
+    async fn query(&self, sql: &str) -> Result<QueryResult, DbError> {
+        let manager_guard = self.connection.lock().await;
+
+        // Execute the command and get the result
+        let result: String = manager_guard
+            .execute_command(|conn| {
+                Box::pin(async move { redis::cmd(sql).query_async(conn).await })
+            }).await
+            .map_err(|e| DbError::Query(e.to_string()))?;
+
+        // Convert the result to QueryResult format
+        Ok(QueryResult {
+            database_type: "redis".to_string(),
+            columns: vec!["result".to_string()],
+            rows: vec![vec![serde_json::Value::String(result)]],
+            rows_affected: 1,
+            last_insert_id: None,
+            execution_time_ms: 0,
+            extra: HashMap::new(),
+            database_metadata: None,
+        })
+    }
+
+    async fn insert(&self, table: &str, data: serde_json::Value) -> Result<(), DbError> {
+        let manager_guard = self.connection.lock().await;
+
+        // Convert the data to a Redis command
+        let key = format!("{}:{}", table, uuid::Uuid::new_v4());
+        let value = serde_json::to_string(&data).map_err(|e| DbError::Query(e.to_string()))?;
+
+        // Set the key-value pair
+        manager_guard
+            .execute_command(|conn| {
+                let key = key.clone();
+                let value = value.clone();
+                Box::pin(async move {
+                    redis::cmd("SET").arg(&key).arg(&value).query_async(conn).await
+                })
+            }).await
+            .map_err(|e| DbError::Query(e.to_string()))?;
+
+        Ok(())
+    }
+
+    async fn get_metadata(&self) -> Result<DatabaseMetadata, DbError> {
+        let manager_guard = self.connection.lock().await;
+
+        // Get server info
+        let (config, stats) = self
+            .collect_server_info().await
+            .map_err(|e| DbError::Query(e.to_string()))?;
+
+        // Get key patterns
+        let key_patterns = self
+            .collect_key_patterns().await
+            .map_err(|e| DbError::Query(e.to_string()))?;
+
+        // Calculate total keys and memory
+        let total_keys = key_patterns
+            .iter()
+            .map(|p| p.key_count)
+            .sum();
+        let total_memory = key_patterns
+            .iter()
+            .map(|p| p.memory_usage)
+            .sum();
+
+        // Get server version
+        let version = stats
+            .get("redis_version")
+            .cloned()
+            .unwrap_or_else(|| "unknown".to_string());
+
+        // Create Redis-specific metadata
+        let redis_metadata = RedisDatabaseMetadata {
+            name: "redis".to_string(),
+            version,
+            key_patterns,
+            total_keys,
+            total_memory,
+            server_config: config,
+            server_stats: stats,
+            extra: HashMap::new(),
+        };
+
+        // Create and return database metadata
+        Ok(DatabaseMetadata {
+            name: "redis".to_string(),
+            version: redis_metadata.version.clone(),
+            tables: Vec::new(), // Redis doesn't have tables
+            redis: Some(redis_metadata),
+            extra: HashMap::new(),
+        })
+    }
 }
 
 impl RedisDatabase {
     /// Create a new Redis database instance
     pub fn new(config: DbConfig) -> Self {
-        let connection = Arc::new(Mutex::new(RedisConnection::new(config.clone())));
-        let commands = Arc::new(Mutex::new(RedisCommands::new(connection.clone())));
-        let transaction = Arc::new(Mutex::new(RedisTransaction::new(connection.clone())));
-        let prepared = Arc::new(Mutex::new(RedisPrepared::new(connection.clone())));
-        let metadata = Arc::new(Mutex::new(RedisMetadata::new(connection.clone())));
-        let pubsub = Arc::new(Mutex::new(RedisPubSub::new(connection.clone())));
-        let script = Arc::new(Mutex::new(RedisScript::new(connection.clone())));
-        let pipeline = Arc::new(Mutex::new(RedisPipeline::new(connection.clone())));
-        let stream = Arc::new(Mutex::new(RedisStream::new(connection.clone())));
-        let hll = Arc::new(Mutex::new(RedisHyperLogLog::new(connection.clone())));
-
-        Self {
-            connection,
-            commands,
-            transaction,
-            prepared,
-            metadata,
-            pubsub,
-            script,
-            pipeline,
-            stream,
-            hll,
-        }
+        let connection = Arc::new(Mutex::new(RedisConnection::new(config)));
+        Self { connection }
     }
 
-    /// Get the Pub/Sub handler
-    pub fn pubsub(&self) -> Arc<Mutex<RedisPubSub>> {
-        self.pubsub.clone()
-    }
-
-    /// Get the Script handler
-    pub fn script(&self) -> Arc<Mutex<RedisScript>> {
-        self.script.clone()
-    }
-
-    /// Get the Pipeline handler
-    pub fn pipeline(&self) -> Arc<Mutex<RedisPipeline>> {
-        self.pipeline.clone()
-    }
-
-    /// Get the Stream handler
-    pub fn stream(&self) -> Arc<Mutex<RedisStream>> {
-        self.stream.clone()
-    }
-
-    /// Get the HyperLogLog handler
-    pub fn hll(&self) -> Arc<Mutex<RedisHyperLogLog>> {
-        self.hll.clone()
-    }
-
-    async fn get_connection(&self) -> Result<ConnectionManager, RedisError> {
+    /// Collect Redis server information
+    async fn collect_server_info(
+        &self
+    ) -> Result<(HashMap<String, String>, HashMap<String, String>), RedisError> {
         let manager_guard = self.connection.lock().await;
-        manager_guard.as_ref().cloned().ok_or(RedisError::NotConnected)
-    }
 
-    async fn execute_command<F, T>(&self, f: F) -> Result<T, RedisError>
-        where F: FnOnce(&mut ConnectionManager) -> redis::RedisFuture<T>
-    {
-        let mut manager = self.get_connection().await?;
-        f(&mut manager).await.map_err(|e| RedisError::Query(e.to_string()))
-    }
+        // Get server configuration
+        let config: HashMap<String, String> = manager_guard.execute_command(|conn| {
+            Box::pin(async move {
+                redis::cmd("CONFIG").arg("GET").arg("*").query_async(conn).await
+            })
+        }).await?;
 
-    async fn execute_transaction<F, T>(&self, f: F) -> Result<T, RedisError>
-        where F: FnOnce(&mut ConnectionManager) -> redis::RedisFuture<T>
-    {
-        let mut manager = self.get_connection().await?;
-        let mut transaction = manager.multi();
-        let result = f(&mut transaction).await?;
-        transaction.exec().await.map_err(|e| RedisError::Transaction(e.to_string()))?;
-        Ok(result)
-    }
-}
-
-#[async_trait::async_trait]
-impl DbxDatabase for RedisDatabase {
-    async fn connect(&self) -> DbResult<()> {
-        let mut conn = self.connection.lock().await;
-        conn.connect().await?;
-        Ok(())
-    }
-
-    async fn disconnect(&self) -> DbResult<()> {
-        let mut conn = self.connection.lock().await;
-        conn.disconnect().await?;
-        Ok(())
-    }
-
-    async fn query(&self, query: &str) -> DbResult<QueryResult> {
-        let mut commands = self.commands.lock().await;
-        commands.query(query).await
-    }
-
-    async fn insert(&self, table: &str, data: &[(&str, &str)]) -> DbResult<u64> {
-        let mut commands = self.commands.lock().await;
-        commands.insert(table, data).await
-    }
-
-    async fn update(&self, table: &str, data: &[(&str, &str)], condition: &str) -> DbResult<u64> {
-        let mut commands = self.commands.lock().await;
-        commands.update(table, data, condition).await
-    }
-
-    async fn delete(&self, table: &str, condition: &str) -> DbResult<u64> {
-        let mut commands = self.commands.lock().await;
-        commands.delete(table, condition).await
-    }
-
-    async fn get_metadata(&self) -> DbResult<DatabaseMetadata> {
-        let mut metadata = self.metadata.lock().await;
-        metadata.get_metadata().await
-    }
-}
-
-#[async_trait::async_trait]
-impl PreparedStatementSupport for RedisDatabase {
-    async fn prepare(&self, query: &str) -> DbResult<PreparedQuery> {
-        let mut prepared = self.prepared.lock().await;
-        prepared.prepare(query).await
-    }
-
-    async fn execute_prepared(
-        &self,
-        name: &str,
-        params: &[QueryParam]
-    ) -> Result<QueryResult, DbError> {
-        self.prepared.lock().await.execute(name, params).await.map_err(DbError::from)
-    }
-
-    async fn remove_prepared(&self, name: &str) -> Result<(), DbError> {
-        self.prepared.lock().await.remove(name).map_err(DbError::from)
-    }
-
-    async fn list_prepared(&self) -> Result<Vec<String>, DbError> {
-        Ok(self.prepared.lock().await.list())
-    }
-}
-
-#[async_trait::async_trait]
-impl TransactionSupport for RedisDatabase {
-    async fn begin(&self) -> DbResult<()> {
-        let mut transaction = self.transaction.lock().await;
-        transaction.begin().await
-    }
-
-    async fn commit(&self) -> DbResult<()> {
-        let mut transaction = self.transaction.lock().await;
-        transaction.commit().await
-    }
-
-    async fn rollback(&self) -> DbResult<()> {
-        let mut transaction = self.transaction.lock().await;
-        transaction.rollback().await
-    }
-
-    async fn is_transaction_active(&self) -> bool {
-        *self.transaction.lock().await
-    }
-}
-
-#[async_trait::async_trait]
-impl ConnectionPoolSupport for RedisDatabase {
-    async fn pool_size(&self) -> DbResult<u32> {
-        // Redis doesn't expose pool size directly, so we'll return a default
-        Ok(10)
-    }
-
-    async fn active_connections(&self) -> DbResult<u32> {
-        let info: String = self.execute_command(|conn| {
+        // Get server statistics
+        let info: String = manager_guard.execute_command(|conn| {
             Box::pin(async move { redis::cmd("INFO").query_async(conn).await })
         }).await?;
 
-        Ok(
-            info
-                .lines()
-                .find(|line| line.starts_with("connected_clients:"))
-                .and_then(|line| line.split(':').nth(1)?.trim().parse().ok())
-                .unwrap_or(0)
-        )
+        let stats = info
+            .lines()
+            .filter_map(|line| {
+                if line.starts_with('#') || line.is_empty() {
+                    None
+                } else {
+                    line.split_once(':').map(|(k, v)| (k.to_string(), v.to_string()))
+                }
+            })
+            .collect();
+
+        Ok((config, stats))
     }
 
-    async fn idle_connections(&self) -> DbResult<u32> {
-        // Redis doesn't expose idle connections directly, so we'll return a default
-        Ok(0)
+    /// Collect Redis key patterns and their metadata
+    async fn collect_key_patterns(&self) -> Result<Vec<RedisKeyPattern>, RedisError> {
+        let manager_guard = self.connection.lock().await;
+
+        // Get all keys
+        let keys: Vec<String> = manager_guard.execute_command(|conn| {
+            Box::pin(async move { redis::cmd("KEYS").arg("*").query_async(conn).await })
+        }).await?;
+
+        // Group keys by pattern
+        let mut patterns: HashMap<String, Vec<String>> = HashMap::new();
+        for key in keys {
+            let pattern = self.extract_pattern(&key);
+            patterns.entry(pattern).or_default().push(key);
+        }
+
+        // Collect metadata for each pattern
+        let mut key_patterns = Vec::new();
+        for (pattern, keys) in patterns {
+            let mut pattern_metadata = RedisKeyPattern {
+                pattern: pattern.clone(),
+                data_type: self.get_key_type(&manager_guard, &keys[0]).await?,
+                ttl: None,
+                key_count: keys.len() as u64,
+                memory_usage: 0,
+                extra: HashMap::new(),
+            };
+
+            // Get TTL for the first key (assuming all keys in pattern have same TTL)
+            if
+                let Ok(ttl) = manager_guard.execute_command(|conn| {
+                    let key = keys[0].clone();
+                    Box::pin(async move { redis::cmd("TTL").arg(&key).query_async(conn).await })
+                }).await
+            {
+                pattern_metadata.ttl = if ttl > 0 { Some(ttl as u64) } else { None };
+            }
+
+            // Calculate total memory usage
+            for key in keys {
+                if
+                    let Ok(memory) = manager_guard.execute_command(|conn| {
+                        let key = key.clone();
+                        Box::pin(async move {
+                            redis::cmd("MEMORY").arg("USAGE").arg(&key).query_async(conn).await
+                        })
+                    }).await
+                {
+                    pattern_metadata.memory_usage += memory as u64;
+                }
+            }
+
+            key_patterns.push(pattern_metadata);
+        }
+
+        Ok(key_patterns)
+    }
+
+    /// Extract pattern from a key
+    fn extract_pattern(&self, key: &str) -> String {
+        // Simple pattern extraction - can be enhanced based on your needs
+        if let Some(pos) = key.rfind(':') {
+            format!("{}:*", &key[..pos])
+        } else {
+            key.to_string()
+        }
+    }
+
+    /// Get Redis data type for a key
+    async fn get_key_type(
+        &self,
+        manager: &RedisConnection,
+        key: &str
+    ) -> Result<RedisDataType, RedisError> {
+        let type_str: String = manager.execute_command(|conn| {
+            let key = key.to_string();
+            Box::pin(async move { redis::cmd("TYPE").arg(&key).query_async(conn).await })
+        }).await?;
+
+        match type_str.to_lowercase().as_str() {
+            "string" => Ok(RedisDataType::String),
+            "list" => Ok(RedisDataType::List),
+            "set" => Ok(RedisDataType::Set),
+            "hash" => Ok(RedisDataType::Hash),
+            "zset" => Ok(RedisDataType::SortedSet),
+            "stream" => Ok(RedisDataType::Stream),
+            _ => Ok(RedisDataType::String), // Default to string for unknown types
+        }
     }
 }

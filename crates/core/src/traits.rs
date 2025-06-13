@@ -1,10 +1,5 @@
 use async_trait::async_trait;
-use crate::{
-    config::DbConfig,
-    error::{ DbError, DbResult },
-    metadata::DatabaseMetadata,
-    query::{ QueryResult, PreparedQuery, QueryParam },
-};
+use crate::{ config::DbConfig, error::{ DbResult } };
 
 /// Main database trait that all database drivers must implement
 #[async_trait]
@@ -16,10 +11,10 @@ pub trait DbxDatabase: Send + Sync {
     async fn disconnect(&self) -> DbResult<()>;
 
     /// Execute a query and return results
-    async fn query(&self, sql: &str) -> DbResult<QueryResult>;
+    // async fn query(&self, sql: &str) -> DbResult<QueryResult>;
 
-    /// Execute a prepared query with parameters
-    async fn execute_prepared(&self, query: &PreparedQuery) -> DbResult<QueryResult>;
+    // /// Execute a prepared query with parameters
+    // async fn execute_prepared(&self, query: &PreparedQuery) -> DbResult<QueryResult>;
 
     /// Insert data into the database
     async fn insert(&self, table: &str, data: serde_json::Value) -> DbResult<()>;
@@ -30,8 +25,8 @@ pub trait DbxDatabase: Send + Sync {
     /// Delete data from the database
     async fn delete(&self, table: &str, condition: &str) -> DbResult<u64>;
 
-    /// Get database metadata
-    async fn get_metadata(&self) -> DbResult<DatabaseMetadata>;
+    // /// Get database metadata
+    // async fn get_metadata(&self) -> DbResult<DatabaseMetadata>;
 
     /// Begin a transaction
     async fn begin_transaction(&self) -> DbResult<()>;
@@ -50,16 +45,6 @@ pub trait DbxDatabase: Send + Sync {
 
     /// Ping the database to check connectivity
     async fn ping(&self) -> DbResult<()>;
-}
-
-/// Trait for database drivers that support prepared statements
-#[async_trait]
-pub trait PreparedStatementSupport: DbxDatabase {
-    /// Prepare a query for execution
-    async fn prepare(&self, query: &str) -> DbResult<PreparedQuery>;
-
-    /// Execute a prepared query with parameters
-    async fn execute(&self, query: &PreparedQuery, params: &[QueryParam]) -> DbResult<QueryResult>;
 }
 
 /// Trait for database drivers that support transactions

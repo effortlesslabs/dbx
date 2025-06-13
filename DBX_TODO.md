@@ -8,18 +8,18 @@
 
 ### 🔹 1. Redis Core Implementation
 
-- [x] Basic Redis driver implementation with `redis-rs`
-- [x] Enhance Redis driver with:
-  - [x] Connection pooling and retry logic
-  - [x] Proper error handling and custom error types
-  - [x] Support for all Redis data types (String, Hash, List, Set, Sorted Set)
-  - [x] Transaction support
-  - [x] Pub/Sub capabilities
-  - [x] Lua scripting support
-  - [x] Pipeline operations
-  - [x] Stream operations
-  - [x] HyperLogLog operations
-- [x] Add comprehensive unit tests
+- [] Basic Redis driver implementation with `redis-rs`
+- [] Enhance Redis driver with:
+  - [] Connection pooling and retry logic
+  - [] Proper error handling and custom error types
+  - [] Support for all Redis data types (String, Hash, List, Set, Sorted Set)
+  - [] Transaction support
+  - [] Pub/Sub capabilities
+  - [] Lua scripting support
+  - [] Pipeline operations
+  - [] Stream operations
+  - [] HyperLogLog operations
+- [] Add comprehensive unit tests
 - [ ] Add integration tests with Redis server
 - [ ] Add performance benchmarks
 
