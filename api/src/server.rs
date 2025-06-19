@@ -1,13 +1,14 @@
-use axum::{ http::StatusCode, response::Json, routing::get, Router };
+use axum::{ http::StatusCode, response::Json, Router };
 use std::sync::Arc;
 use tower_http::cors::{ Any, CorsLayer };
 use tower_http::trace::TraceLayer;
 use tracing::info;
 
 use crate::{
-    config::Config,
-    handlers::redis_handlers,
-    models::{ ApiResponse, HealthResponse, ServerInfo },
+    config::{ Config, DatabaseType },
+    handlers::redis::RedisHandler,
+    models::ApiResponse,
+    routes,
 };
 
 use dbx_crates::adapter::redis::Redis;
@@ -15,32 +16,35 @@ use dbx_crates::adapter::redis::Redis;
 /// Main server struct
 pub struct Server {
     config: Config,
-    redis: Arc<Redis>,
 }
 
 impl Server {
     /// Create a new server instance
     pub async fn new(config: Config) -> anyhow::Result<Self> {
-        info!("Connecting to Redis at {}", config.redis_url);
+        info!("Connecting to {} at {}", config.database_type, config.database_url);
 
-        let redis = Redis::from_url(&config.redis_url)?;
-
-        // Test the connection
-        let ping_result = redis.ping();
-        match ping_result {
-            Ok(true) => info!("Successfully connected to Redis"),
-            Ok(false) => {
-                return Err(anyhow::anyhow!("Redis ping failed"));
+        // Test the database connection based on type
+        match config.database_type {
+            DatabaseType::Redis => {
+                let redis = Redis::from_url(&config.database_url)?;
+                let ping_result = redis.ping();
+                match ping_result {
+                    Ok(true) => info!("Successfully connected to Redis"),
+                    Ok(false) => {
+                        return Err(anyhow::anyhow!("Redis ping failed"));
+                    }
+                    Err(e) => {
+                        return Err(anyhow::anyhow!("Failed to connect to Redis: {}", e));
+                    }
+                }
             }
-            Err(e) => {
-                return Err(anyhow::anyhow!("Failed to connect to Redis: {}", e));
-            }
+            // Future database types
+            // DatabaseType::Postgres => { /* PostgreSQL connection test */ }
+            // DatabaseType::MongoDB => { /* MongoDB connection test */ }
+            // DatabaseType::MySQL => { /* MySQL connection test */ }
         }
 
-        Ok(Self {
-            config,
-            redis: Arc::new(redis),
-        })
+        Ok(Self { config })
     }
 
     /// Get the configuration
@@ -48,48 +52,29 @@ impl Server {
         &self.config
     }
 
-    /// Get the Redis instance
-    pub fn redis(&self) -> &Arc<Redis> {
-        &self.redis
-    }
-
     /// Create the application router
     pub fn create_router(&self) -> Router {
         // CORS configuration
         let cors = CorsLayer::new().allow_origin(Any).allow_methods(Any).allow_headers(Any);
 
-        // Health check handler
-        let health_handler = {
-            let redis = self.redis.clone();
-            move || async move {
-                let redis_connected = redis.ping().unwrap_or(false);
-                let health = HealthResponse {
-                    status: "ok".to_string(),
-                    redis_connected,
-                    timestamp: chrono::Utc::now().to_rfc3339(),
-                };
-                Json(ApiResponse::success(health))
+        // Create database-specific routes
+        let database_routes = match self.config.database_type {
+            DatabaseType::Redis => {
+                let redis = Redis::from_url(&self.config.database_url).expect(
+                    "Failed to create Redis client"
+                );
+                let handler = RedisHandler::new(Arc::new(redis));
+                routes::redis::create_routes().with_state(handler)
             }
-        };
-
-        // Server info handler
-        let info_handler = {
-            let config = self.config.clone();
-            move || async move {
-                let info = ServerInfo {
-                    name: "DBX API".to_string(),
-                    version: env!("CARGO_PKG_VERSION").to_string(),
-                    redis_url: config.redis_url.clone(),
-                    pool_size: config.pool_size,
-                };
-                Json(ApiResponse::success(info))
-            }
+            // Future database types
+            // DatabaseType::Postgres => { /* PostgreSQL routes */ }
+            // DatabaseType::MongoDB => { /* MongoDB routes */ }
+            // DatabaseType::MySQL => { /* MySQL routes */ }
         };
 
         Router::new()
-            .route("/health", get(health_handler))
-            .route("/info", get(info_handler))
-            .nest("/api/v1/redis", redis_handlers::create_redis_routes(self.redis.clone()))
+            .merge(routes::common::create_routes().with_state(self.clone()))
+            .merge(database_routes)
             .layer(cors)
             .layer(TraceLayer::new_for_http())
             .fallback(|| async {
@@ -101,11 +86,19 @@ impl Server {
     pub async fn run(self, addr: std::net::SocketAddr) -> anyhow::Result<()> {
         let app = self.create_router();
 
-        info!("Starting server on {}", addr);
+        info!("Starting {} API server on {}", self.config.database_type, addr);
 
         let listener = tokio::net::TcpListener::bind(addr).await?;
         axum::serve(listener, app).await?;
 
         Ok(())
+    }
+}
+
+impl Clone for Server {
+    fn clone(&self) -> Self {
+        Self {
+            config: self.config.clone(),
+        }
     }
 }

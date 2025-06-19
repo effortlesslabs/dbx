@@ -9,15 +9,19 @@ mod models;
 mod routes;
 mod server;
 
-use config::Config;
+use config::{ Config, DatabaseType };
 use server::Server;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// Redis connection URL
-    #[arg(short, long)]
-    redis_url: Option<String>,
+    /// Database type (redis, postgres, mongodb, mysql)
+    #[arg(short, long, value_enum, default_value = "redis")]
+    database_type: DatabaseType,
+
+    /// Database connection URL
+    #[arg(short = 'u', long)]
+    database_url: Option<String>,
 
     /// Server host
     #[arg(long)]
@@ -55,13 +59,22 @@ async fn main() -> anyhow::Result<()> {
 
     tracing_subscriber::fmt().with_max_level(log_level).init();
 
-    info!("Starting DBX API server...");
+    info!("Starting DBX API server for {}...", args.database_type);
 
+    let database_type = args.database_type.clone();
     // Create configuration with environment variables taking precedence
     let config = Config {
-        redis_url: args.redis_url
-            .or_else(|| std::env::var("REDIS_URL").ok())
-            .unwrap_or_else(|| "redis://127.0.0.1:6379".to_string()),
+        database_type,
+        database_url: args.database_url
+            .or_else(|| std::env::var("DATABASE_URL").ok())
+            .unwrap_or_else(|| {
+                match args.database_type {
+                    DatabaseType::Redis => "redis://127.0.0.1:6379".to_string(),
+                    // DatabaseType::Postgres => "postgresql://localhost:5432/dbx".to_string(),
+                    // DatabaseType::MongoDB => "mongodb://localhost:27017/dbx".to_string(),
+                    // DatabaseType::MySQL => "mysql://localhost:3306/dbx".to_string(),
+                }
+            }),
         host: args.host
             .or_else(|| std::env::var("HOST").ok())
             .unwrap_or_else(|| "127.0.0.1".to_string()),
@@ -88,7 +101,8 @@ async fn main() -> anyhow::Result<()> {
     let addr = SocketAddr::new(server.config().host.parse()?, server.config().port);
 
     info!("Server listening on {}", addr);
-    info!("Redis URL: {}", server.config().redis_url);
+    info!("Database type: {}", server.config().database_type);
+    info!("Database URL: {}", server.config().database_url);
     info!("Connection pool size: {}", server.config().pool_size);
 
     server.run(addr).await?;

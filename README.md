@@ -7,9 +7,9 @@ A minimal API layer for all types of databases, portable across Workers, Raspber
 ## Features
 
 - 🚀 Fast and lightweight database abstraction layer
-- 🔄 Currently implements Redis adapter with more databases planned
+- 🔄 **Multi-database support**: select database type and URL at runtime
 - 🔢 Robust Redis primitives with support for pipeline, transaction, and Lua scripts
-- 🌐 **NEW: Full REST API** for Redis operations with comprehensive endpoints
+- 🌐 **Full REST API** for Redis operations with comprehensive endpoints
 - 🧰 Well-documented API with comprehensive examples
 - 🛠️ Modern Rust implementation with configurable features
 - 🧩 Modular architecture for easy extension
@@ -31,7 +31,12 @@ dbx/
 │   │   ├── config.rs  # Configuration management
 │   │   ├── models.rs  # Request/response models
 │   │   ├── server.rs  # Axum server setup
-│   │   ├── handlers/  # API endpoint handlers
+│   │   ├── handlers/  # API endpoint handlers (per database)
+│   │   │   ├── redis.rs
+│   │   │   └── ...
+│   │   ├── routes/    # API routes (per database)
+│   │   │   ├── redis.rs
+│   │   │   └── ...
 │   │   └── middleware.rs # Error handling
 │   ├── examples/      # Usage examples
 │   ├── tests/         # Integration tests
@@ -39,6 +44,21 @@ dbx/
 ├── Cargo.toml         # Workspace configuration
 └── Cargo.lock         # Dependency lock file
 ```
+
+## Multi-Database Support
+
+DBX supports running API servers for different databases. You select the database type and connection URL at startup using CLI flags. Only the relevant routes and handlers for the selected database are enabled.
+
+- **Current support:** Redis
+- **Planned:** Postgres, MongoDB, MySQL (add your own handlers/routes for these)
+
+### Extending
+
+To add a new database:
+
+- Add a new variant to the `DatabaseType` enum in `api/src/config.rs`
+- Add new handler and route modules in `api/src/handlers/` and `api/src/routes/`
+- Extend the CLI/server logic to support the new type
 
 ## Getting Started
 
@@ -65,17 +85,32 @@ cargo test
 cargo test --doc
 ```
 
-### Running the REST API
+### Running the REST API (with CLI)
 
 ```bash
 # Set up environment (optional - defaults provided)
 cp api/.env.example .env
 # Edit .env with your Redis connection details
 
-# Start the API server
-cargo run --bin dbx-api
+# Start the API server for Redis (customize as needed)
+cargo run --bin dbx-api -- --database-type redis --database-url redis://default:redispw@localhost:55000
 
-# The server will start on http://localhost:3000
+# The server will start on http://localhost:3000 by default
+```
+
+#### CLI Options
+
+- `--database-type` (or `-d`): Database type to serve (e.g. `redis`). Default: `redis`.
+- `--database-url` (or `-u`): Database connection URL (e.g. `redis://default:redispw@localhost:55000`).
+- `--host`: API server host (default: `127.0.0.1`)
+- `--port` (or `-p`): API server port (default: `3000`)
+- `--pool-size`: Connection pool size (default: `10`)
+- `--log-level`: Log verbosity (e.g. `info`, `debug`)
+
+#### Example
+
+```bash
+cargo run --bin dbx-api -- --database-type redis --database-url redis://default:redispw@localhost:55000 --host 0.0.0.0 --port 8080
 ```
 
 ### API Usage Examples
@@ -140,14 +175,15 @@ The API can be configured via environment variables or CLI arguments:
 
 ```bash
 # Environment variables
-REDIS_URL=redis://default:redispw@localhost:55000
+DATABASE_TYPE=redis
+DATABASE_URL=redis://default:redispw@localhost:55000
 HOST=127.0.0.1
 PORT=3000
 POOL_SIZE=10
 LOG_LEVEL=info
 
 # CLI arguments
-cargo run --bin dbx-api -- --redis-url redis://localhost:6379 --port 3000
+cargo run --bin dbx-api -- --database-type redis --database-url redis://default:redispw@localhost:55000 --port 3000
 ```
 
 ## Development Status
