@@ -1,0 +1,29 @@
+[package]
+name = "dbx-crates"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Database adapters and utilities for DBX"
+
+[lib]
+name = "dbx_crates"
+path = "lib.rs"
+
+[dependencies]
+redis = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true, optional = true }
+async-trait = { workspace = true, optional = true }
+mockall = { workspace = true, optional = true }
+
+[dev-dependencies]
+mockall = { workspace = true }
+
+[features]
+default = []
+async = ["tokio", "async-trait", "redis/tokio-comp"]
+connection-pool = ["async"]
