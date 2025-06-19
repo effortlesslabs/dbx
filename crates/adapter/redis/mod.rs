@@ -8,7 +8,7 @@
 pub mod client;
 pub mod primitives;
 
-use redis::{Connection, RedisError, RedisResult, Script};
+use redis::{ Client, Connection, RedisError, RedisResult, Script };
 
 use client::RedisClient;
 use primitives::string::RedisString;
@@ -92,10 +92,7 @@ impl Redis {
 
     /// Execute a Lua script directly
     pub fn eval_script<T, K, A>(&self, script: &Script, keys: K, args: A) -> RedisResult<T>
-    where
-        T: redis::FromRedisValue,
-        K: redis::ToRedisArgs,
-        A: redis::ToRedisArgs,
+        where T: redis::FromRedisValue, K: redis::ToRedisArgs, A: redis::ToRedisArgs
     {
         self.string().eval_script(script, keys, args)
     }
@@ -106,11 +103,10 @@ impl Redis {
         pipe: &'a mut redis::Pipeline,
         script: &Script,
         keys: K,
-        args: A,
-    ) -> &'a mut redis::Pipeline
-    where
-        K: redis::ToRedisArgs,
-        A: redis::ToRedisArgs,
+        args: A
+    )
+        -> &'a mut redis::Pipeline
+        where K: redis::ToRedisArgs, A: redis::ToRedisArgs
     {
         primitives::string::RedisString::add_script_to_pipeline(pipe, script, keys, args)
     }
@@ -214,14 +210,11 @@ impl RedisPoolAdapter {
 /// Error types for Redis operations
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("Redis error: {0}")]
-    Redis(#[from] RedisError),
+    #[error("Redis error: {0}")] Redis(#[from] RedisError),
 
-    #[error("Connection error: {0}")]
-    Connection(String),
+    #[error("Connection error: {0}")] Connection(String),
 
-    #[error("Serialization error: {0}")]
-    Serialization(String),
+    #[error("Serialization error: {0}")] Serialization(String),
 }
 
 /// Helper functions for Redis operations

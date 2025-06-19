@@ -4,8 +4,8 @@
 //! Redis connections, including support for connection pooling and different
 //! connection types.
 
-use redis::{Client, Connection, RedisError, RedisResult};
-use std::sync::{Arc, Mutex};
+use redis::{ Client, Connection, RedisError, RedisResult };
+use std::sync::{ Arc, Mutex };
 
 /// A simple Redis client wrapper that manages a single connection
 pub struct RedisClient {
@@ -105,12 +105,6 @@ impl RedisPool {
     #[cfg(feature = "async")]
     pub async fn get_async_connection(&self) -> RedisResult<redis::aio::Connection> {
         self.client.get_async_connection().await
-    }
-
-    /// Get a managed asynchronous connection from the pool
-    #[cfg(feature = "async")]
-    pub async fn get_connection_manager(&self) -> RedisResult<redis::aio::ConnectionManager> {
-        redis::aio::ConnectionManager::new(self.client.clone()).await
     }
 }
 

@@ -30,6 +30,16 @@ As of now, DBX has implemented:
   - [ ] SQLite adapter
   - [ ] Basic PostgreSQL adapter
 
+- [ ] **REST API Layer**
+  - [ ] Design REST API endpoints for Redis operations
+  - [ ] Implement REST API server
+  - [ ] Add authentication and authorization mechanisms
+
+- [ ] **CLI System**
+  - [ ] Develop CLI tool to run REST API server
+  - [ ] Support configuration via Redis database URL
+  - [ ] Provide basic usage commands and help documentation
+
 - [ ] **Documentation**
   - [ ] Comprehensive API documentation
   - [ ] Usage examples for all implemented features
