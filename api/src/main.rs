@@ -71,10 +71,10 @@ async fn main() -> anyhow::Result<()> {
             .or_else(|| std::env::var("DATABASE_URL").ok())
             .unwrap_or_else(|| {
                 match args.database_type {
-                    DatabaseType::Redis => DatabaseUrls::REDIS_DEFAULT.to_string(),
-                    // DatabaseType::Postgres => DatabaseUrls::POSTGRES_DEFAULT.to_string(),
-                    // DatabaseType::MongoDB => DatabaseUrls::MONGODB_DEFAULT.to_string(),
-                    // DatabaseType::MySQL => DatabaseUrls::MYSQL_DEFAULT.to_string(),
+                    DatabaseType::Redis => DatabaseUrls::redis_url(),
+                    // DatabaseType::Postgres => DatabaseUrls::postgres_url(),
+                    // DatabaseType::MongoDB => DatabaseUrls::mongodb_url(),
+                    // DatabaseType::MySQL => DatabaseUrls::mysql_url(),
                 }
             }),
         host: args.host

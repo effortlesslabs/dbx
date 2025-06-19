@@ -1,0 +1,47 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+ROADMAP.md
+*.md
+
+# Rust
+target/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment files (except example)
+.env
+.env.local
+.env.production
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Tests
+tests/
+
+# Examples (keep only the source)
+examples/
+
+# Temporary files
+*.tmp
+*.temp
+
+# TypeScript client
+ts/ 

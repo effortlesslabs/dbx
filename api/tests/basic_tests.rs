@@ -5,13 +5,17 @@ use std::sync::Arc;
 use tower::util::ServiceExt;
 use axum::body::to_bytes;
 
-use dbx_api::{ config::{ Config, DatabaseType }, server::Server };
+use dbx_api::{
+    config::{ Config, DatabaseType },
+    server::Server,
+    constants::database::DatabaseUrls,
+};
 
 // Helper to create a test server
 async fn create_test_server() -> (Router, Arc<Redis>) {
     let config = Config {
         database_type: DatabaseType::Redis,
-        database_url: "redis://default:redispw@localhost:55000".to_string(),
+        database_url: DatabaseUrls::redis_test_url(),
         host: "127.0.0.1".to_string(),
         port: 3001,
         pool_size: 5,
@@ -20,9 +24,7 @@ async fn create_test_server() -> (Router, Arc<Redis>) {
 
     // Create Redis client directly for testing
     let redis = Arc::new(
-        Redis::from_url("redis://default:redispw@localhost:55000").expect(
-            "Failed to create Redis client"
-        )
+        Redis::from_url(&DatabaseUrls::redis_test_url()).expect("Failed to create Redis client")
     );
     let router = server.create_router();
     (router, redis)

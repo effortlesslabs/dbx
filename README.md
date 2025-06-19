@@ -1,200 +1,419 @@
 # DBX
 
-![DBX Banner](banner.png)
-
-A minimal API layer for all types of databases, portable across Workers, Raspberry Pi, and RISC-V boards. Written in Rust with bindings for TypeScript and other languages.
+A Rust-powered minimal API layer supporting multiple databases like Redis and Postgres, with both HTTP and WebSocket interfaces.
 
 ## Features
 
-- 🚀 Fast and lightweight database abstraction layer
-- 🔄 **Multi-database support**: select database type and URL at runtime
-- 🔢 Robust Redis primitives with support for pipeline, transaction, and Lua scripts
-- 🌐 **Full REST API** for Redis operations with comprehensive endpoints
-- 🧰 Well-documented API with comprehensive examples
-- 🛠️ Modern Rust implementation with configurable features
-- 🧩 Modular architecture for easy extension
-- ⚙️ Environment-based configuration with `.env` support
+- **Multi-Database Support**: Redis, PostgreSQL (planned)
+- **Dual Protocol**: HTTP REST API and WebSocket for real-time operations
+- **Modular Architecture**: Trait-based adapter layer for unified database operations
+- **High Performance**: Built with Rust for optimal performance
+- **Docker Support**: Complete containerization
 
-## Project Structure
+## Quick Start
 
-```
-dbx/
-├── crates/            # Main crate containing all modules
-│   ├── adapter/       # Database adapters
-│   │   └── redis/     # Redis adapter implementation
-│   │       ├── client.rs          # Redis client functionality
-│   │       └── primitives/        # Redis primitive data types
-│   │           └── string.rs      # Redis string operations
-├── api/               # REST API server
-│   ├── src/           # API source code
-│   │   ├── main.rs    # CLI entry point
-│   │   ├── config.rs  # Configuration management
-│   │   ├── models.rs  # Request/response models
-│   │   ├── server.rs  # Axum server setup
-│   │   ├── handlers/  # API endpoint handlers (per database)
-│   │   │   ├── redis.rs
-│   │   │   └── ...
-│   │   ├── routes/    # API routes (per database)
-│   │   │   ├── redis.rs
-│   │   │   └── ...
-│   │   └── middleware.rs # Error handling
-│   ├── examples/      # Usage examples
-│   ├── tests/         # Integration tests
-│   └── .env           # Environment configuration
-├── Cargo.toml         # Workspace configuration
-└── Cargo.lock         # Dependency lock file
-```
+### Using Docker (Recommended)
 
-## Multi-Database Support
+1. **Setup Docker environment:**
 
-DBX supports running API servers for different databases. You select the database type and connection URL at startup using CLI flags. Only the relevant routes and handlers for the selected database are enabled.
+   ```bash
+   ./scripts/docker-setup.sh
+   ```
 
-- **Current support:** Redis
-- **Planned:** Postgres, MongoDB, MySQL (add your own handlers/routes for these)
+2. **Manual setup:**
 
-### Extending
+   ```bash
+   # Build and start services
+   docker-compose up -d
 
-To add a new database:
+   # View logs
+   docker-compose logs -f
+   ```
 
-- Add a new variant to the `DatabaseType` enum in `api/src/config.rs`
-- Add new handler and route modules in `api/src/handlers/` and `api/src/routes/`
-- Extend the CLI/server logic to support the new type
+### Local Development
 
-## Getting Started
+1. **Prerequisites:**
 
-### Prerequisites
+   - Rust 1.75+
+   - Redis server
+   - Cargo
 
-- Rust 1.75 or later
-- Cargo
-- Redis server (for API testing)
+2. **Setup:**
 
-### Building
+   ```bash
+   # Clone the repository
+   git clone <repository-url>
+   cd dbx
 
-```bash
-# Clone the repository
-git clone https://github.com/effortlesslabs/dbx.git
-cd dbx
+   # Copy environment file
+   cp api/env.example api/.env
 
-# Build all crates
-cargo build
+   # Install dependencies
+   cargo build
 
-# Run tests
-cargo test
+   # Run the server
+   cargo run --bin dbx-api
+   ```
 
-# Run doctests
-cargo test --doc
+## API Documentation
+
+### HTTP API
+
+#### Base URL
+
+- Development: `http://localhost:3000`
+- Production: `https://your-domain.com`
+
+#### Endpoints
+
+##### Health Check
+
+```http
+GET /health
 ```
 
-### Running the REST API (with CLI)
+**Response:**
 
-```bash
-# Set up environment (optional - defaults provided)
-cp api/.env.example .env
-# Edit .env with your Redis connection details
-
-# Start the API server for Redis (customize as needed)
-cargo run --bin dbx-api -- --database-type redis --database-url redis://default:redispw@localhost:55000
-
-# The server will start on http://localhost:3000 by default
+```json
+{
+  "status": "healthy",
+  "timestamp": "2024-01-01T00:00:00Z"
+}
 ```
 
-#### CLI Options
+##### Redis Operations
 
-- `--database-type` (or `-d`): Database type to serve (e.g. `redis`). Default: `redis`.
-- `--database-url` (or `-u`): Database connection URL (e.g. `redis://default:redispw@localhost:55000`).
-- `--host`: API server host (default: `127.0.0.1`)
-- `--port` (or `-p`): API server port (default: `3000`)
-- `--pool-size`: Connection pool size (default: `10`)
-- `--log-level`: Log verbosity (e.g. `info`, `debug`)
+**Set Key-Value:**
 
-#### Example
+```http
+POST /api/redis/set
+Content-Type: application/json
 
-```bash
-cargo run --bin dbx-api -- --database-type redis --database-url redis://default:redispw@localhost:55000 --host 0.0.0.0 --port 8080
+{
+  "key": "user:123",
+  "value": "John Doe",
+  "expiry": 3600
+}
 ```
 
-### API Usage Examples
+**Get Value:**
 
-```bash
-# Health check
-curl http://localhost:3000/health
-
-# Set a key
-curl -X POST http://localhost:3000/api/v1/redis/strings/mykey \
-  -H "Content-Type: application/json" \
-  -d '{"value": "hello world", "ttl": 3600}'
-
-# Get a key
-curl http://localhost:3000/api/v1/redis/strings/mykey
-
-# Batch operations
-curl -X POST http://localhost:3000/api/v1/redis/strings/batch/set \
-  -H "Content-Type: application/json" \
-  -d '{"key_values": {"key1": "value1", "key2": "value2"}}'
+```http
+GET /api/redis/get/user:123
 ```
 
-## API Endpoints
+**Delete Key:**
 
-### Health & Info
+```http
+DELETE /api/redis/delete/user:123
+```
 
-- `GET /health` - Health check with Redis connection status
-- `GET /info` - Server information and configuration
+**List Keys:**
 
-### String Operations
+```http
+GET /api/redis/keys?pattern=user:*
+```
 
-- `GET /api/v1/redis/strings/:key` - Get a string value
-- `POST /api/v1/redis/strings/:key` - Set a string value (with optional TTL)
-- `DELETE /api/v1/redis/strings/:key` - Delete a string key
-- `GET /api/v1/redis/strings/:key/exists` - Check if a key exists
-- `GET /api/v1/redis/strings/:key/ttl` - Get the TTL of a key
-- `POST /api/v1/redis/strings/:key/incr` - Increment a numeric value
-- `POST /api/v1/redis/strings/:key/incrby` - Increment by specific amount
+### WebSocket API
 
-### Advanced Operations
+#### Connection
 
-- `POST /api/v1/redis/strings/:key/setnx` - Set only if key doesn't exist
-- `POST /api/v1/redis/strings/:key/cas` - Compare and set atomically
+```javascript
+const ws = new WebSocket("ws://localhost:3000/ws");
+```
 
-### Batch Operations
+#### Message Format
 
-- `POST /api/v1/redis/strings/batch/set` - Set multiple keys at once
-- `POST /api/v1/redis/strings/batch/get` - Get multiple keys at once
-- `POST /api/v1/redis/strings/batch/delete` - Delete multiple keys at once
-- `POST /api/v1/redis/strings/batch/incr` - Increment multiple counters
-- `POST /api/v1/redis/strings/batch/incrby` - Increment multiple counters by amounts
+```json
+{
+  "id": "unique-request-id",
+  "command": "SET",
+  "args": {
+    "key": "user:123",
+    "value": "John Doe",
+    "expiry": 3600
+  }
+}
+```
 
-### Lua Script Operations
+#### Supported Commands
 
-- `POST /api/v1/redis/scripts/rate-limiter` - Implement rate limiting
-- `POST /api/v1/redis/scripts/multi-counter` - Increment multiple counters atomically
-- `POST /api/v1/redis/scripts/multi-set-ttl` - Set multiple keys with TTL atomically
+- `SET` - Set key-value pair
+- `GET` - Get value by key
+- `DELETE` - Delete key
+- `KEYS` - List keys by pattern
+- `EXISTS` - Check if key exists
+- `TTL` - Get time to live
+- `EXPIRE` - Set expiration time
+
+#### Response Format
+
+```json
+{
+  "id": "unique-request-id",
+  "success": true,
+  "data": "value",
+  "timestamp": "2024-01-01T00:00:00Z"
+}
+```
 
 ## Configuration
 
-The API can be configured via environment variables or CLI arguments:
+### Environment Variables
+
+| Variable        | Default                  | Description                    |
+| --------------- | ------------------------ | ------------------------------ |
+| `REDIS_URL`     | `redis://localhost:6379` | Redis connection URL           |
+| `DATABASE_TYPE` | `redis`                  | Database type (redis/postgres) |
+| `HOST`          | `127.0.0.1`              | Server host                    |
+| `PORT`          | `3000`                   | Server port                    |
+| `POOL_SIZE`     | `10`                     | Connection pool size           |
+| `LOG_LEVEL`     | `INFO`                   | Logging level                  |
+
+### Docker Environment
+
+The Docker setup automatically configures environment variables:
 
 ```bash
-# Environment variables
+REDIS_URL=redis://redis:6379
 DATABASE_TYPE=redis
-DATABASE_URL=redis://default:redispw@localhost:55000
-HOST=127.0.0.1
+HOST=0.0.0.0
 PORT=3000
 POOL_SIZE=10
-LOG_LEVEL=info
-
-# CLI arguments
-cargo run --bin dbx-api -- --database-type redis --database-url redis://default:redispw@localhost:55000 --port 3000
+LOG_LEVEL=INFO
 ```
 
-## Development Status
+## Docker Services
 
-This project is currently in early development. See [ROADMAP.md](ROADMAP.md) for the detailed development plan and future goals.
+### Core Services
+
+- **DBX API**: Main API server (port 3000)
+- **Redis**: Database server (port 6379)
+- **Redis Commander**: Web UI for Redis (port 8081)
+
+## Examples
+
+### JavaScript Client
+
+```javascript
+// HTTP API
+const response = await fetch("http://localhost:3000/api/redis/set", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    key: "user:123",
+    value: "John Doe",
+    expiry: 3600,
+  }),
+});
+
+// WebSocket API
+const ws = new WebSocket("ws://localhost:3000/ws");
+ws.onmessage = (event) => {
+  const response = JSON.parse(event.data);
+  console.log("Response:", response);
+};
+
+ws.send(
+  JSON.stringify({
+    id: "1",
+    command: "SET",
+    args: { key: "user:123", value: "John Doe" },
+  })
+);
+```
+
+### Rust Client
+
+```rust
+use reqwest;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = reqwest::Client::new();
+
+    // HTTP API
+    let response = client
+        .post("http://localhost:3000/api/redis/set")
+        .json(&serde_json::json!({
+            "key": "user:123",
+            "value": "John Doe",
+            "expiry": 3600
+        }))
+        .send()
+        .await?;
+
+    println!("Response: {:?}", response.text().await?);
+    Ok(())
+}
+```
+
+## Development
+
+### Project Structure
+
+```
+dbx/
+├── Dockerfile              # Docker image
+├── docker-compose.yml      # Service orchestration
+├── .dockerignore          # Docker build exclusions
+├── scripts/
+│   └── docker-setup.sh    # Setup script
+├── docs/
+│   └── docker.md          # Docker documentation
+├── api/                   # API source code
+│   ├── src/
+│   ├── Cargo.toml
+│   └── env.example
+├── crates/                # Shared crates
+├── tests/                 # Test files
+├── examples/              # Usage examples
+└── ts/                    # TypeScript client
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+cargo test
+
+# Run specific test file
+cargo test --test basic_tests
+
+# Run with Docker
+docker-compose exec dbx-api cargo test
+```
+
+### Code Quality
+
+```bash
+# Format code
+cargo fmt
+
+# Lint code
+cargo clippy
+
+# Check for security vulnerabilities
+cargo audit
+```
+
+## Monitoring and Observability
+
+### Health Checks
+
+- **API Health**: `GET /health`
+- **Docker Health**: Built-in health checks for all services
+- **Redis Health**: Automatic ping checks
+
+### Logging
+
+- **Structured Logging**: JSON format in production
+- **Log Levels**: Configurable per environment
+- **Log Aggregation**: Ready for ELK stack
+
+## Security
+
+### Security Features
+
+- **Non-root Containers**: All services run as non-root users
+- **Network Isolation**: Services communicate via internal network
+- **Health Checks**: Automatic container restart on failure
+- **Resource Limits**: Memory and CPU limits per container
+
+### Redis Security
+
+- **Network Binding**: Bind to internal network only
+- **Memory Limits**: Prevent memory exhaustion attacks
+
+## Deployment
+
+### Docker Deployment
+
+```bash
+# Setup and start
+./scripts/docker-setup.sh
+
+# Manual start
+docker-compose up -d
+```
+
+### Manual Deployment
+
+```bash
+# Build release
+cargo build --release
+
+# Run with environment variables
+REDIS_URL=redis://your-redis:6379 cargo run --release
+```
+
+### Scaling
+
+```bash
+# Scale API instances
+docker-compose up -d --scale dbx-api=3
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Port Conflicts**
+
+   ```bash
+   # Check port usage
+   netstat -tulpn | grep :3000
+
+   # Change ports in docker-compose.yml
+   ports:
+     - "3001:3000"
+   ```
+
+2. **Redis Connection Issues**
+
+   ```bash
+   # Test Redis connection
+   redis-cli ping
+
+   # Check Redis logs
+   docker-compose logs redis
+   ```
+
+### Debugging
+
+```bash
+# View logs
+docker-compose logs -f
+
+# Access container shell
+docker exec -it dbx-api bash
+
+# Check health status
+curl http://localhost:3000/health
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Ensure all tests pass
+6. Submit a pull request
 
 ## License
 
-This project is licensed under either of
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
-- MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
+## Roadmap
 
-at your option.
+- [x] HTTP API Layer (Redis)
+- [x] WebSocket API Layer (Redis)
+- [x] Docker Configuration
+- [x] Monitoring and Observability
+- [ ] PostgreSQL Support
+- [ ] Authentication and Authorization
+- [ ] PubSub/Streaming Support
+- [ ] GraphQL API
+- [ ] Kubernetes Deployment
+- [ ] Performance Benchmarks

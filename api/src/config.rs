@@ -56,15 +56,15 @@ impl Config {
     /// Create a new configuration with default values
     pub fn new(database_type: DatabaseType) -> Self {
         let default_url = match database_type {
-            DatabaseType::Redis => DatabaseUrls::REDIS_DEFAULT,
-            // DatabaseType::Postgres => DatabaseUrls::POSTGRES_DEFAULT,
-            // DatabaseType::MongoDB => DatabaseUrls::MONGODB_DEFAULT,
-            // DatabaseType::MySQL => DatabaseUrls::MYSQL_DEFAULT,
+            DatabaseType::Redis => DatabaseUrls::redis_url(),
+            // DatabaseType::Postgres => DatabaseUrls::postgres_url(),
+            // DatabaseType::MongoDB => DatabaseUrls::mongodb_url(),
+            // DatabaseType::MySQL => DatabaseUrls::mysql_url(),
         };
 
         Self {
             database_type,
-            database_url: default_url.to_string(),
+            database_url: default_url,
             host: ConfigDefaults::HOST.to_string(),
             port: ConfigDefaults::PORT,
             pool_size: ConfigDefaults::POOL_SIZE,
@@ -80,15 +80,15 @@ impl Config {
             .unwrap_or(DatabaseType::Redis);
 
         let default_url = match database_type {
-            DatabaseType::Redis => DatabaseUrls::REDIS_DEFAULT,
-            // DatabaseType::Postgres => DatabaseUrls::POSTGRES_DEFAULT,
-            // DatabaseType::MongoDB => DatabaseUrls::MONGODB_DEFAULT,
-            // DatabaseType::MySQL => DatabaseUrls::MYSQL_DEFAULT,
+            DatabaseType::Redis => DatabaseUrls::redis_url(),
+            // DatabaseType::Postgres => DatabaseUrls::postgres_url(),
+            // DatabaseType::MongoDB => DatabaseUrls::mongodb_url(),
+            // DatabaseType::MySQL => DatabaseUrls::mysql_url(),
         };
 
         Self {
             database_type,
-            database_url: std::env::var("DATABASE_URL").unwrap_or_else(|_| default_url.to_string()),
+            database_url: std::env::var("DATABASE_URL").unwrap_or_else(|_| default_url),
             host: std::env::var("HOST").unwrap_or_else(|_| ConfigDefaults::HOST.to_string()),
             port: std::env
                 ::var("PORT")

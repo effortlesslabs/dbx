@@ -13,711 +13,443 @@ A REST API and WebSocket server for Redis operations built with Rust and Axum.
 - **Health Checks**: Server and Redis connection monitoring
 - **CORS Support**: Cross-origin resource sharing enabled
 - **Comprehensive Error Handling**: Proper HTTP status codes and error messages
+- **Multi-Database Support**: Redis, PostgreSQL (planned)
+- **Dual Protocol**: HTTP REST API and WebSocket for real-time operations
+- **Modular Architecture**: Trait-based adapter layer for unified database operations
+- **High Performance**: Built with Rust for optimal performance
+- **Docker Support**: Complete containerization for development and production
 
 ## Quick Start
 
-### Prerequisites
+### Using Docker (Recommended)
 
-- Rust 1.70+
-- Redis server running (default: `redis://127.0.0.1:6379`)
+1. **Development Environment:**
 
-### Installation
+   ```bash
+   # Setup development environment with all tools
+   ./scripts/docker-setup.sh
+   ```
 
-```bash
-# Clone the repository
-git clone https://github.com/effortlesslabs/dbx.git
-cd dbx
+2. **Production Environment:**
 
-# Build the API server
-cargo build --bin dbx-api
+   ```bash
+   # Setup production environment
+   ./scripts/docker-prod.sh
+   ```
 
-# Run the server
-cargo run --bin dbx-api
+3. **Manual Docker Setup:**
+
+   ```bash
+   # Development
+   docker-compose --profile dev up -d
+
+   # Production
+   docker-compose -f docker-compose.prod.yml up -d
+   ```
+
+### Local Development
+
+1. **Prerequisites:**
+
+   - Rust 1.75+
+   - Redis server
+   - Cargo
+
+2. **Setup:**
+
+   ```bash
+   # Clone the repository
+   git clone <repository-url>
+   cd dbx/api
+
+   # Copy environment file
+   cp env.example .env
+
+   # Install dependencies
+   cargo build
+
+   # Run the server
+   cargo run
+   ```
+
+## API Documentation
+
+### HTTP API
+
+#### Base URL
+
+- Development: `http://localhost:3000`
+- Production: `https://your-domain.com`
+
+#### Endpoints
+
+##### Health Check
+
+```http
+GET /health
 ```
 
-### Configuration
-
-The server can be configured via command-line arguments or environment variables:
-
-```bash
-# Command-line arguments
-cargo run --bin dbx-api -- --redis-url redis://localhost:6379 --port 3000
-
-# Environment variables
-export REDIS_URL=redis://localhost:6379
-export PORT=3000
-export HOST=127.0.0.1
-export POOL_SIZE=10
-cargo run --bin dbx-api
-```
-
-## API Endpoints
-
-### Health & Info
-
-#### GET /health
-
-Check server and Redis connection status.
-
-```bash
-curl http://localhost:3000/health
-```
-
-Response:
+**Response:**
 
 ```json
 {
-  "success": true,
-  "data": {
-    "status": "ok",
-    "redis_connected": true,
-    "timestamp": "2024-01-01T12:00:00Z"
-  }
+  "status": "healthy",
+  "timestamp": "2024-01-01T00:00:00Z"
 }
 ```
 
-#### GET /info
+##### Redis Operations
 
-Get server information.
+**Set Key-Value:**
 
-```bash
-curl http://localhost:3000/info
-```
+```http
+POST /api/redis/set
+Content-Type: application/json
 
-### String Operations
-
-#### GET /api/v1/redis/strings/:key
-
-Get a string value.
-
-```bash
-curl http://localhost:3000/api/v1/redis/strings/mykey
-```
-
-#### POST /api/v1/redis/strings/:key
-
-Set a string value.
-
-```bash
-curl -X POST http://localhost:3000/api/v1/redis/strings/mykey \
-  -H "Content-Type: application/json" \
-  -d '{"value": "hello world", "ttl": 3600}'
-```
-
-#### DELETE /api/v1/redis/strings/:key
-
-Delete a string key.
-
-```bash
-curl -X DELETE http://localhost:3000/api/v1/redis/strings/mykey
-```
-
-#### GET /api/v1/redis/strings/:key/exists
-
-Check if a key exists.
-
-```bash
-curl http://localhost:3000/api/v1/redis/strings/mykey/exists
-```
-
-#### GET /api/v1/redis/strings/:key/ttl
-
-Get the TTL of a key.
-
-```bash
-curl http://localhost:3000/api/v1/redis/strings/mykey/ttl
-```
-
-#### POST /api/v1/redis/strings/:key/incr
-
-Increment a numeric value.
-
-```bash
-curl -X POST http://localhost:3000/api/v1/redis/strings/counter/incr
-```
-
-#### POST /api/v1/redis/strings/:key/incrby
-
-Increment a numeric value by a specific amount.
-
-```bash
-curl -X POST http://localhost:3000/api/v1/redis/strings/counter/incrby \
-  -H "Content-Type: application/json" \
-  -d '{"increment": 5}'
-```
-
-#### POST /api/v1/redis/strings/:key/setnx
-
-Set a value only if the key doesn't exist.
-
-```bash
-curl -X POST http://localhost:3000/api/v1/redis/strings/mykey/setnx \
-  -H "Content-Type: application/json" \
-  -d '{"value": "unique value", "ttl": 3600}'
-```
-
-#### POST /api/v1/redis/strings/:key/cas
-
-Compare and set a value atomically.
-
-```bash
-curl -X POST http://localhost:3000/api/v1/redis/strings/mykey/cas \
-  -H "Content-Type: application/json" \
-  -d '{"expected_value": "old value", "new_value": "new value", "ttl": 3600}'
-```
-
-### Batch Operations
-
-#### POST /api/v1/redis/strings/batch/set
-
-Set multiple keys at once.
-
-```bash
-curl -X POST http://localhost:3000/api/v1/redis/strings/batch/set \
-  -H "Content-Type: application/json" \
-  -d '{
-    "key_values": {
-      "key1": "value1",
-      "key2": "value2",
-      "key3": "value3"
-    },
-    "ttl": 3600
-  }'
-```
-
-#### POST /api/v1/redis/strings/batch/get
-
-Get multiple keys at once.
-
-```bash
-curl -X POST http://localhost:3000/api/v1/redis/strings/batch/get \
-  -H "Content-Type: application/json" \
-  -d '["key1", "key2", "key3"]'
-```
-
-#### POST /api/v1/redis/strings/batch/delete
-
-Delete multiple keys at once.
-
-```bash
-curl -X POST http://localhost:3000/api/v1/redis/strings/batch/delete \
-  -H "Content-Type: application/json" \
-  -d '["key1", "key2", "key3"]'
-```
-
-#### POST /api/v1/redis/strings/batch/incr
-
-Increment multiple counters at once.
-
-```bash
-curl -X POST http://localhost:3000/api/v1/redis/strings/batch/incr \
-  -H "Content-Type: application/json" \
-  -d '["counter1", "counter2", "counter3"]'
-```
-
-#### POST /api/v1/redis/strings/batch/incrby
-
-Increment multiple counters by specific amounts.
-
-```bash
-curl -X POST http://localhost:3000/api/v1/redis/strings/batch/incrby \
-  -H "Content-Type: application/json" \
-  -d '[["counter1", 5], ["counter2", 10], ["counter3", 15]]'
-```
-
-### Key Operations
-
-#### GET /api/v1/redis/keys
-
-List keys matching a pattern.
-
-```bash
-# List all keys
-curl http://localhost:3000/api/v1/redis/keys
-
-# List keys matching a pattern
-curl "http://localhost:3000/api/v1/redis/keys?pattern=user:*"
-```
-
-#### DELETE /api/v1/redis/keys/:key
-
-Delete a key.
-
-```bash
-curl -X DELETE http://localhost:3000/api/v1/redis/keys/mykey
-```
-
-#### GET /api/v1/redis/keys/:key/exists
-
-Check if a key exists.
-
-```bash
-curl http://localhost:3000/api/v1/redis/keys/mykey/exists
-```
-
-#### GET /api/v1/redis/keys/:key/ttl
-
-Get the TTL of a key.
-
-```bash
-curl http://localhost:3000/api/v1/redis/keys/mykey/ttl
-```
-
-### Lua Script Operations
-
-#### POST /api/v1/redis/scripts/rate-limiter
-
-Implement rate limiting.
-
-```bash
-curl -X POST http://localhost:3000/api/v1/redis/scripts/rate-limiter \
-  -H "Content-Type: application/json" \
-  -d '{
-    "key": "rate_limit:user:123",
-    "limit": 10,
-    "window": 60
-  }'
-```
-
-#### POST /api/v1/redis/scripts/multi-counter
-
-Increment multiple counters atomically.
-
-```bash
-curl -X POST http://localhost:3000/api/v1/redis/scripts/multi-counter \
-  -H "Content-Type: application/json" \
-  -d '{
-    "counters": [
-      ["counter1", 5],
-      ["counter2", 10],
-      ["counter3", 15]
-    ]
-  }'
-```
-
-#### POST /api/v1/redis/scripts/multi-set-ttl
-
-Set multiple keys with TTL atomically.
-
-```bash
-curl -X POST http://localhost:3000/api/v1/redis/scripts/multi-set-ttl \
-  -H "Content-Type: application/json" \
-  -d '{
-    "key_values": {
-      "key1": "value1",
-      "key2": "value2",
-      "key3": "value3"
-    },
-    "ttl": 3600
-  }'
-```
-
-## WebSocket API
-
-The WebSocket API provides a real-time, low-latency interface for database operations. It's ideal for:
-
-- **Batch Commands**: Execute multiple operations efficiently
-- **Low-Latency Operations**: Minimal overhead for frequent requests
-- **Real-time Streaming**: Subscribe to database changes (coming soon)
-- **Persistent Connections**: Maintain connection state across requests
-
-### WebSocket Endpoint
-
-```
-ws://localhost:3000/ws
-```
-
-### Message Format
-
-All WebSocket messages use JSON format with the following structure:
-
-```json
 {
-  "id": "optional-request-id",
-  "command": {
-    "action": "command_name",
-    "params": {
-      // command-specific parameters
-    }
-  }
+  "key": "user:123",
+  "value": "John Doe",
+  "expiry": 3600
 }
 ```
 
-### Supported Commands
+**Get Value:**
 
-#### Basic Operations
-
-**Get Value**
-
-```json
-{
-  "id": "get-1",
-  "command": {
-    "action": "get",
-    "params": {
-      "key": "mykey"
-    }
-  }
-}
+```http
+GET /api/redis/get/user:123
 ```
 
-**Set Value**
+**Delete Key:**
 
-```json
-{
-  "id": "set-1",
-  "command": {
-    "action": "set",
-    "params": {
-      "key": "mykey",
-      "value": "myvalue",
-      "ttl": 3600
-    }
-  }
-}
+```http
+DELETE /api/redis/delete/user:123
 ```
 
-**Delete Key**
+**List Keys:**
 
-```json
-{
-  "id": "delete-1",
-  "command": {
-    "action": "delete",
-    "params": {
-      "key": "mykey"
-    }
-  }
-}
+```http
+GET /api/redis/keys?pattern=user:*
 ```
 
-**Check Exists**
+### WebSocket API
 
-```json
-{
-  "id": "exists-1",
-  "command": {
-    "action": "exists",
-    "params": {
-      "key": "mykey"
-    }
-  }
-}
-```
-
-**Get TTL**
-
-```json
-{
-  "id": "ttl-1",
-  "command": {
-    "action": "ttl",
-    "params": {
-      "key": "mykey"
-    }
-  }
-}
-```
-
-#### Numeric Operations
-
-**Increment**
-
-```json
-{
-  "id": "incr-1",
-  "command": {
-    "action": "incr",
-    "params": {
-      "key": "counter"
-    }
-  }
-}
-```
-
-**Increment By**
-
-```json
-{
-  "id": "incrby-1",
-  "command": {
-    "action": "incrby",
-    "params": {
-      "key": "counter",
-      "increment": 5
-    }
-  }
-}
-```
-
-#### Advanced Operations
-
-**Set If Not Exists**
-
-```json
-{
-  "id": "setnx-1",
-  "command": {
-    "action": "setnx",
-    "params": {
-      "key": "unique_key",
-      "value": "unique_value",
-      "ttl": 3600
-    }
-  }
-}
-```
-
-**Compare and Set**
-
-```json
-{
-  "id": "cas-1",
-  "command": {
-    "action": "cas",
-    "params": {
-      "key": "mykey",
-      "expected_value": "old_value",
-      "new_value": "new_value",
-      "ttl": 3600
-    }
-  }
-}
-```
-
-#### Batch Operations
-
-**Batch Get**
-
-```json
-{
-  "id": "batch-get-1",
-  "command": {
-    "action": "batch_get",
-    "params": {
-      "keys": ["key1", "key2", "key3"]
-    }
-  }
-}
-```
-
-**Batch Set**
-
-```json
-{
-  "id": "batch-set-1",
-  "command": {
-    "action": "batch_set",
-    "params": {
-      "key_values": {
-        "key1": "value1",
-        "key2": "value2",
-        "key3": "value3"
-      },
-      "ttl": 1800
-    }
-  }
-}
-```
-
-**Batch Delete**
-
-```json
-{
-  "id": "batch-delete-1",
-  "command": {
-    "action": "batch_delete",
-    "params": {
-      "keys": ["key1", "key2", "key3"]
-    }
-  }
-}
-```
-
-**Batch Increment**
-
-```json
-{
-  "id": "batch-incr-1",
-  "command": {
-    "action": "batch_incr",
-    "params": {
-      "keys": ["counter1", "counter2", "counter3"]
-    }
-  }
-}
-```
-
-**Batch Increment By**
-
-```json
-{
-  "id": "batch-incrby-1",
-  "command": {
-    "action": "batch_incrby",
-    "params": {
-      "key_increments": [
-        ["counter1", 1],
-        ["counter2", 5],
-        ["counter3", 10]
-      ]
-    }
-  }
-}
-```
-
-#### Utility Commands
-
-**Ping**
-
-```json
-{
-  "id": "ping-1",
-  "command": {
-    "action": "ping"
-  }
-}
-```
-
-### Response Format
-
-All WebSocket responses follow this format:
-
-```json
-{
-  "id": "request-id",
-  "success": true,
-  "data": {
-    // response data
-  },
-  "error": null,
-  "timestamp": "2024-01-01T12:00:00Z"
-}
-```
-
-### Example Usage
-
-#### JavaScript Client
+#### Connection
 
 ```javascript
 const ws = new WebSocket("ws://localhost:3000/ws");
-
-ws.onopen = function () {
-  console.log("Connected to DBX WebSocket API");
-
-  // Send a set command
-  ws.send(
-    JSON.stringify({
-      id: "set-1",
-      command: {
-        action: "set",
-        params: {
-          key: "test_key",
-          value: "test_value",
-          ttl: 3600,
-        },
-      },
-    })
-  );
-};
-
-ws.onmessage = function (event) {
-  const response = JSON.parse(event.data);
-  console.log("Received:", response);
-
-  if (response.id === "set-1" && response.success) {
-    console.log("Value set successfully:", response.data);
-  }
-};
 ```
 
-#### Rust Client Example
+#### Message Format
 
-Run the included WebSocket client example:
+```json
+{
+  "id": "unique-request-id",
+  "command": "SET",
+  "args": {
+    "key": "user:123",
+    "value": "John Doe",
+    "expiry": 3600
+  }
+}
+```
+
+#### Supported Commands
+
+- `SET` - Set key-value pair
+- `GET` - Get value by key
+- `DELETE` - Delete key
+- `KEYS` - List keys by pattern
+- `EXISTS` - Check if key exists
+- `TTL` - Get time to live
+- `EXPIRE` - Set expiration time
+
+#### Response Format
+
+```json
+{
+  "id": "unique-request-id",
+  "success": true,
+  "data": "value",
+  "timestamp": "2024-01-01T00:00:00Z"
+}
+```
+
+## Configuration
+
+### Environment Variables
+
+| Variable        | Default                  | Description                    |
+| --------------- | ------------------------ | ------------------------------ |
+| `REDIS_URL`     | `redis://localhost:6379` | Redis connection URL           |
+| `DATABASE_TYPE` | `redis`                  | Database type (redis/postgres) |
+| `HOST`          | `127.0.0.1`              | Server host                    |
+| `PORT`          | `3000`                   | Server port                    |
+| `POOL_SIZE`     | `10`                     | Connection pool size           |
+| `LOG_LEVEL`     | `INFO`                   | Logging level                  |
+
+### Docker Environment
+
+The Docker setup automatically configures environment variables:
+
+**Development:**
 
 ```bash
-cargo run --example websocket_client
+REDIS_URL=redis://redis:6379
+DATABASE_TYPE=redis
+HOST=0.0.0.0
+PORT=3000
+POOL_SIZE=5
+LOG_LEVEL=DEBUG
 ```
 
-This example demonstrates:
+**Production:**
 
-- Connecting to the WebSocket API
-- Sending various commands (ping, set, get, batch operations)
-- Receiving and processing responses
+```bash
+REDIS_URL=redis://redis:6379
+DATABASE_TYPE=redis
+HOST=0.0.0.0
+PORT=3000
+POOL_SIZE=20
+LOG_LEVEL=WARN
+```
 
-### Error Handling
+## Docker Services
 
-WebSocket responses include error information when operations fail:
+### Core Services
 
-```json
-{
-  "id": "get-1",
-  "success": false,
-  "data": null,
-  "error": "Key not found",
-  "timestamp": "2024-01-01T12:00:00Z"
+- **DBX API**: Main API server (port 3000)
+- **Redis**: Database server (port 6379)
+
+### Development Tools
+
+- **Redis Commander**: Web UI for Redis (port 8081)
+- **Redis Insight**: Advanced Redis management (port 8001)
+- **Jaeger**: Distributed tracing (port 16686)
+- **Prometheus**: Metrics collection (port 9090)
+- **Grafana**: Metrics visualization (port 3001)
+
+### Production Services
+
+- **Nginx**: Reverse proxy with SSL (ports 80, 443)
+- **SSL**: HTTPS termination and security headers
+
+## Examples
+
+### JavaScript Client
+
+```javascript
+// HTTP API
+const response = await fetch("http://localhost:3000/api/redis/set", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    key: "user:123",
+    value: "John Doe",
+    expiry: 3600,
+  }),
+});
+
+// WebSocket API
+const ws = new WebSocket("ws://localhost:3000/ws");
+ws.onmessage = (event) => {
+  const response = JSON.parse(event.data);
+  console.log("Response:", response);
+};
+
+ws.send(
+  JSON.stringify({
+    id: "1",
+    command: "SET",
+    args: { key: "user:123", value: "John Doe" },
+  })
+);
+```
+
+### Rust Client
+
+```rust
+use reqwest;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = reqwest::Client::new();
+
+    // HTTP API
+    let response = client
+        .post("http://localhost:3000/api/redis/set")
+        .json(&serde_json::json!({
+            "key": "user:123",
+            "value": "John Doe",
+            "expiry": 3600
+        }))
+        .send()
+        .await?;
+
+    println!("Response: {:?}", response.text().await?);
+    Ok(())
 }
 ```
-
-Common error scenarios:
-
-- **Key not found**: When trying to get a non-existent key
-- **Invalid JSON**: When message format is incorrect
-- **Redis errors**: When underlying Redis operations fail
-- **Unsupported commands**: When using commands not yet implemented
-
-### Connection Management
-
-- **Automatic Reconnection**: Clients should implement reconnection logic
-- **Heartbeat**: Use ping/pong for connection health monitoring
-- **Graceful Shutdown**: Server sends close frames on shutdown
-- **Connection Limits**: Consider implementing connection limits for production
-
-## Error Handling
-
-The API returns consistent error responses:
-
-```json
-{
-  "success": false,
-  "error": "Error message describing what went wrong"
-}
-```
-
-Common HTTP status codes:
-
-- `200 OK`: Operation successful
-- `400 Bad Request`: Invalid request parameters
-- `404 Not Found`: Key not found
-- `409 Conflict`: Operation conflict (e.g., compare-and-set failed)
-- `500 Internal Server Error`: Server error
-- `503 Service Unavailable`: Redis connection issues
 
 ## Development
+
+### Project Structure
+
+```
+api/
+├── src/
+│   ├── main.rs              # Application entry point
+│   ├── server.rs            # Server configuration
+│   ├── config.rs            # Configuration management
+│   ├── constants/           # Centralized constants
+│   ├── handlers/            # Request handlers
+│   ├── middleware.rs        # Middleware components
+│   ├── models.rs            # Data models
+│   └── routes/              # API routes
+├── crates/                  # Shared crates
+├── tests/                   # Test files
+├── examples/                # Usage examples
+├── scripts/                 # Setup scripts
+├── docs/                    # Documentation
+└── docker-compose*.yml      # Docker configurations
+```
 
 ### Running Tests
 
 ```bash
-cargo test --bin dbx-api
+# Run all tests
+cargo test
+
+# Run specific test file
+cargo test --test basic_tests
+
+# Run with Docker
+docker-compose exec dbx-api cargo test
 ```
 
-### Running with Docker
+### Code Quality
 
 ```bash
-# Build the Docker image
-docker build -t dbx-api .
+# Format code
+cargo fmt
 
-# Run the container
-docker run -p 3000:3000 -e REDIS_URL=redis://host.docker.internal:6379 dbx-api
+# Lint code
+cargo clippy
+
+# Check for security vulnerabilities
+cargo audit
 ```
+
+## Monitoring and Observability
+
+### Health Checks
+
+- **API Health**: `GET /health`
+- **Docker Health**: Built-in health checks for all services
+- **Redis Health**: Automatic ping checks
+
+### Metrics
+
+- **Prometheus**: Metrics collection at `/metrics`
+- **Grafana**: Pre-configured dashboards
+- **Custom Metrics**: Request rates, response times, error rates
 
 ### Logging
 
-The server uses structured logging with different levels:
+- **Structured Logging**: JSON format in production
+- **Log Levels**: Configurable per environment
+- **Log Aggregation**: Ready for ELK stack
+
+## Security
+
+### Production Security Features
+
+- **SSL/TLS**: HTTPS with modern cipher suites
+- **Security Headers**: HSTS, XSS protection, content type options
+- **Rate Limiting**: API rate limiting via Nginx
+- **Non-root Containers**: All services run as non-root users
+- **Network Isolation**: Services communicate via internal network
+- **Resource Limits**: Memory and CPU limits per container
+
+### Redis Security
+
+- **Password Protection**: Configure `requirepass` in `redis.conf`
+- **Network Binding**: Bind to internal network only
+- **Memory Limits**: Prevent memory exhaustion attacks
+
+## Deployment
+
+### Docker Deployment
 
 ```bash
-# Set log level
-cargo run --bin dbx-api -- --log-level debug
+# Development
+./scripts/docker-setup.sh
+
+# Production
+./scripts/docker-prod.sh
+```
+
+### Manual Deployment
+
+```bash
+# Build release
+cargo build --release
+
+# Run with environment variables
+REDIS_URL=redis://your-redis:6379 cargo run --release
+```
+
+### Scaling
+
+```bash
+# Scale API instances
+docker-compose -f docker-compose.prod.yml up -d --scale dbx-api=3
+
+# Scale with load balancer
+docker-compose -f docker-compose.prod.yml up -d --scale dbx-api=5
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Port Conflicts**
+
+   ```bash
+   # Check port usage
+   netstat -tulpn | grep :3000
+
+   # Change ports in docker-compose.yml
+   ports:
+     - "3001:3000"
+   ```
+
+2. **Redis Connection Issues**
+
+   ```bash
+   # Test Redis connection
+   redis-cli ping
+
+   # Check Redis logs
+   docker-compose logs redis
+   ```
+
+3. **SSL Certificate Issues**
+   ```bash
+   # Generate new self-signed certificate
+   openssl req -x509 -newkey rsa:4096 -keyout ssl/key.pem -out ssl/cert.pem -days 365 -nodes
+   ```
+
+### Debugging
+
+```bash
+# View logs
+docker-compose logs -f
+
+# Access container shell
+docker exec -it dbx-api bash
+
+# Check health status
+curl http://localhost:3000/health
 ```
 
 ## Contributing
@@ -725,9 +457,23 @@ cargo run --bin dbx-api -- --log-level debug
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Add tests
-5. Submit a pull request
+4. Add tests for new functionality
+5. Ensure all tests pass
+6. Submit a pull request
 
 ## License
 
-MIT OR Apache-2.0
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Roadmap
+
+- [x] HTTP API Layer (Redis)
+- [x] WebSocket API Layer (Redis)
+- [x] Docker Configuration
+- [x] Monitoring and Observability
+- [ ] PostgreSQL Support
+- [ ] Authentication and Authorization
+- [ ] PubSub/Streaming Support
+- [ ] GraphQL API
+- [ ] Kubernetes Deployment
+- [ ] Performance Benchmarks
