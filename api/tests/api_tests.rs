@@ -6,20 +6,15 @@ use tower::util::ServiceExt;
 use axum::body::to_bytes;
 
 use dbx_api::{
-    config::Config,
+    config::{ Config, DatabaseType },
     models::{
         ApiResponse,
         BooleanValue,
-        CompareAndSetRequest,
         DeleteResponse,
         ExistsResponse,
-        IncrByRequest,
         IntegerValue,
         KeyValues,
         KeysResponse,
-        SetIfNotExistsRequest,
-        SetManyRequest,
-        SetRequest,
         StringValue,
         TtlResponse,
     },
@@ -29,14 +24,21 @@ use dbx_api::{
 // Test helper to create a test server
 async fn create_test_server() -> (Router, Arc<Redis>) {
     let config = Config {
-        redis_url: "redis://127.0.0.1:6379".to_string(),
+        database_type: DatabaseType::Redis,
+        database_url: "redis://default:redispw@localhost:55000".to_string(),
         host: "127.0.0.1".to_string(),
-        port: 3000,
+        port: 3001,
         pool_size: 5,
     };
 
     let server = Server::new(config).await.expect("Failed to create test server");
-    let redis = server.redis().clone();
+
+    // Create Redis client directly for testing
+    let redis = Arc::new(
+        Redis::from_url("redis://default:redispw@localhost:55000").expect(
+            "Failed to create Redis client"
+        )
+    );
     let router = server.create_router();
 
     (router, redis)
@@ -76,13 +78,10 @@ async fn test_health_endpoint() {
     let response = make_request(router, "GET", "/health", None).await;
     assert_eq!(response.status(), StatusCode::OK);
 
-    let health_response: ApiResponse<Value> = extract_json(response).await;
-    assert!(health_response.success);
-    assert!(health_response.data.is_some());
-
-    let health_data = health_response.data.unwrap();
-    assert_eq!(health_data["status"], "ok");
-    assert!(health_data["timestamp"].is_string());
+    let health_response: Value = extract_json(response).await;
+    assert_eq!(health_response["status"], "healthy");
+    assert_eq!(health_response["service"], "dbx-api");
+    assert!(health_response["timestamp"].is_string());
 }
 
 #[tokio::test]
@@ -92,14 +91,10 @@ async fn test_info_endpoint() {
     let response = make_request(router, "GET", "/info", None).await;
     assert_eq!(response.status(), StatusCode::OK);
 
-    let info_response: ApiResponse<Value> = extract_json(response).await;
-    assert!(info_response.success);
-    assert!(info_response.data.is_some());
-
-    let info_data = info_response.data.unwrap();
-    assert_eq!(info_data["name"], "DBX API");
-    assert!(info_data["version"].is_string());
-    assert_eq!(info_data["redis_url"], "redis://127.0.0.1:6379");
+    let info_response: Value = extract_json(response).await;
+    assert_eq!(info_response["service"], "dbx-api");
+    assert!(info_response["version"].is_string());
+    assert_eq!(info_response["database_url"], "redis://default:redispw@localhost:55000");
 }
 
 #[tokio::test]
@@ -421,7 +416,7 @@ async fn test_batch_operations() {
     assert_eq!(key_values["batch_key3"], "value3");
 
     // Test batch INCR
-    let batch_incr_request = json!(["batch_key1", "batch_key2"]);
+    let batch_incr_request = json!(["incr_key1", "incr_key2"]);
 
     let response = make_request(
         router.clone(),
@@ -435,7 +430,13 @@ async fn test_batch_operations() {
     assert!(batch_incr_response.success);
 
     // Test batch DELETE
-    let batch_delete_request = json!(["batch_key1", "batch_key2", "batch_key3"]);
+    let batch_delete_request = json!([
+        "batch_key1",
+        "batch_key2",
+        "batch_key3",
+        "incr_key1",
+        "incr_key2",
+    ]);
 
     let response = make_request(
         router.clone(),
@@ -447,7 +448,7 @@ async fn test_batch_operations() {
     assert_eq!(response.status(), StatusCode::OK);
     let batch_delete_response: ApiResponse<DeleteResponse> = extract_json(response).await;
     assert!(batch_delete_response.success);
-    assert_eq!(batch_delete_response.data.unwrap().deleted_count, 3);
+    assert_eq!(batch_delete_response.data.unwrap().deleted_count, 5);
 }
 
 #[tokio::test]

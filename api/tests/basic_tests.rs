@@ -5,18 +5,25 @@ use std::sync::Arc;
 use tower::util::ServiceExt;
 use axum::body::to_bytes;
 
-use dbx_api::{ config::Config, models::ApiResponse, server::Server };
+use dbx_api::{ config::{ Config, DatabaseType }, server::Server };
 
 // Helper to create a test server
 async fn create_test_server() -> (Router, Arc<Redis>) {
     let config = Config {
-        redis_url: "redis://127.0.0.1:6379".to_string(),
+        database_type: DatabaseType::Redis,
+        database_url: "redis://default:redispw@localhost:55000".to_string(),
         host: "127.0.0.1".to_string(),
-        port: 3000,
+        port: 3001,
         pool_size: 5,
     };
     let server = Server::new(config).await.expect("Failed to create test server");
-    let redis = server.redis().clone();
+
+    // Create Redis client directly for testing
+    let redis = Arc::new(
+        Redis::from_url("redis://default:redispw@localhost:55000").expect(
+            "Failed to create Redis client"
+        )
+    );
     let router = server.create_router();
     (router, redis)
 }
@@ -51,12 +58,10 @@ async fn test_health_endpoint() {
     let (router, _) = create_test_server().await;
     let response = make_request(router, "GET", "/health", None).await;
     assert_eq!(response.status(), StatusCode::OK);
-    let health_response: ApiResponse<Value> = extract_json(response).await;
-    assert!(health_response.success);
-    assert!(health_response.data.is_some());
-    let health_data = health_response.data.unwrap();
-    assert_eq!(health_data["status"], "ok");
-    assert!(health_data["timestamp"].is_string());
+    let health_response: Value = extract_json(response).await;
+    assert_eq!(health_response["status"], "healthy");
+    assert_eq!(health_response["service"], "dbx-api");
+    assert!(health_response["timestamp"].is_string());
 }
 
 #[tokio::test]

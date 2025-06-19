@@ -15,39 +15,61 @@ As of now, DBX has implemented:
 - **REST API Layer (Redis)**: Modular REST API server for Redis, with per-database routes/handlers
 - **Multi-database CLI**: Unified CLI to select database type and connection URL at runtime
 - **Extensible Architecture**: Easy to add new databases (Postgres, MongoDB, etc.) by adding handler/route modules and updating the enum/CLI
+- **TypeScript SDK**: Complete TypeScript SDK with full type definitions, covering all API operations including string operations, batch operations, key management, and Lua scripts
 
 ## Short-term Goals (0-3 months)
+
+### High Priority - Hosting & Deployment
+
+- [ ] **Docker Support**
+  - [ ] Add `Dockerfile` for the API server
+  - [ ] Create `docker-compose.yml` with Redis included
+  - [ ] Add health checks and proper container configuration
+  - [ ] Environment variable configuration for database URLs
+- [ ] **Environment Configuration**
+  - [ ] Support for `.env` files
+  - [ ] Environment variable overrides for all config options
+  - [ ] Default configurations for common deployment scenarios
+- [ ] **Deployment Documentation**
+  - [ ] Quick start guide with Docker
+  - [ ] Deployment guides for common platforms (Heroku, Railway, DigitalOcean)
+  - [ ] Production configuration examples
+
+### Core Features
 
 - [x] **Core Interfaces**
   - [x] Define common traits across all database types
   - [x] Implement error handling framework
   - [x] Add comprehensive logging
 - [x] **REST API Layer (Redis)**
-
   - [x] Design REST API endpoints for Redis operations
   - [x] Implement REST API server for Redis
   - [x] Modularize routes/handlers per database
   - [ ] Add authentication and authorization mechanisms
-
 - [x] **CLI System**
-
   - [x] Develop CLI tool to run REST API server
   - [x] Support configuration via database type and URL
   - [x] Provide usage commands and help documentation
 
-- [ ] **Redis Adapter Enhancements**
+### Medium Priority
 
+- [ ] **Process Management**
+  - [ ] Graceful shutdown handling
+  - [ ] Signal handling (SIGTERM, SIGINT)
+  - [ ] Process monitoring and restart capabilities
+- [ ] **Health & Monitoring**
+  - [ ] Enhanced health check endpoint with database connectivity
+  - [ ] Basic metrics endpoint
+  - [ ] Logging configuration for production
+- [ ] **Redis Adapter Enhancements**
   - [ ] Add support for all Redis data types (Lists, Sets, Hashes, Sorted Sets)
   - [ ] Implement PubSub functionality
   - [ ] Add cluster support
   - [ ] Implement connection pooling improvements
-
 - [ ] **New Database Adapters**
-
   - [ ] SQLite adapter
   - [ ] Basic PostgreSQL adapter (with REST API)
   - [ ] Add modular routes/handlers for new databases
-
 - [ ] **Documentation**
   - [x] CLI and API usage examples
   - [x] Modular architecture and extension guide
@@ -79,7 +101,7 @@ As of now, DBX has implemented:
 ## Long-term Goals (6+ months)
 
 - [ ] **Language Bindings**
-  - [ ] TypeScript/JavaScript bindings
+  - [x] TypeScript/JavaScript bindings
   - [ ] Python bindings
   - [ ] Ruby bindings
   - [ ] C# bindings

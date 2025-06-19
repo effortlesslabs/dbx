@@ -20,6 +20,7 @@ use crate::{
         SetRequest,
         StringValue,
         TtlResponse,
+        KeysResponse,
     },
 };
 
@@ -305,6 +306,57 @@ impl RedisHandler {
         }
 
         Ok(Json(ApiResponse::success(results)))
+    }
+
+    // Key operation handlers
+
+    pub async fn list_keys(
+        State(handler): State<Self>,
+        axum::extract::Query(query): axum::extract::Query<KeyQuery>
+    ) -> Result<Json<ApiResponse<KeysResponse>>, (StatusCode, Json<ApiResponse<()>>)> {
+        debug!("GET /keys with pattern: {:?}", query.pattern);
+
+        let pattern = query.pattern.unwrap_or_else(|| "*".to_string());
+        match handler.redis.string().keys(&pattern) {
+            Ok(keys) => Ok(Json(ApiResponse::success(KeysResponse { keys }))),
+            Err(e) => Err(handle_redis_error(e)),
+        }
+    }
+
+    pub async fn key_exists(
+        State(handler): State<Self>,
+        Path(key): Path<String>
+    ) -> Result<Json<ApiResponse<ExistsResponse>>, (StatusCode, Json<ApiResponse<()>>)> {
+        debug!("GET /keys/{}/exists", key);
+
+        match handler.redis.string().exists(&key) {
+            Ok(exists) => Ok(Json(ApiResponse::success(ExistsResponse { exists }))),
+            Err(e) => Err(handle_redis_error(e)),
+        }
+    }
+
+    pub async fn key_ttl(
+        State(handler): State<Self>,
+        Path(key): Path<String>
+    ) -> Result<Json<ApiResponse<TtlResponse>>, (StatusCode, Json<ApiResponse<()>>)> {
+        debug!("GET /keys/{}/ttl", key);
+
+        match handler.redis.string().ttl(&key) {
+            Ok(ttl) => Ok(Json(ApiResponse::success(TtlResponse { ttl }))),
+            Err(e) => Err(handle_redis_error(e)),
+        }
+    }
+
+    pub async fn delete_key(
+        State(handler): State<Self>,
+        Path(key): Path<String>
+    ) -> Result<Json<ApiResponse<DeleteResponse>>, (StatusCode, Json<ApiResponse<()>>)> {
+        debug!("DELETE /keys/{}", key);
+
+        match handler.redis.string().del(&key) {
+            Ok(_) => Ok(Json(ApiResponse::success(DeleteResponse { deleted_count: 1 }))),
+            Err(e) => Err(handle_redis_error(e)),
+        }
     }
 
     // Script operation handlers

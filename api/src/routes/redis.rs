@@ -8,7 +8,10 @@ pub fn create_routes() -> Router<RedisHandler> {
 
 /// Create Redis API routes
 fn create_redis_api_routes() -> Router<RedisHandler> {
-    Router::new().nest("/strings", create_string_routes()).nest("/scripts", create_script_routes())
+    Router::new()
+        .nest("/strings", create_string_routes())
+        .nest("/scripts", create_script_routes())
+        .nest("/keys", create_key_routes())
 }
 
 /// Create string operation routes
@@ -36,4 +39,13 @@ fn create_script_routes() -> Router<RedisHandler> {
         .route("/rate-limiter", post(RedisHandler::rate_limiter_script))
         .route("/multi-counter", post(RedisHandler::multi_counter_script))
         .route("/multi-set-ttl", post(RedisHandler::multi_set_ttl_script))
+}
+
+/// Create key operation routes
+fn create_key_routes() -> Router<RedisHandler> {
+    Router::new()
+        .route("/", get(RedisHandler::list_keys))
+        .route("/:key/exists", get(RedisHandler::key_exists))
+        .route("/:key/ttl", get(RedisHandler::key_ttl))
+        .route("/:key", delete(RedisHandler::delete_key))
 }
