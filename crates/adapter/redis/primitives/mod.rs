@@ -1,19 +1,22 @@
-//! Redis primitive data type adapters
-//!
-//! This module provides implementations for Redis primitive data types:
-//! - String: Simple string values, numbers, and binary data
-//! - List: Lists of strings
-//! - Hash: Hash maps of string field-value pairs
-//! - Set: Unordered collections of unique strings
-//! - Sorted Set: Ordered collections of strings with associated scores
-//!
-//! Each implementation supports individual commands, pipelined operations,
-//! transactions, and Lua scripts.
+/// Redis data type primitives
+///
+/// This module contains all Redis data type implementations providing 
+/// type-specific operations for string, list, set, sorted set, hash, 
+/// stream, bitmap and other Redis data structures.
 
 pub mod string;
+pub mod list;
+pub mod set;
+pub mod sorted_set;
+pub mod hash;
+pub mod stream;
+pub mod bitmap;
 
-// These will be implemented in future versions:
-// pub mod list;
-// pub mod hash;
-// pub mod set;
-// pub mod sorted_set;
+// Re-export the main types for easier access
+pub use string::RedisString;
+pub use list::RedisList;
+pub use set::RedisSet;
+pub use sorted_set::RedisSortedSet;
+pub use hash::RedisHash;
+pub use stream::{RedisStream, StreamStats};
+pub use bitmap::{RedisBitmap, BitfieldOperation, BitmapStats};

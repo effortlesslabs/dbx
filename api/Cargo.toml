@@ -5,7 +5,7 @@ edition.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "REST API server for DBX database operations"
+description = "API layer for DBX database abstraction"
 
 [[bin]]
 name = "dbx-api"
@@ -13,32 +13,27 @@ path = "src/main.rs"
 
 [dependencies]
 dbx-crates = { path = "../crates", features = ["async", "connection-pool"] }
-axum = { workspace = true, features = ["ws"] }
-tokio = { workspace = true, features = ["full"] }
+axum = { workspace = true }
+tokio = { workspace = true }
+tower = "0.4"
+tower-http = { version = "0.4", features = ["cors", "trace"] }
+hyper = "0.14"
 serde = { workspace = true }
 serde_json = { workspace = true }
-tower = "0.4"
-tower-http = { version = "0.5", features = ["cors", "trace"] }
+redis = { workspace = true }
+thiserror = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
-thiserror = { workspace = true }
-anyhow = "1.0"
-config = "0.14"
 clap = { version = "4.0", features = ["derive"] }
-redis = { workspace = true }
+dotenvy = "0.15"
 chrono = { version = "0.4", features = ["serde"] }
-dotenv = "0.15"
-# WebSocket dependencies
-axum-extra = { version = "0.9", features = ["typed-header"] }
-futures-util = { version = "0.3", features = ["sink"] }
-uuid = { version = "1.0", features = ["v4"] }
+futures = "0.3"
+uuid = { version = "1.0", features = ["v4", "serde"] }
+tokio-tungstenite = "0.20"
 
 [dev-dependencies]
 reqwest = { version = "0.11", features = ["json"] }
 tokio-test = "0.4"
-hyper = { version = "0.14", features = ["full"] }
-tower = { version = "0.4", features = ["util"] }
-tokio-tungstenite = "0.20"
 url = "2.4"
 serde_json = "1.0"
 futures-util = "0.3"

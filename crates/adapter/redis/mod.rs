@@ -1,7 +1,7 @@
 //! Redis adapter module
 //!
 //! This module provides adapters for interacting with Redis,
-//! organized by Redis data type (string, list, hash, set, sorted set).
+//! organized by Redis data type (string, list, hash, set, sorted set, stream, bitmap).
 //! It includes support for individual commands, pipelined operations,
 //! transactions, and Lua scripts.
 
@@ -11,16 +11,17 @@ pub mod primitives;
 use redis::{ Client, Connection, RedisError, RedisResult, Script };
 
 use client::RedisClient;
-use primitives::string::RedisString;
+use primitives::{
+    RedisString, RedisList, RedisSet, RedisSortedSet, RedisHash, 
+    RedisStream, RedisBitmap
+};
 
 /// Redis data type adapters providing type-specific operations
 pub mod types {
-    pub use super::primitives::string::RedisString;
-    // Other Redis types will be added here as they're implemented:
-    // pub use super::primitives::list::RedisList;
-    // pub use super::primitives::hash::RedisHash;
-    // pub use super::primitives::set::RedisSet;
-    // pub use super::primitives::sorted_set::RedisSortedSet;
+    pub use super::primitives::{
+        RedisString, RedisList, RedisSet, RedisSortedSet, RedisHash,
+        RedisStream, StreamStats, RedisBitmap, BitfieldOperation, BitmapStats
+    };
 }
 
 /// Commonly used Redis Lua scripts
@@ -88,6 +89,36 @@ impl Redis {
     /// Get access to string operations
     pub fn string(&self) -> RedisString {
         RedisString::new(self.client.connection().clone())
+    }
+
+    /// Get access to list operations
+    pub fn list(&self) -> RedisList {
+        RedisList::new(self.client.connection().clone())
+    }
+
+    /// Get access to set operations
+    pub fn set(&self) -> RedisSet {
+        RedisSet::new(self.client.connection().clone())
+    }
+
+    /// Get access to sorted set operations
+    pub fn sorted_set(&self) -> RedisSortedSet {
+        RedisSortedSet::new(self.client.connection().clone())
+    }
+
+    /// Get access to hash operations
+    pub fn hash(&self) -> RedisHash {
+        RedisHash::new(self.client.connection().clone())
+    }
+
+    /// Get access to stream operations
+    pub fn stream(&self) -> RedisStream {
+        RedisStream::new(self.client.connection().clone())
+    }
+
+    /// Get access to bitmap operations
+    pub fn bitmap(&self) -> RedisBitmap {
+        RedisBitmap::new(self.client.connection().clone())
     }
 
     /// Execute a Lua script directly
@@ -166,6 +197,36 @@ impl BatchOperations {
     /// Execute multiple DEL operations in a pipeline
     pub fn del_many(redis: &Redis, keys: Vec<&str>) -> RedisResult<()> {
         redis.string().del_many(keys)
+    }
+
+    /// Execute multiple list operations in a pipeline
+    pub fn lpush_many(redis: &Redis, operations: Vec<(&str, Vec<&str>)>) -> RedisResult<Vec<i64>> {
+        redis.list().lpush_many(operations)
+    }
+
+    /// Execute multiple set operations in a pipeline
+    pub fn sadd_many(redis: &Redis, operations: Vec<(&str, Vec<&str>)>) -> RedisResult<Vec<i64>> {
+        redis.set().sadd_many(operations)
+    }
+
+    /// Execute multiple sorted set operations in a pipeline
+    pub fn zadd_many(redis: &Redis, operations: Vec<(&str, Vec<(f64, &str)>)>) -> RedisResult<Vec<i64>> {
+        redis.sorted_set().zadd_many(operations)
+    }
+
+    /// Execute multiple hash operations in a pipeline
+    pub fn hset_many(redis: &Redis, operations: Vec<(&str, &[(&str, &str)])>) -> RedisResult<Vec<i64>> {
+        redis.hash().hset_many(operations)
+    }
+
+    /// Execute multiple stream operations in a pipeline
+    pub fn xadd_many(redis: &Redis, operations: Vec<(&str, &[(&str, &str)])>) -> RedisResult<Vec<String>> {
+        redis.stream().xadd_many(operations)
+    }
+
+    /// Execute multiple bitmap operations in a pipeline
+    pub fn setbit_many(redis: &Redis, operations: Vec<(&str, u64, bool)>) -> RedisResult<Vec<bool>> {
+        redis.bitmap().setbit_many(operations)
     }
 }
 
