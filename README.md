@@ -7,23 +7,24 @@ A minimal API layer for all types of databases, portable across Workers, Raspber
 ## Features
 
 - 🚀 Fast and lightweight database abstraction layer
-- 🔄 Support for multiple databases (SQLite, PostgreSQL, MongoDB, Redis)
-- 🌐 WASM/Worker compatibility
-- 📦 TypeScript bindings
-- 🛠️ Simple CLI tool
-- 🔌 Language bindings for Python, Ruby, C#, and Java
+- 🔄 Currently implements Redis adapter with more databases planned
+- 🔢 Robust Redis primitives with support for pipeline, transaction, and Lua scripts
+- 🧰 Well-documented API with comprehensive examples
+- 🛠️ Modern Rust implementation with configurable features
+- 🧩 Modular architecture for easy extension
 
 ## Project Structure
 
 ```
 dbx/
-├── crates/
-│   ├── dbx-core/      # Core traits and types
-│   ├── dbx-sqlite/    # SQLite driver
-│   ├── dbx-postgres/  # PostgreSQL driver
-│   ├── dbx-mongo/     # MongoDB driver
-│   └── dbx-redis/     # Redis driver
-└── Cargo.toml         # Workspace configuration
+├── crates/            # Main crate containing all modules
+│   ├── adapter/       # Database adapters
+│   │   └── redis/     # Redis adapter implementation
+│   │       ├── client.rs          # Redis client functionality
+│   │       └── primitives/        # Redis primitive data types
+│   │           └── string.rs      # Redis string operations
+├── Cargo.toml         # Workspace configuration
+└── Cargo.lock         # Dependency lock file
 ```
 
 ## Getting Started
@@ -45,11 +46,14 @@ cargo build
 
 # Run tests
 cargo test
+
+# Run doctests
+cargo test --doc
 ```
 
 ## Development Status
 
-This project is currently in early development. See [DBX_TODO.md](DBX_TODO.md) for the current status and roadmap.
+This project is currently in early development. See [ROADMAP.md](ROADMAP.md) for the detailed development plan and future goals.
 
 ## License
 
