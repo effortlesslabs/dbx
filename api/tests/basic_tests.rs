@@ -70,7 +70,7 @@ async fn test_api_compilation() {
     use dbx_api::config::Config;
     use dbx_api::models::ApiResponse;
 
-    let config = Config::new();
+    let config = Config::new(DatabaseType::Redis);
     assert_eq!(config.port, 3000);
 
     let response = ApiResponse::<String>::success("test".to_string());

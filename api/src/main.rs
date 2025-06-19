@@ -3,6 +3,7 @@ use std::net::SocketAddr;
 use tracing::{ info, Level };
 
 mod config;
+mod constants;
 mod handlers;
 mod middleware;
 mod models;
@@ -10,6 +11,7 @@ mod routes;
 mod server;
 
 use config::{ Config, DatabaseType };
+use constants::{ config::ConfigDefaults, database::DatabaseUrls, errors::ErrorMessages };
 use server::Server;
 
 #[derive(Parser, Debug)]
@@ -69,15 +71,15 @@ async fn main() -> anyhow::Result<()> {
             .or_else(|| std::env::var("DATABASE_URL").ok())
             .unwrap_or_else(|| {
                 match args.database_type {
-                    DatabaseType::Redis => "redis://127.0.0.1:6379".to_string(),
-                    // DatabaseType::Postgres => "postgresql://localhost:5432/dbx".to_string(),
-                    // DatabaseType::MongoDB => "mongodb://localhost:27017/dbx".to_string(),
-                    // DatabaseType::MySQL => "mysql://localhost:3306/dbx".to_string(),
+                    DatabaseType::Redis => DatabaseUrls::REDIS_DEFAULT.to_string(),
+                    // DatabaseType::Postgres => DatabaseUrls::POSTGRES_DEFAULT.to_string(),
+                    // DatabaseType::MongoDB => DatabaseUrls::MONGODB_DEFAULT.to_string(),
+                    // DatabaseType::MySQL => DatabaseUrls::MYSQL_DEFAULT.to_string(),
                 }
             }),
         host: args.host
             .or_else(|| std::env::var("HOST").ok())
-            .unwrap_or_else(|| "127.0.0.1".to_string()),
+            .unwrap_or_else(|| ConfigDefaults::HOST.to_string()),
         port: args.port
             .or_else(||
                 std::env
@@ -85,7 +87,7 @@ async fn main() -> anyhow::Result<()> {
                     .ok()
                     .and_then(|s| s.parse().ok())
             )
-            .unwrap_or(3000),
+            .unwrap_or(ConfigDefaults::PORT),
         pool_size: args.pool_size
             .or_else(||
                 std::env
@@ -93,7 +95,7 @@ async fn main() -> anyhow::Result<()> {
                     .ok()
                     .and_then(|s| s.parse().ok())
             )
-            .unwrap_or(10),
+            .unwrap_or(ConfigDefaults::POOL_SIZE),
     };
 
     // Create and start server

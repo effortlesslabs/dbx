@@ -1,4 +1,6 @@
+use crate::constants::{ config::ConfigDefaults, database::DatabaseUrls, errors::ErrorMessages };
 use serde::{ Deserialize, Serialize };
+use std::str::FromStr;
 
 /// Supported database types
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -10,7 +12,7 @@ pub enum DatabaseType {
     // MySQL,
 }
 
-impl std::str::FromStr for DatabaseType {
+impl FromStr for DatabaseType {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -52,24 +54,20 @@ pub struct Config {
 
 impl Config {
     /// Create a new configuration with default values
-    pub fn new() -> Self {
-        Self {
-            database_type: DatabaseType::Redis,
-            database_url: "redis://127.0.0.1:6379".to_string(),
-            host: "127.0.0.1".to_string(),
-            port: 3000,
-            pool_size: 10,
-        }
-    }
+    pub fn new(database_type: DatabaseType) -> Self {
+        let default_url = match database_type {
+            DatabaseType::Redis => DatabaseUrls::REDIS_DEFAULT,
+            // DatabaseType::Postgres => DatabaseUrls::POSTGRES_DEFAULT,
+            // DatabaseType::MongoDB => DatabaseUrls::MONGODB_DEFAULT,
+            // DatabaseType::MySQL => DatabaseUrls::MYSQL_DEFAULT,
+        };
 
-    /// Create a new configuration for a specific database type
-    pub fn new_for_database(database_type: DatabaseType, database_url: String) -> Self {
         Self {
             database_type,
-            database_url,
-            host: "127.0.0.1".to_string(),
-            port: 3000,
-            pool_size: 10,
+            database_url: default_url.to_string(),
+            host: ConfigDefaults::HOST.to_string(),
+            port: ConfigDefaults::PORT,
+            pool_size: ConfigDefaults::POOL_SIZE,
         }
     }
 
@@ -77,37 +75,37 @@ impl Config {
     pub fn from_env() -> Self {
         let database_type = std::env
             ::var("DATABASE_TYPE")
-            .unwrap_or_else(|_| "redis".to_string())
+            .unwrap_or_else(|_| ConfigDefaults::DATABASE_TYPE.to_string())
             .parse()
             .unwrap_or(DatabaseType::Redis);
 
         let default_url = match database_type {
-            DatabaseType::Redis => "redis://127.0.0.1:6379",
-            // DatabaseType::Postgres => "postgresql://localhost:5432/dbx",
-            // DatabaseType::MongoDB => "mongodb://localhost:27017/dbx",
-            // DatabaseType::MySQL => "mysql://localhost:3306/dbx",
+            DatabaseType::Redis => DatabaseUrls::REDIS_DEFAULT,
+            // DatabaseType::Postgres => DatabaseUrls::POSTGRES_DEFAULT,
+            // DatabaseType::MongoDB => DatabaseUrls::MONGODB_DEFAULT,
+            // DatabaseType::MySQL => DatabaseUrls::MYSQL_DEFAULT,
         };
 
         Self {
             database_type,
             database_url: std::env::var("DATABASE_URL").unwrap_or_else(|_| default_url.to_string()),
-            host: std::env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_string()),
+            host: std::env::var("HOST").unwrap_or_else(|_| ConfigDefaults::HOST.to_string()),
             port: std::env
                 ::var("PORT")
-                .unwrap_or_else(|_| "3000".to_string())
+                .unwrap_or_else(|_| ConfigDefaults::PORT.to_string())
                 .parse()
-                .unwrap_or(3000),
+                .unwrap_or(ConfigDefaults::PORT),
             pool_size: std::env
                 ::var("POOL_SIZE")
-                .unwrap_or_else(|_| "10".to_string())
+                .unwrap_or_else(|_| ConfigDefaults::POOL_SIZE.to_string())
                 .parse()
-                .unwrap_or(10),
+                .unwrap_or(ConfigDefaults::POOL_SIZE),
         }
     }
 }
 
 impl Default for Config {
     fn default() -> Self {
-        Self::new()
+        Self::new(DatabaseType::Redis)
     }
 }

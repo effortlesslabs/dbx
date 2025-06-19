@@ -5,6 +5,7 @@ use std::sync::Arc;
 use tracing::debug;
 
 use crate::{
+    constants::{ database::DatabasePatterns, errors::ErrorMessages },
     middleware::handle_redis_error,
     models::{
         ApiResponse,
@@ -55,7 +56,10 @@ impl RedisHandler {
         match handler.redis.string().get(&key) {
             Ok(Some(value)) => Ok(Json(ApiResponse::success(StringValue { value }))),
             Ok(None) =>
-                Err((StatusCode::NOT_FOUND, Json(ApiResponse::error("Key not found".to_string())))),
+                Err((
+                    StatusCode::NOT_FOUND,
+                    Json(ApiResponse::error(ErrorMessages::KEY_NOT_FOUND.to_string())),
+                )),
             Err(e) => Err(handle_redis_error(e)),
         }
     }
@@ -70,7 +74,11 @@ impl RedisHandler {
         let result = if let Some(ttl) = request.ttl {
             handler.redis
                 .string()
-                .set_with_expiry(&key, &request.value, ttl.try_into().unwrap_or(usize::MAX))
+                .set_with_expiry(
+                    &key,
+                    &request.value,
+                    ttl.try_into().unwrap_or(DatabasePatterns::MAX_TTL)
+                )
         } else {
             handler.redis.string().set(&key, &request.value)
         };
@@ -182,7 +190,7 @@ impl RedisHandler {
         debug!("POST /strings/{}/cas", key);
 
         let script = RedisString::compare_and_set_with_ttl_script();
-        let ttl = request.ttl.unwrap_or(0);
+        let ttl = request.ttl.unwrap_or(DatabasePatterns::DEFAULT_TTL);
         let result: i32 = match
             handler.redis.eval_script(
                 &script,

@@ -6,6 +6,7 @@ use tracing::info;
 
 use crate::{
     config::{ Config, DatabaseType },
+    constants::errors::ErrorMessages,
     handlers::{ redis::RedisHandler, websocket::WebSocketHandler },
     models::ApiResponse,
     routes,
@@ -31,10 +32,12 @@ impl Server {
                 match ping_result {
                     Ok(true) => info!("Successfully connected to Redis"),
                     Ok(false) => {
-                        return Err(anyhow::anyhow!("Redis ping failed"));
+                        return Err(anyhow::anyhow!(ErrorMessages::REDIS_PING_FAILED));
                     }
                     Err(e) => {
-                        return Err(anyhow::anyhow!("Failed to connect to Redis: {}", e));
+                        return Err(
+                            anyhow::anyhow!("{}{}", ErrorMessages::REDIS_CONNECTION_FAILED, e)
+                        );
                     }
                 }
             }
@@ -61,7 +64,7 @@ impl Server {
         let (database_routes, websocket_routes) = match self.config.database_type {
             DatabaseType::Redis => {
                 let redis = Redis::from_url(&self.config.database_url).expect(
-                    "Failed to create Redis client"
+                    ErrorMessages::REDIS_CLIENT_CREATION_FAILED
                 );
                 let redis_handler = RedisHandler::new(Arc::new(redis));
                 let websocket_handler = WebSocketHandler::new(redis_handler.clone());
@@ -84,7 +87,10 @@ impl Server {
             .layer(cors)
             .layer(TraceLayer::new_for_http())
             .fallback(|| async {
-                (StatusCode::NOT_FOUND, Json(ApiResponse::<()>::error("Not found".to_string())))
+                (
+                    StatusCode::NOT_FOUND,
+                    Json(ApiResponse::<()>::error(ErrorMessages::NOT_FOUND.to_string())),
+                )
             })
     }
 
