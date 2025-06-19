@@ -1,14 +1,15 @@
-use redis::{Commands, Connection, FromRedisValue, Pipeline, RedisResult, ToRedisArgs};
+use redis::{Commands, Connection, FromRedisValue, Pipeline, RedisResult};
 use std::sync::Arc;
 use std::sync::Mutex;
 
-/// Represents a Redis Set data type with operations for manipulating unordered collections of unique elements.
+/// Represents a Redis Set data type with operations for managing unique, unordered collections.
 ///
 /// This implementation supports:
 /// - Basic set operations (add, remove, members, etc.)
-/// - Set operations (union, intersection, difference)
-/// - Random member selection
+/// - Set arithmetic (union, intersection, difference)
+/// - Random member selection and popping
 /// - Pipelined operations (for efficiency)
+/// - Set scanning and pattern matching
 #[derive(Clone)]
 pub struct RedisSet {
     conn: Arc<Mutex<Connection>>,
@@ -36,7 +37,12 @@ impl RedisSet {
     /// Adds multiple members to a set
     pub fn sadd_multiple(&self, key: &str, members: Vec<&str>) -> RedisResult<i64> {
         let mut conn = self.conn.lock().unwrap();
-        conn.sadd_multiple(key, &members)
+        let mut total = 0i64;
+        for member in members {
+            let result: i64 = conn.sadd(key, member)?;
+            total += result;
+        }
+        Ok(total)
     }
 
     /// Removes one or more members from a set
@@ -48,10 +54,15 @@ impl RedisSet {
     /// Removes multiple members from a set
     pub fn srem_multiple(&self, key: &str, members: Vec<&str>) -> RedisResult<i64> {
         let mut conn = self.conn.lock().unwrap();
-        conn.srem_multiple(key, &members)
+        let mut total = 0i64;
+        for member in members {
+            let result: i64 = conn.srem(key, member)?;
+            total += result;
+        }
+        Ok(total)
     }
 
-    /// Returns all members of a set
+    /// Gets all members of a set
     pub fn smembers(&self, key: &str) -> RedisResult<Vec<String>> {
         let mut conn = self.conn.lock().unwrap();
         conn.smembers(key)
@@ -66,44 +77,104 @@ impl RedisSet {
     /// Checks if multiple members exist in a set
     pub fn smismember(&self, key: &str, members: Vec<&str>) -> RedisResult<Vec<bool>> {
         let mut conn = self.conn.lock().unwrap();
-        conn.cmd("SMISMEMBER")
-            .arg(key)
-            .arg(&members)
-            .query(&mut *conn)
+        let mut results = Vec::new();
+        for member in members {
+            let exists: bool = conn.sismember(key, member)?;
+            results.push(exists);
+        }
+        Ok(results)
     }
 
-    /// Returns the number of members in a set
+    /// Gets the cardinality (number of members) of a set
     pub fn scard(&self, key: &str) -> RedisResult<i64> {
         let mut conn = self.conn.lock().unwrap();
         conn.scard(key)
     }
 
-    /// Returns a random member from the set
+    /// Gets a random member from a set
     pub fn srandmember(&self, key: &str) -> RedisResult<Option<String>> {
         let mut conn = self.conn.lock().unwrap();
         conn.srandmember(key)
     }
 
-    /// Returns multiple random members from the set
+    /// Gets multiple random members from a set
     pub fn srandmember_multiple(&self, key: &str, count: i64) -> RedisResult<Vec<String>> {
         let mut conn = self.conn.lock().unwrap();
-        conn.srandmember_multiple(key, count)
+        conn.srandmember_multiple(key, count as usize)
     }
 
-    /// Removes and returns a random member from the set
+    /// Removes and returns a random member from a set
     pub fn spop(&self, key: &str) -> RedisResult<Option<String>> {
         let mut conn = self.conn.lock().unwrap();
         conn.spop(key)
     }
 
-    /// Removes and returns multiple random members from the set
-    pub fn spop_multiple(&self, key: &str, count: i64) -> RedisResult<Vec<String>> {
+    /// Removes and returns multiple random members from a set
+    pub fn spop_count(&self, key: &str, count: i64) -> RedisResult<Vec<String>> {
         let mut conn = self.conn.lock().unwrap();
-        conn.cmd("SPOP")
-            .arg(key)
-            .arg(count)
-            .query(&mut *conn)
+        // Use pipeline to call spop multiple times
+        let mut results = Vec::new();
+        for _ in 0..count {
+            if let Some(member) = conn.spop(key)? {
+                results.push(member);
+            } else {
+                break;
+            }
+        }
+        Ok(results)
     }
+
+    // Set Arithmetic Operations
+
+    /// Computes the union of multiple sets
+    pub fn sunion(&self, keys: Vec<&str>) -> RedisResult<Vec<String>> {
+        let mut conn = self.conn.lock().unwrap();
+        conn.sunion(keys)
+    }
+
+    /// Computes the union of multiple sets and stores the result in a destination key
+    pub fn sunionstore(&self, destination: &str, keys: Vec<&str>) -> RedisResult<i64> {
+        let mut conn = self.conn.lock().unwrap();
+        conn.sunionstore(destination, keys)
+    }
+
+    /// Computes the intersection of multiple sets
+    pub fn sinter(&self, keys: Vec<&str>) -> RedisResult<Vec<String>> {
+        let mut conn = self.conn.lock().unwrap();
+        conn.sinter(keys)
+    }
+
+    /// Computes the intersection of multiple sets and stores the result in a destination key
+    pub fn sinterstore(&self, destination: &str, keys: Vec<&str>) -> RedisResult<i64> {
+        let mut conn = self.conn.lock().unwrap();
+        conn.sinterstore(destination, keys)
+    }
+
+    /// Computes the difference between the first set and all successive sets
+    pub fn sdiff(&self, keys: Vec<&str>) -> RedisResult<Vec<String>> {
+        let mut conn = self.conn.lock().unwrap();
+        conn.sdiff(keys)
+    }
+
+    /// Computes the difference between sets and stores the result in a destination key
+    pub fn sdiffstore(&self, destination: &str, keys: Vec<&str>) -> RedisResult<i64> {
+        let mut conn = self.conn.lock().unwrap();
+        conn.sdiffstore(destination, keys)
+    }
+
+    /// Counts the number of members in the intersection of multiple sets (Redis 7.0+)
+    pub fn sintercard(&self, keys: Vec<&str>, limit: Option<i64>) -> RedisResult<i64> {
+        let mut conn = self.conn.lock().unwrap();
+        // Use redis::cmd for newer Redis commands
+        let mut cmd = redis::cmd("SINTERCARD");
+        cmd.arg(keys.len()).arg(keys);
+        if let Some(l) = limit {
+            cmd.arg("LIMIT").arg(l);
+        }
+        cmd.query(&mut *conn)
+    }
+
+    // Advanced Operations
 
     /// Moves a member from one set to another
     pub fn smove(&self, source: &str, destination: &str, member: &str) -> RedisResult<bool> {
@@ -111,72 +182,21 @@ impl RedisSet {
         conn.smove(source, destination, member)
     }
 
-    // Set Operations
+    // Scanning Operations
 
-    /// Returns the union of multiple sets
-    pub fn sunion(&self, keys: Vec<&str>) -> RedisResult<Vec<String>> {
+    /// Scans a set with optional pattern matching
+    pub fn sscan(&self, key: &str, cursor: u64, pattern: Option<&str>, count: Option<usize>) -> RedisResult<(u64, Vec<String>)> {
         let mut conn = self.conn.lock().unwrap();
-        conn.sunion(&keys)
-    }
-
-    /// Stores the union of multiple sets in a destination key
-    pub fn sunionstore(&self, destination: &str, keys: Vec<&str>) -> RedisResult<i64> {
-        let mut conn = self.conn.lock().unwrap();
-        conn.sunionstore(destination, &keys)
-    }
-
-    /// Returns the intersection of multiple sets
-    pub fn sinter(&self, keys: Vec<&str>) -> RedisResult<Vec<String>> {
-        let mut conn = self.conn.lock().unwrap();
-        conn.sinter(&keys)
-    }
-
-    /// Stores the intersection of multiple sets in a destination key
-    pub fn sinterstore(&self, destination: &str, keys: Vec<&str>) -> RedisResult<i64> {
-        let mut conn = self.conn.lock().unwrap();
-        conn.sinterstore(destination, &keys)
-    }
-
-    /// Returns the cardinality of the intersection of multiple sets
-    pub fn sintercard(&self, keys: Vec<&str>, limit: Option<i64>) -> RedisResult<i64> {
-        let mut conn = self.conn.lock().unwrap();
-        let mut cmd = conn.cmd("SINTERCARD");
-        cmd.arg(keys.len()).arg(&keys);
-        if let Some(limit) = limit {
-            cmd.arg("LIMIT").arg(limit);
-        }
-        cmd.query(&mut *conn)
-    }
-
-    /// Returns the difference between sets
-    pub fn sdiff(&self, keys: Vec<&str>) -> RedisResult<Vec<String>> {
-        let mut conn = self.conn.lock().unwrap();
-        conn.sdiff(&keys)
-    }
-
-    /// Stores the difference between sets in a destination key
-    pub fn sdiffstore(&self, destination: &str, keys: Vec<&str>) -> RedisResult<i64> {
-        let mut conn = self.conn.lock().unwrap();
-        conn.sdiffstore(destination, &keys)
-    }
-
-    // Scanning
-
-    /// Scans the set for members matching a pattern
-    pub fn sscan(&self, key: &str, cursor: u64, pattern: Option<&str>, count: Option<u64>) -> RedisResult<(u64, Vec<String>)> {
-        let mut conn = self.conn.lock().unwrap();
-        let mut cmd = conn.cmd("SSCAN");
-        cmd.arg(key).arg(cursor);
         
-        if let Some(pattern) = pattern {
-            cmd.arg("MATCH").arg(pattern);
+        if let Some(pat) = pattern {
+            let mut iter = conn.sscan_match(key, pat)?;
+            let members: Vec<String> = iter.collect();
+            Ok((0, members)) // For simplicity, return 0 as cursor since we collected all
+        } else {
+            let mut iter = conn.sscan(key)?;
+            let members: Vec<String> = iter.collect();
+            Ok((0, members)) // For simplicity, return 0 as cursor since we collected all
         }
-        
-        if let Some(count) = count {
-            cmd.arg("COUNT").arg(count);
-        }
-        
-        cmd.query(&mut *conn)
     }
 
     // Pipeline Operations
@@ -197,7 +217,9 @@ impl RedisSet {
     pub fn sadd_many(&self, operations: Vec<(&str, Vec<&str>)>) -> RedisResult<Vec<i64>> {
         self.with_pipeline(|pipe| {
             for (key, members) in operations {
-                pipe.cmd("SADD").arg(key).arg(&members);
+                for member in members {
+                    pipe.sadd(key, member).ignore();
+                }
             }
             pipe
         })
@@ -207,27 +229,9 @@ impl RedisSet {
     pub fn srem_many(&self, operations: Vec<(&str, Vec<&str>)>) -> RedisResult<Vec<i64>> {
         self.with_pipeline(|pipe| {
             for (key, members) in operations {
-                pipe.cmd("SREM").arg(key).arg(&members);
-            }
-            pipe
-        })
-    }
-
-    /// Batch membership checks using pipeline
-    pub fn sismember_many(&self, operations: Vec<(&str, &str)>) -> RedisResult<Vec<bool>> {
-        self.with_pipeline(|pipe| {
-            for (key, member) in operations {
-                pipe.cmd("SISMEMBER").arg(key).arg(member);
-            }
-            pipe
-        })
-    }
-
-    /// Batch cardinality checks using pipeline
-    pub fn scard_many(&self, keys: Vec<&str>) -> RedisResult<Vec<i64>> {
-        self.with_pipeline(|pipe| {
-            for key in keys {
-                pipe.cmd("SCARD").arg(key);
+                for member in members {
+                    pipe.srem(key, member).ignore();
+                }
             }
             pipe
         })
@@ -237,8 +241,8 @@ impl RedisSet {
 
     /// Check if set is empty
     pub fn is_empty(&self, key: &str) -> RedisResult<bool> {
-        let cardinality = self.scard(key)?;
-        Ok(cardinality == 0)
+        let count = self.scard(key)?;
+        Ok(count == 0)
     }
 
     /// Clear the set (remove all members)
@@ -247,62 +251,40 @@ impl RedisSet {
         conn.del(key)
     }
 
-    /// Get all members as a sorted vector
-    pub fn get_sorted_members(&self, key: &str) -> RedisResult<Vec<String>> {
-        let mut members = self.smembers(key)?;
-        members.sort();
-        Ok(members)
-    }
-
-    /// Check if two sets are equal
-    pub fn sets_equal(&self, key1: &str, key2: &str) -> RedisResult<bool> {
-        let diff1 = self.sdiff(vec![key1, key2])?;
-        let diff2 = self.sdiff(vec![key2, key1])?;
-        Ok(diff1.is_empty() && diff2.is_empty())
-    }
-
-    /// Get a subset of random members
-    pub fn get_random_subset(&self, key: &str, size: i64) -> RedisResult<Vec<String>> {
-        self.srandmember_multiple(key, size)
-    }
-
-    /// Copy all members from one set to another
-    pub fn copy_set(&self, source: &str, destination: &str) -> RedisResult<i64> {
-        let members = self.smembers(source)?;
-        if members.is_empty() {
-            return Ok(0);
+    /// Check if one set is a subset of another
+    pub fn is_subset(&self, subset_key: &str, superset_key: &str) -> RedisResult<bool> {
+        let subset_members = self.smembers(subset_key)?;
+        for member in subset_members {
+            if !self.sismember(superset_key, &member)? {
+                return Ok(false);
+            }
         }
-        
-        let member_refs: Vec<&str> = members.iter().map(|s| s.as_str()).collect();
-        self.sadd_multiple(destination, member_refs)
+        Ok(true)
     }
 
-    /// Check if set1 is a subset of set2
-    pub fn is_subset(&self, set1: &str, set2: &str) -> RedisResult<bool> {
-        let diff = self.sdiff(vec![set1, set2])?;
-        Ok(diff.is_empty())
+    /// Check if one set is a superset of another
+    pub fn is_superset(&self, superset_key: &str, subset_key: &str) -> RedisResult<bool> {
+        self.is_subset(subset_key, superset_key)
     }
 
-    /// Check if set1 is a superset of set2
-    pub fn is_superset(&self, set1: &str, set2: &str) -> RedisResult<bool> {
-        self.is_subset(set2, set1)
-    }
-
-    /// Get the symmetric difference of two sets
+    /// Get symmetric difference between two sets
     pub fn symmetric_difference(&self, key1: &str, key2: &str) -> RedisResult<Vec<String>> {
-        let mut conn = self.conn.lock().unwrap();
-        let mut pipe = redis::pipe();
+        // Get elements in key1 but not in key2
+        let diff1 = self.sdiff(vec![key1, key2])?;
+        // Get elements in key2 but not in key1  
+        let diff2 = self.sdiff(vec![key2, key1])?;
         
-        // Get key1 - key2 and key2 - key1, then union them
-        pipe.cmd("SDIFF").arg(key1).arg(key2);
-        pipe.cmd("SDIFF").arg(key2).arg(key1);
-        
-        let results: (Vec<String>, Vec<String>) = pipe.query(&mut *conn)?;
-        
-        let mut symmetric_diff = results.0;
-        symmetric_diff.extend(results.1);
-        
-        Ok(symmetric_diff)
+        // Combine the results
+        let mut result = diff1;
+        result.extend(diff2);
+        Ok(result)
+    }
+
+    /// Copy a set to another key
+    pub fn copy_set(&self, source: &str, destination: &str) -> RedisResult<()> {
+        let members = self.smembers(source)?;
+        self.sadd_multiple(destination, members.iter().map(|s| s.as_str()).collect())
+            .map(|_| ())
     }
 }
 

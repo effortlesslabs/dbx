@@ -36,7 +36,12 @@ impl RedisList {
     /// Pushes multiple elements to the head of the list
     pub fn lpush_multiple(&self, key: &str, values: Vec<&str>) -> RedisResult<i64> {
         let mut conn = self.conn.lock().unwrap();
-        conn.lpush_multiple(key, &values)
+        let mut total = 0i64;
+        for value in values {
+            let result: i64 = conn.lpush(key, value)?;
+            total = result; // Return the final length
+        }
+        Ok(total)
     }
 
     /// Pushes an element to the tail of the list
@@ -48,7 +53,12 @@ impl RedisList {
     /// Pushes multiple elements to the tail of the list
     pub fn rpush_multiple(&self, key: &str, values: Vec<&str>) -> RedisResult<i64> {
         let mut conn = self.conn.lock().unwrap();
-        conn.rpush_multiple(key, &values)
+        let mut total = 0i64;
+        for value in values {
+            let result: i64 = conn.rpush(key, value)?;
+            total = result; // Return the final length
+        }
+        Ok(total)
     }
 
     /// Pops an element from the head of the list
@@ -60,7 +70,8 @@ impl RedisList {
     /// Pops multiple elements from the head of the list
     pub fn lpop_count(&self, key: &str, count: isize) -> RedisResult<Vec<String>> {
         let mut conn = self.conn.lock().unwrap();
-        conn.lpop(key, Some(count))
+        let count_nonzero = std::num::NonZeroUsize::new(count as usize);
+        conn.lpop(key, count_nonzero)
     }
 
     /// Pops an element from the tail of the list
@@ -72,7 +83,8 @@ impl RedisList {
     /// Pops multiple elements from the tail of the list
     pub fn rpop_count(&self, key: &str, count: isize) -> RedisResult<Vec<String>> {
         let mut conn = self.conn.lock().unwrap();
-        conn.rpop(key, Some(count))
+        let count_nonzero = std::num::NonZeroUsize::new(count as usize);
+        conn.rpop(key, count_nonzero)
     }
 
     /// Gets the length of the list
@@ -84,25 +96,25 @@ impl RedisList {
     /// Gets a range of elements from the list
     pub fn lrange(&self, key: &str, start: i64, stop: i64) -> RedisResult<Vec<String>> {
         let mut conn = self.conn.lock().unwrap();
-        conn.lrange(key, start, stop)
+        conn.lrange(key, start as isize, stop as isize)
     }
 
     /// Gets an element by index
     pub fn lindex(&self, key: &str, index: i64) -> RedisResult<Option<String>> {
         let mut conn = self.conn.lock().unwrap();
-        conn.lindex(key, index)
+        conn.lindex(key, index as isize)
     }
 
     /// Sets the value of an element at a specific index
     pub fn lset(&self, key: &str, index: i64, value: &str) -> RedisResult<()> {
         let mut conn = self.conn.lock().unwrap();
-        conn.lset(key, index, value)
+        conn.lset(key, index as isize, value)
     }
 
     /// Trims the list to the specified range
     pub fn ltrim(&self, key: &str, start: i64, stop: i64) -> RedisResult<()> {
         let mut conn = self.conn.lock().unwrap();
-        conn.ltrim(key, start, stop)
+        conn.ltrim(key, start as isize, stop as isize)
     }
 
     /// Inserts an element before or after another element
@@ -120,25 +132,37 @@ impl RedisList {
     /// Removes elements from the list
     pub fn lrem(&self, key: &str, count: i64, value: &str) -> RedisResult<i64> {
         let mut conn = self.conn.lock().unwrap();
-        conn.lrem(key, count, value)
+        conn.lrem(key, count as isize, value)
     }
 
     // Blocking Operations
 
     /// Blocking pop from the head of the list
-    pub fn blpop(&self, keys: Vec<&str>, timeout: usize) -> RedisResult<Option<(String, String)>> {
+    pub fn blpop(&self, keys: Vec<&str>, timeout: f64) -> RedisResult<Option<(String, String)>> {
         let mut conn = self.conn.lock().unwrap();
-        conn.blpop(&keys, timeout)
+        for key in keys {
+            let result: Option<(String, String)> = conn.blpop(key, timeout)?;
+            if result.is_some() {
+                return Ok(result);
+            }
+        }
+        Ok(None)
     }
 
     /// Blocking pop from the tail of the list
-    pub fn brpop(&self, keys: Vec<&str>, timeout: usize) -> RedisResult<Option<(String, String)>> {
+    pub fn brpop(&self, keys: Vec<&str>, timeout: f64) -> RedisResult<Option<(String, String)>> {
         let mut conn = self.conn.lock().unwrap();
-        conn.brpop(&keys, timeout)
+        for key in keys {
+            let result: Option<(String, String)> = conn.brpop(key, timeout)?;
+            if result.is_some() {
+                return Ok(result);
+            }
+        }
+        Ok(None)
     }
 
     /// Blocking pop from the tail of source and push to head of destination
-    pub fn brpoplpush(&self, source: &str, destination: &str, timeout: usize) -> RedisResult<Option<String>> {
+    pub fn brpoplpush(&self, source: &str, destination: &str, timeout: f64) -> RedisResult<Option<String>> {
         let mut conn = self.conn.lock().unwrap();
         conn.brpoplpush(source, destination, timeout)
     }
@@ -154,24 +178,33 @@ impl RedisList {
     /// Moves an element from one list to another
     pub fn lmove(&self, source: &str, destination: &str, src_dir: &str, dest_dir: &str) -> RedisResult<Option<String>> {
         let mut conn = self.conn.lock().unwrap();
-        conn.cmd("LMOVE")
-            .arg(source)
-            .arg(destination)
-            .arg(src_dir)
-            .arg(dest_dir)
-            .query(&mut *conn)
+        let src_direction = match src_dir.to_uppercase().as_str() {
+            "LEFT" => redis::Direction::Left,
+            "RIGHT" => redis::Direction::Right,
+            _ => redis::Direction::Left,
+        };
+        let dst_direction = match dest_dir.to_uppercase().as_str() {
+            "LEFT" => redis::Direction::Left,
+            "RIGHT" => redis::Direction::Right,
+            _ => redis::Direction::Right,
+        };
+        conn.lmove(source, destination, src_direction, dst_direction)
     }
 
     /// Blocking move operation
     pub fn blmove(&self, source: &str, destination: &str, src_dir: &str, dest_dir: &str, timeout: f64) -> RedisResult<Option<String>> {
         let mut conn = self.conn.lock().unwrap();
-        conn.cmd("BLMOVE")
-            .arg(source)
-            .arg(destination)
-            .arg(src_dir)
-            .arg(dest_dir)
-            .arg(timeout)
-            .query(&mut *conn)
+        let src_direction = match src_dir.to_uppercase().as_str() {
+            "LEFT" => redis::Direction::Left,
+            "RIGHT" => redis::Direction::Right,
+            _ => redis::Direction::Left,
+        };
+        let dst_direction = match dest_dir.to_uppercase().as_str() {
+            "LEFT" => redis::Direction::Left,
+            "RIGHT" => redis::Direction::Right,
+            _ => redis::Direction::Right,
+        };
+        conn.blmove(source, destination, src_direction, dst_direction, timeout)
     }
 
     // Pipeline Operations
@@ -193,7 +226,7 @@ impl RedisList {
         self.with_pipeline(|pipe| {
             for (key, values) in operations {
                 for value in values {
-                    pipe.cmd("LPUSH").arg(key).arg(value);
+                    pipe.lpush(key, value).ignore();
                 }
             }
             pipe
@@ -204,7 +237,7 @@ impl RedisList {
     pub fn lpop_many(&self, keys: Vec<&str>) -> RedisResult<Vec<Option<String>>> {
         self.with_pipeline(|pipe| {
             for key in keys {
-                pipe.cmd("LPOP").arg(key);
+                pipe.lpop(key, None);
             }
             pipe
         })
@@ -232,41 +265,37 @@ impl RedisList {
     /// Push only if list exists
     pub fn lpushx(&self, key: &str, value: &str) -> RedisResult<i64> {
         let mut conn = self.conn.lock().unwrap();
-        conn.cmd("LPUSHX").arg(key).arg(value).query(&mut *conn)
+        conn.lpush_exists(key, value)
     }
 
     /// Push to tail only if list exists
     pub fn rpushx(&self, key: &str, value: &str) -> RedisResult<i64> {
         let mut conn = self.conn.lock().unwrap();
-        conn.cmd("RPUSHX").arg(key).arg(value).query(&mut *conn)
+        conn.rpush_exists(key, value)
     }
 
     /// Find positions of elements in list
     pub fn lpos(&self, key: &str, element: &str) -> RedisResult<Option<i64>> {
         let mut conn = self.conn.lock().unwrap();
-        conn.cmd("LPOS").arg(key).arg(element).query(&mut *conn)
+        let opts = redis::LposOptions::default();
+        let result: Option<isize> = conn.lpos(key, element, opts)?;
+        Ok(result.map(|i| i as i64))
     }
 
     /// Find multiple positions of elements in list
     pub fn lpos_count(&self, key: &str, element: &str, count: i64) -> RedisResult<Vec<i64>> {
         let mut conn = self.conn.lock().unwrap();
-        conn.cmd("LPOS")
-            .arg(key)
-            .arg(element)
-            .arg("COUNT")
-            .arg(count)
-            .query(&mut *conn)
+        let opts = redis::LposOptions::default().count(count as usize);
+        let result: Vec<isize> = conn.lpos(key, element, opts)?;
+        Ok(result.into_iter().map(|i| i as i64).collect())
     }
 
     /// Find positions with rank (nth occurrence)
     pub fn lpos_rank(&self, key: &str, element: &str, rank: i64) -> RedisResult<Option<i64>> {
         let mut conn = self.conn.lock().unwrap();
-        conn.cmd("LPOS")
-            .arg(key)
-            .arg(element)
-            .arg("RANK")
-            .arg(rank)
-            .query(&mut *conn)
+        let opts = redis::LposOptions::default().rank(rank as isize);
+        let result: Option<isize> = conn.lpos(key, element, opts)?;
+        Ok(result.map(|i| i as i64))
     }
 }
 
