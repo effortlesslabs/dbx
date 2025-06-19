@@ -13,6 +13,13 @@ As of now, DBX has implemented:
   - Lua scripting capabilities
   - Predefined utility scripts for common patterns
 - **REST API Layer (Redis)**: Modular REST API server for Redis, with per-database routes/handlers
+- **WebSocket API Layer (Redis)**: Real-time WebSocket interface for low-latency operations and batch commands
+  - [x] JSON-encoded command protocol
+  - [x] Support for all Redis string operations
+  - [x] Batch operations for efficient multi-key operations
+  - [x] Connection management and error handling
+  - [x] Client examples in Rust and JavaScript
+  - [ ] PubSub/streaming support (future enhancement)
 - **Multi-database CLI**: Unified CLI to select database type and connection URL at runtime
 - **Extensible Architecture**: Easy to add new databases (Postgres, MongoDB, etc.) by adding handler/route modules and updating the enum/CLI
 - **TypeScript SDK**: Complete TypeScript SDK with full type definitions, covering all API operations including string operations, batch operations, key management, and Lua scripts
@@ -46,6 +53,15 @@ As of now, DBX has implemented:
   - [x] Implement REST API server for Redis
   - [x] Modularize routes/handlers per database
   - [ ] Add authentication and authorization mechanisms
+- [x] **WebSocket API Layer (Redis)**
+  - [x] Design WebSocket protocol for Redis operations
+  - [x] Implement WebSocket server for Redis
+  - [x] JSON-encoded command/response format
+  - [x] Support for all Redis string operations
+  - [x] Batch operations for efficient multi-key operations
+  - [x] Connection management and error handling
+  - [x] Client examples and documentation
+  - [ ] Add Redis PubSub support for real-time streaming (future)
 - [x] **CLI System**
   - [x] Develop CLI tool to run REST API server
   - [x] Support configuration via database type and URL
@@ -72,6 +88,7 @@ As of now, DBX has implemented:
   - [ ] Add modular routes/handlers for new databases
 - [ ] **Documentation**
   - [x] CLI and API usage examples
+  - [x] WebSocket API documentation and examples
   - [x] Modular architecture and extension guide
   - [ ] Comprehensive API documentation
   - [ ] Usage examples for all implemented features
@@ -84,8 +101,8 @@ As of now, DBX has implemented:
   - [ ] Migration support
   - [ ] Schema validation
 - [ ] **Additional Database Adapters**
-  - [ ] MongoDB adapter (with REST API)
-  - [ ] MySQL adapter (with REST API)
+  - [ ] MongoDB adapter (with REST API and WebSocket)
+  - [ ] MySQL adapter (with REST API and WebSocket)
   - [ ] DynamoDB adapter
 - [ ] **Runtime Compatibility**
 
@@ -137,6 +154,14 @@ As of now, DBX has implemented:
 2. Create new handler and route modules in `api/src/handlers/` and `api/src/routes/`
 3. Update the CLI/server logic to support the new type
 4. Add API endpoint documentation and usage examples
+
+## How to Add WebSocket Support for New Databases
+
+1. Create a new WebSocket handler in `api/src/handlers/websocket.rs` or create a separate module
+2. Implement the `process_command` method for the new database type
+3. Add WebSocket routes in `api/src/routes/websocket.rs`
+4. Update the server to include the new WebSocket handler
+5. Add WebSocket command documentation and examples
 
 ## How to Contribute
 

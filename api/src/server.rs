@@ -6,7 +6,7 @@ use tracing::info;
 
 use crate::{
     config::{ Config, DatabaseType },
-    handlers::redis::RedisHandler,
+    handlers::{ redis::RedisHandler, websocket::WebSocketHandler },
     models::ApiResponse,
     routes,
 };
@@ -58,13 +58,18 @@ impl Server {
         let cors = CorsLayer::new().allow_origin(Any).allow_methods(Any).allow_headers(Any);
 
         // Create database-specific routes
-        let database_routes = match self.config.database_type {
+        let (database_routes, websocket_routes) = match self.config.database_type {
             DatabaseType::Redis => {
                 let redis = Redis::from_url(&self.config.database_url).expect(
                     "Failed to create Redis client"
                 );
-                let handler = RedisHandler::new(Arc::new(redis));
-                routes::redis::create_routes().with_state(handler)
+                let redis_handler = RedisHandler::new(Arc::new(redis));
+                let websocket_handler = WebSocketHandler::new(redis_handler.clone());
+
+                let http_routes = routes::redis::create_routes().with_state(redis_handler);
+                let ws_routes = routes::websocket::create_routes().with_state(websocket_handler);
+
+                (http_routes, ws_routes)
             }
             // Future database types
             // DatabaseType::Postgres => { /* PostgreSQL routes */ }
@@ -75,6 +80,7 @@ impl Server {
         Router::new()
             .merge(routes::common::create_routes().with_state(self.clone()))
             .merge(database_routes)
+            .merge(websocket_routes)
             .layer(cors)
             .layer(TraceLayer::new_for_http())
             .fallback(|| async {
@@ -87,6 +93,8 @@ impl Server {
         let app = self.create_router();
 
         info!("Starting {} API server on {}", self.config.database_type, addr);
+        info!("HTTP API available at http://{}", addr);
+        info!("WebSocket API available at ws://{}/ws", addr);
 
         let listener = tokio::net::TcpListener::bind(addr).await?;
         axum::serve(listener, app).await?;

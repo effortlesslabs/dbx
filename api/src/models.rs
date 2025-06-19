@@ -121,3 +121,119 @@ pub struct ServerInfo {
     pub redis_url: String,
     pub pool_size: u32,
 }
+
+// WebSocket Models
+
+/// WebSocket command types
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(tag = "action", content = "params")]
+pub enum WebSocketCommand {
+    #[serde(rename = "get")] Get {
+        key: String,
+    },
+    #[serde(rename = "set")] Set {
+        key: String,
+        value: String,
+        ttl: Option<u64>,
+    },
+    #[serde(rename = "delete")] Delete {
+        key: String,
+    },
+    #[serde(rename = "exists")] Exists {
+        key: String,
+    },
+    #[serde(rename = "ttl")] Ttl {
+        key: String,
+    },
+    #[serde(rename = "incr")] Incr {
+        key: String,
+    },
+    #[serde(rename = "incrby")] IncrBy {
+        key: String,
+        increment: i64,
+    },
+    #[serde(rename = "setnx")] SetNx {
+        key: String,
+        value: String,
+        ttl: Option<u64>,
+    },
+    #[serde(rename = "cas")] CompareAndSet {
+        key: String,
+        expected_value: String,
+        new_value: String,
+        ttl: Option<u64>,
+    },
+    #[serde(rename = "batch_get")] BatchGet {
+        keys: Vec<String>,
+    },
+    #[serde(rename = "batch_set")] BatchSet {
+        key_values: HashMap<String, String>,
+        ttl: Option<u64>,
+    },
+    #[serde(rename = "batch_delete")] BatchDelete {
+        keys: Vec<String>,
+    },
+    #[serde(rename = "batch_incr")] BatchIncr {
+        keys: Vec<String>,
+    },
+    #[serde(rename = "batch_incrby")] BatchIncrBy {
+        key_increments: Vec<(String, i64)>,
+    },
+    #[serde(rename = "list_keys")] ListKeys {
+        pattern: Option<String>,
+    },
+    #[serde(rename = "ping")]
+    Ping,
+    #[serde(rename = "subscribe")] Subscribe {
+        channels: Vec<String>,
+    },
+    #[serde(rename = "unsubscribe")] Unsubscribe {
+        channels: Vec<String>,
+    },
+}
+
+/// WebSocket message wrapper
+#[derive(Debug, Serialize, Deserialize)]
+pub struct WebSocketMessage {
+    pub id: Option<String>,
+    pub command: WebSocketCommand,
+}
+
+/// WebSocket response wrapper
+#[derive(Debug, Serialize, Deserialize)]
+pub struct WebSocketResponse {
+    pub id: Option<String>,
+    pub success: bool,
+    pub data: Option<serde_json::Value>,
+    pub error: Option<String>,
+    pub timestamp: String,
+}
+
+impl WebSocketResponse {
+    pub fn success(id: Option<String>, data: serde_json::Value) -> Self {
+        Self {
+            id,
+            success: true,
+            data: Some(data),
+            error: None,
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        }
+    }
+
+    pub fn error(id: Option<String>, error: String) -> Self {
+        Self {
+            id,
+            success: false,
+            data: None,
+            error: Some(error),
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        }
+    }
+}
+
+/// WebSocket connection state
+#[derive(Debug, Clone)]
+pub struct WebSocketState {
+    pub connection_id: String,
+    pub subscribed_channels: std::sync::Arc<tokio::sync::RwLock<Vec<String>>>,
+}
