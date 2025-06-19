@@ -18,7 +18,7 @@ impl RedisClient {
     ///
     /// # Example
     /// ```no_run
-    /// # use dbx::crates::adapter::redis::client::RedisClient;
+    /// # use dbx_crates::adapter::redis::client::RedisClient;
     /// let client = RedisClient::from_url("redis://127.0.0.1:6379").unwrap();
     /// ```
     pub fn from_url(url: &str) -> RedisResult<Self> {
@@ -75,7 +75,7 @@ impl RedisPool {
     ///
     /// # Example
     /// ```no_run
-    /// # use dbx::crates::adapter::redis::client::RedisPool;
+    /// # use dbx_crates::adapter::redis::client::RedisPool;
     /// let pool = RedisPool::new("redis://127.0.0.1:6379", 10).unwrap();
     /// ```
     pub fn new(url: &str, pool_size: u32) -> RedisResult<Self> {

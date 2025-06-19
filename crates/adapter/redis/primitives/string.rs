@@ -96,7 +96,7 @@ impl RedisString {
     /// ```no_run
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
-    /// # use crate::RedisString;
+    /// # use dbx_crates::adapter::redis::primitives::string::RedisString;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_string = RedisString::new(Arc::new(Mutex::new(conn)));
     /// let results: (String, i64) = redis_string.with_pipeline(|pipe| {
@@ -193,13 +193,12 @@ impl RedisString {
     /// ```no_run
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
-    /// # use crate::RedisString;
+    /// # use dbx_crates::adapter::redis::primitives::string::RedisString;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_string = RedisString::new(Arc::new(Mutex::new(conn)));
-    /// let results: ((), i64, String) = redis_string.transaction(|pipe| {
+    /// let _: () = redis_string.transaction(|pipe| {
     ///     pipe.cmd("SET").arg("key").arg("value")
     ///        .cmd("INCR").arg("counter")
-    ///        .cmd("GET").arg("other_key")
     /// })?;
     /// # Ok(())
     /// # }
@@ -234,7 +233,7 @@ impl RedisString {
     /// # Example
     /// ```
     /// use redis::Script;
-    /// use crate::RedisString;
+    /// use dbx_crates::adapter::redis::primitives::string::RedisString;
     ///
     /// let script = RedisString::create_script(r#"
     ///     local current = redis.call('GET', KEYS[1])
@@ -252,13 +251,13 @@ impl RedisString {
     /// ```no_run
     /// # use redis::{Connection, RedisResult, Script};
     /// # use std::sync::{Arc, Mutex};
-    /// # use crate::RedisString;
+    /// # use dbx_crates::adapter::redis::primitives::string::RedisString;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_string = RedisString::new(Arc::new(Mutex::new(conn)));
     /// let script = RedisString::create_script("return redis.call('GET', KEYS[1])");
     ///
     /// // Execute the script with "mykey" as the key and no arguments
-    /// let result: Option<String> = redis_string.eval_script(&script, &["mykey"], &[])?;
+    /// let result: Option<String> = redis_string.eval_script::<Option<String>, _, _>(&script, &["mykey"], &[""])?;
     /// # Ok(())
     /// # }
     /// ```
@@ -301,7 +300,7 @@ impl RedisString {
     /// ```no_run
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
-    /// # use crate::RedisString;
+    /// # use dbx_crates::adapter::redis::primitives::string::RedisString;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_string = RedisString::new(Arc::new(Mutex::new(conn)));
     /// let script = RedisString::get_set_script();
