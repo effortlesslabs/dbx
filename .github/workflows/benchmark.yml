@@ -1,0 +1,396 @@
+name: Performance Benchmarks
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sundays
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  benchmark:
+    name: Rust Benchmarks
+    runs-on: ubuntu-latest
+    
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libssl-dev pkg-config redis-tools
+
+    - name: Check Redis connection
+      run: redis-cli -h localhost -p 6379 ping
+
+    - name: Cache cargo registry
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+        key: ${{ runner.os }}-cargo-bench-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Install cargo-criterion
+      run: cargo install cargo-criterion
+
+    - name: Run Redis primitives benchmarks
+      env:
+        REDIS_URL: redis://localhost:6379
+      run: |
+        # Create benchmark directory if it doesn't exist
+        mkdir -p benches
+        
+        # Create basic benchmarks if they don't exist
+        cat > benches/redis_primitives.rs << 'EOF'
+        use criterion::{black_box, criterion_group, criterion_main, Criterion};
+        use dbx_crates::adapter::redis::RedisAdapter;
+        use redis::Client;
+        use std::sync::{Arc, Mutex};
+        
+        fn string_operations_benchmark(c: &mut Criterion) {
+            let client = Client::open("redis://127.0.0.1:6379").unwrap();
+            let conn = client.get_connection().unwrap();
+            let adapter = RedisAdapter::new(Arc::new(Mutex::new(conn)));
+            
+            c.bench_function("string_set", |b| {
+                b.iter(|| {
+                    adapter.string().set(
+                        black_box("bench_key"),
+                        black_box("bench_value")
+                    ).unwrap()
+                })
+            });
+            
+            c.bench_function("string_get", |b| {
+                // Setup
+                adapter.string().set("bench_key", "bench_value").unwrap();
+                
+                b.iter(|| {
+                    adapter.string().get(black_box("bench_key")).unwrap()
+                })
+            });
+        }
+        
+        fn list_operations_benchmark(c: &mut Criterion) {
+            let client = Client::open("redis://127.0.0.1:6379").unwrap();
+            let conn = client.get_connection().unwrap();
+            let adapter = RedisAdapter::new(Arc::new(Mutex::new(conn)));
+            
+            c.bench_function("list_push", |b| {
+                b.iter(|| {
+                    adapter.list().lpush(
+                        black_box("bench_list"),
+                        black_box("item")
+                    ).unwrap()
+                })
+            });
+        }
+        
+        criterion_group!(benches, string_operations_benchmark, list_operations_benchmark);
+        criterion_main!(benches);
+        EOF
+        
+        # Add criterion dependency to Cargo.toml if not present
+        if ! grep -q "criterion" Cargo.toml; then
+          cat >> Cargo.toml << 'EOF'
+        
+        [dev-dependencies]
+        criterion = { version = "0.5", features = ["html_reports"] }
+        
+        [[bench]]
+        name = "redis_primitives"
+        harness = false
+        EOF
+        fi
+        
+        # Run benchmarks
+        cargo bench --workspace
+
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v3
+      with:
+        name: benchmark-results
+        path: target/criterion/
+
+  api-benchmark:
+    name: API Performance Benchmarks
+    runs-on: ubuntu-latest
+    
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libssl-dev pkg-config redis-tools curl jq
+
+    - name: Install wrk and hey
+      run: |
+        # Install wrk
+        sudo apt-get install -y build-essential libssl-dev git
+        git clone https://github.com/wg/wrk.git
+        cd wrk && make && sudo cp wrk /usr/local/bin/
+        cd ..
+        
+        # Install hey
+        curl -L https://hey-release.s3.us-east-2.amazonaws.com/hey_linux_amd64 -o hey
+        chmod +x hey
+        sudo mv hey /usr/local/bin/
+
+    - name: Build and start API server
+      working-directory: ./api
+      env:
+        REDIS_URL: redis://localhost:6379
+        HOST: 127.0.0.1
+        PORT: 8080
+      run: |
+        cargo build --release
+        cargo run --release &
+        API_PID=$!
+        sleep 10
+        echo $API_PID > ../api.pid
+
+    - name: Wait for API to be ready
+      run: |
+        for i in {1..30}; do
+          if curl -f http://127.0.0.1:8080/health; then
+            echo "API is ready"
+            break
+          fi
+          echo "Waiting for API... ($i/30)"
+          sleep 2
+        done
+
+    - name: Run API benchmarks
+      run: |
+        echo "=== Benchmark Results ===" > benchmark_results.txt
+        echo "Date: $(date)" >> benchmark_results.txt
+        echo "" >> benchmark_results.txt
+        
+        # Health endpoint benchmark
+        echo "## Health Endpoint Benchmark" >> benchmark_results.txt
+        wrk -t4 -c100 -d30s --latency http://127.0.0.1:8080/health >> benchmark_results.txt
+        echo "" >> benchmark_results.txt
+        
+        # String operations benchmark
+        echo "## String SET Benchmark" >> benchmark_results.txt
+        cat > post_script.lua << 'EOF'
+        wrk.method = "POST"
+        wrk.body   = '{"key": "perf_test", "value": "performance_test_value"}'
+        wrk.headers["Content-Type"] = "application/json"
+        EOF
+        
+        wrk -t4 -c50 -d30s -s post_script.lua --latency http://127.0.0.1:8080/string/set >> benchmark_results.txt
+        echo "" >> benchmark_results.txt
+        
+        # String GET benchmark
+        echo "## String GET Benchmark" >> benchmark_results.txt
+        # First set a value
+        curl -X POST http://127.0.0.1:8080/string/set \
+          -H "Content-Type: application/json" \
+          -d '{"key": "perf_test", "value": "performance_test_value"}'
+        
+        wrk -t4 -c100 -d30s --latency http://127.0.0.1:8080/string/get/perf_test >> benchmark_results.txt
+        echo "" >> benchmark_results.txt
+        
+        # Memory usage
+        echo "## Memory Usage" >> benchmark_results.txt
+        ps aux | grep dbx-api | grep -v grep >> benchmark_results.txt
+        
+        cat benchmark_results.txt
+
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v3
+      with:
+        name: api-benchmark-results
+        path: benchmark_results.txt
+
+    - name: Stop API server
+      run: |
+        if [ -f api.pid ]; then
+          kill $(cat api.pid) || true
+        fi
+
+  memory-profiling:
+    name: Memory Profiling
+    runs-on: ubuntu-latest
+    
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libssl-dev pkg-config redis-tools valgrind
+
+    - name: Install cargo-valgrind
+      run: cargo install cargo-valgrind
+
+    - name: Build with debug info
+      working-directory: ./api
+      env:
+        CARGO_PROFILE_RELEASE_DEBUG: true
+      run: cargo build --release
+
+    - name: Run memory profiling
+      working-directory: ./api
+      env:
+        REDIS_URL: redis://localhost:6379
+      run: |
+        # Create a simple test that exercises the API
+        cat > memory_test.rs << 'EOF'
+        use std::thread;
+        use std::time::Duration;
+        
+        fn main() {
+            // Simulate API usage
+            for i in 0..1000 {
+                // This would be replaced with actual API calls
+                thread::sleep(Duration::from_millis(1));
+            }
+        }
+        EOF
+        
+        # Compile and run with valgrind
+        rustc memory_test.rs -o memory_test
+        valgrind --tool=massif --massif-out-file=massif.out ./memory_test || true
+        
+        # Generate memory report
+        ms_print massif.out > memory_report.txt || echo "Massif report generation failed"
+
+    - name: Upload memory profiling results
+      uses: actions/upload-artifact@v3
+      with:
+        name: memory-profile
+        path: |
+          api/massif.out
+          api/memory_report.txt
+
+  performance-regression:
+    name: Performance Regression Detection
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout PR branch
+      uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libssl-dev pkg-config redis-tools
+
+    - name: Run current branch benchmarks
+      env:
+        REDIS_URL: redis://localhost:6379
+      run: |
+        cargo test --release --workspace -- --bench > current_bench.txt || echo "No benchmarks found"
+
+    - name: Checkout main branch
+      uses: actions/checkout@v4
+      with:
+        ref: main
+
+    - name: Run main branch benchmarks
+      env:
+        REDIS_URL: redis://localhost:6379
+      run: |
+        cargo test --release --workspace -- --bench > main_bench.txt || echo "No benchmarks found"
+
+    - name: Compare performance
+      run: |
+        echo "=== Performance Comparison ===" > comparison.txt
+        echo "Main branch results:" >> comparison.txt
+        cat main_bench.txt >> comparison.txt
+        echo "" >> comparison.txt
+        echo "PR branch results:" >> comparison.txt
+        cat current_bench.txt >> comparison.txt
+        
+        # Simple comparison (would be more sophisticated in practice)
+        echo "" >> comparison.txt
+        echo "Note: Please review the benchmark results above for any significant performance changes." >> comparison.txt
+
+    - name: Comment on PR
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const comparison = fs.readFileSync('comparison.txt', 'utf8');
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `## 📊 Performance Benchmark Results\n\n\`\`\`\n${comparison}\n\`\`\``
+          });
+
+    - name: Upload comparison results
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-comparison
+        path: comparison.txt

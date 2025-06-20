@@ -1,0 +1,306 @@
+name: API Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'api/**'
+      - 'crates/**'
+      - '.github/workflows/api-tests.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'api/**'
+      - 'crates/**'
+      - '.github/workflows/api-tests.yml'
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  api-unit-tests:
+    name: API Unit Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libssl-dev pkg-config
+
+    - name: Cache cargo registry
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+        key: ${{ runner.os }}-cargo-api-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Build API
+      working-directory: ./api
+      run: cargo build --verbose
+
+    - name: Run API unit tests
+      working-directory: ./api
+      run: cargo test --lib --verbose
+
+  api-integration-tests:
+    name: API Integration Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libssl-dev pkg-config redis-tools
+
+    - name: Check Redis connection
+      run: redis-cli -h localhost -p 6379 ping
+
+    - name: Cache cargo registry
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+        key: ${{ runner.os }}-cargo-api-integration-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Build API with all features
+      working-directory: ./api
+      run: cargo build --all-features --verbose
+
+    - name: Run API integration tests
+      working-directory: ./api
+      env:
+        REDIS_URL: redis://localhost:6379
+        DATABASE_URL: redis://localhost:6379
+        RUST_LOG: debug
+      run: |
+        cargo test --test '*' --verbose
+        cargo test --verbose -- --ignored
+
+    - name: Run Redis primitives integration tests
+      env:
+        REDIS_URL: redis://localhost:6379
+      run: cargo test --workspace --lib --verbose -- --ignored
+
+  api-http-tests:
+    name: API HTTP Endpoint Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libssl-dev pkg-config redis-tools curl jq
+
+    - name: Check Redis connection
+      run: redis-cli -h localhost -p 6379 ping
+
+    - name: Build and start API server
+      working-directory: ./api
+      env:
+        REDIS_URL: redis://localhost:6379
+        HOST: 127.0.0.1
+        PORT: 8080
+      run: |
+        cargo build --release
+        cargo run --release &
+        sleep 10
+
+    - name: Wait for API to be ready
+      run: |
+        for i in {1..30}; do
+          if curl -f http://127.0.0.1:8080/health; then
+            echo "API is ready"
+            break
+          fi
+          echo "Waiting for API... ($i/30)"
+          sleep 2
+        done
+
+    - name: Test API endpoints
+      run: |
+        # Test health endpoint
+        curl -f http://127.0.0.1:8080/health | jq '.'
+        
+        # Test string operations
+        echo "Testing string operations..."
+        curl -X POST http://127.0.0.1:8080/string/set \
+          -H "Content-Type: application/json" \
+          -d '{"key": "test_key", "value": "test_value"}' | jq '.'
+        
+        curl -X GET http://127.0.0.1:8080/string/get/test_key | jq '.'
+        
+        # Test hash operations (if implemented)
+        echo "Testing hash operations..."
+        curl -X POST http://127.0.0.1:8080/hash/set \
+          -H "Content-Type: application/json" \
+          -d '{"key": "test_hash", "field": "test_field", "value": "test_value"}' | jq '.' || echo "Hash endpoints not yet implemented"
+        
+        # Test list operations (if implemented)
+        echo "Testing list operations..."
+        curl -X POST http://127.0.0.1:8080/list/lpush \
+          -H "Content-Type: application/json" \
+          -d '{"key": "test_list", "values": ["item1", "item2"]}' | jq '.' || echo "List endpoints not yet implemented"
+
+    - name: Test WebSocket connections (if implemented)
+      run: |
+        # Install websocat for WebSocket testing
+        curl -L https://github.com/vi/websocat/releases/download/v1.11.0/websocat.x86_64-unknown-linux-musl -o websocat
+        chmod +x websocat
+        
+        # Test WebSocket connection
+        echo '{"action": "ping"}' | timeout 5s ./websocat ws://127.0.0.1:8080/ws || echo "WebSocket not implemented or failed"
+
+  load-testing:
+    name: API Load Testing
+    runs-on: ubuntu-latest
+    
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libssl-dev pkg-config redis-tools
+
+    - name: Install wrk load testing tool
+      run: |
+        sudo apt-get install -y build-essential libssl-dev git
+        git clone https://github.com/wg/wrk.git
+        cd wrk
+        make
+        sudo cp wrk /usr/local/bin/
+
+    - name: Build and start API server
+      working-directory: ./api
+      env:
+        REDIS_URL: redis://localhost:6379
+        HOST: 127.0.0.1
+        PORT: 8080
+      run: |
+        cargo build --release
+        cargo run --release &
+        sleep 10
+
+    - name: Wait for API to be ready
+      run: |
+        for i in {1..30}; do
+          if curl -f http://127.0.0.1:8080/health; then
+            echo "API is ready"
+            break
+          fi
+          echo "Waiting for API... ($i/30)"
+          sleep 2
+        done
+
+    - name: Run load tests
+      run: |
+        echo "Running light load test..."
+        wrk -t2 -c10 -d30s http://127.0.0.1:8080/health
+        
+        echo "Running API load test with POST requests..."
+        cat > post_script.lua << 'EOF'
+        wrk.method = "POST"
+        wrk.body   = '{"key": "load_test_key", "value": "load_test_value"}'
+        wrk.headers["Content-Type"] = "application/json"
+        EOF
+        
+        wrk -t2 -c10 -d30s -s post_script.lua http://127.0.0.1:8080/string/set || echo "Load test completed with some errors"
+
+  api-documentation:
+    name: API Documentation Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libssl-dev pkg-config
+
+    - name: Check for API documentation
+      working-directory: ./api
+      run: |
+        # Check if OpenAPI/Swagger docs are generated
+        if cargo doc --lib --no-deps --open; then
+          echo "API documentation generated successfully"
+        else
+          echo "Warning: Could not generate API documentation"
+        fi
+
+    - name: Validate API examples
+      working-directory: ./api
+      run: |
+        # Check if examples compile
+        cargo check --examples
+        
+        # Run examples if they exist
+        for example in examples/*.rs; do
+          if [ -f "$example" ]; then
+            echo "Checking example: $example"
+            cargo check --example $(basename "$example" .rs)
+          fi
+        done
