@@ -40,7 +40,9 @@ pub async fn rate_limiter_script(
 
     let key_slice: [&str; 1] = [&request.key];
     let arg_slice: [String; 2] = [request.limit.to_string(), request.window.to_string()];
-    let result: i32 = match handler.redis.eval_script::<i32, _, _>(&script, &key_slice, &arg_slice) {
+    let result: i32 = match
+        handler.redis.string().eval_script::<i32, _, _>(&script, &key_slice, &arg_slice)
+    {
         Ok(result) => result,
         Err(e) => {
             return Err(handle_redis_error(e));
@@ -74,7 +76,7 @@ pub async fn multi_counter_script(
         .collect();
 
     let result: Vec<i64> = match
-        handler.redis.eval_script::<Vec<i64>, &[&str], &[String]>(&script, &[], &args)
+        handler.redis.string().eval_script::<Vec<i64>, &[&str], &[String]>(&script, &[], &args)
     {
         Ok(result) => result,
         Err(e) => {
@@ -118,7 +120,9 @@ pub async fn multi_set_ttl_script(
         args.push(value.clone());
     }
 
-    let _: () = match handler.redis.eval_script::<(), &[&str], &[String]>(&script, &[], &args) {
+    let _: () = match
+        handler.redis.string().eval_script::<(), &[&str], &[String]>(&script, &[], &args)
+    {
         Ok(_) => (),
         Err(e) => {
             return Err(handle_redis_error(e));

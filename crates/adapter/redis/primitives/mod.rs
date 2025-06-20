@@ -12,8 +12,8 @@
 
 pub mod string;
 pub mod set;
+pub mod hash;
 
 // These will be implemented in future versions:
 // pub mod list;
-// pub mod hash;
 // pub mod sorted_set;

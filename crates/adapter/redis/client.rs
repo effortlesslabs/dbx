@@ -7,6 +7,10 @@
 use redis::{ Client, Connection, RedisError, RedisResult };
 use std::sync::{ Arc, Mutex };
 
+use super::primitives::string::RedisString;
+use super::primitives::set::RedisSet;
+use super::primitives::hash::RedisHash;
+
 /// A simple Redis client wrapper that manages a single connection
 pub struct RedisClient {
     client: Arc<Client>,
@@ -58,6 +62,21 @@ impl RedisClient {
         let mut conn = self.connection.lock().unwrap();
         let pong: String = redis::cmd("PING").query(&mut *conn)?;
         Ok(pong == "PONG")
+    }
+
+    /// Get a RedisString primitive for string operations
+    pub fn string(&self) -> RedisString {
+        RedisString::new(self.connection.clone())
+    }
+
+    /// Get a RedisSet primitive for set operations
+    pub fn set(&self) -> RedisSet {
+        RedisSet::new(self.connection.clone())
+    }
+
+    /// Get a RedisHash primitive for hash operations
+    pub fn hash(&self) -> RedisHash {
+        RedisHash::new(self.connection.clone())
     }
 }
 

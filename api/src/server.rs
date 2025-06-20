@@ -12,7 +12,7 @@ use crate::{
     routes,
 };
 
-use dbx_crates::adapter::redis::Redis;
+use dbx_crates::adapter::redis::client::RedisClient;
 
 /// Main server struct
 pub struct Server {
@@ -27,8 +27,8 @@ impl Server {
         // Test the database connection based on type
         match config.database_type {
             DatabaseType::Redis => {
-                let redis = Redis::from_url(&config.database_url)?;
-                let ping_result = redis.ping();
+                let redis_client = RedisClient::from_url(&config.database_url)?;
+                let ping_result = redis_client.ping();
                 match ping_result {
                     Ok(true) => info!("Successfully connected to Redis"),
                     Ok(false) => {
@@ -61,20 +61,18 @@ impl Server {
         let cors = CorsLayer::new().allow_origin(Any).allow_methods(Any).allow_headers(Any);
 
         // Create database-specific routes
-        let (database_routes, websocket_routes) = match self.config.database_type {
+        let (database_routes, websocket_routes, redis_handler) = match self.config.database_type {
             DatabaseType::Redis => {
-                let redis = Redis::from_url(&self.config.database_url).expect(
+                let redis_client = RedisClient::from_url(&self.config.database_url).expect(
                     ErrorMessages::REDIS_CLIENT_CREATION_FAILED
                 );
-                let redis_handler = Arc::new(RedisHandler::new(Arc::new(redis)));
+                let redis_handler = Arc::new(RedisHandler::new(redis_client));
                 let websocket_handler = WebSocketHandler::new((*redis_handler).clone());
 
-                let http_routes = routes
-                    ::create_redis_routes(redis_handler.clone())
-                    .with_state(redis_handler);
+                let http_routes = crate::routes::redis::create_routes(redis_handler.clone());
                 let ws_routes = routes::websocket::create_routes().with_state(websocket_handler);
 
-                (http_routes, ws_routes)
+                (http_routes, ws_routes, redis_handler)
             }
             // Future database types
             // DatabaseType::Postgres => { /* PostgreSQL routes */ }
@@ -83,7 +81,7 @@ impl Server {
         };
 
         Router::new()
-            .merge(routes::common::create_routes().with_state(self.clone()))
+            .merge(routes::common::create_routes())
             .merge(database_routes)
             .merge(websocket_routes)
             .layer(cors)
@@ -94,6 +92,7 @@ impl Server {
                     Json(ApiResponse::<()>::error(ErrorMessages::NOT_FOUND.to_string())),
                 )
             })
+            .with_state(redis_handler)
     }
 
     /// Run the server
@@ -105,7 +104,10 @@ impl Server {
         info!("WebSocket API available at ws://{}/ws", addr);
 
         let listener = tokio::net::TcpListener::bind(addr).await?;
-        axum::serve(listener, app).await?;
+        axum::serve(
+            listener,
+            app.into_make_service_with_connect_info::<std::net::SocketAddr>()
+        ).await?;
 
         Ok(())
     }

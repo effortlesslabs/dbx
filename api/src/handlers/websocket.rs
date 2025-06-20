@@ -299,7 +299,7 @@ impl WebSocketHandler {
                 let script =
                     dbx_crates::adapter::redis::primitives::string::RedisString::set_if_not_exists_script();
                 let result: i32 = match
-                    handler.redis_handler.redis.eval_script(&script, &[&key], &[&value])
+                    handler.redis_handler.redis.string().eval_script(&script, &[&key], &[&value])
                 {
                     Ok(result) => result,
                     Err(e) => {
@@ -326,11 +326,13 @@ impl WebSocketHandler {
                     dbx_crates::adapter::redis::primitives::string::RedisString::compare_and_set_with_ttl_script();
                 let ttl = ttl.unwrap_or(0);
                 let result: i32 = match
-                    handler.redis_handler.redis.eval_script(
-                        &script,
-                        &[&key],
-                        &[&expected_value, &new_value, &ttl.to_string()]
-                    )
+                    handler.redis_handler.redis
+                        .string()
+                        .eval_script(
+                            &script,
+                            &[&key],
+                            &[&expected_value, &new_value, &ttl.to_string()]
+                        )
                 {
                     Ok(result) => result,
                     Err(e) => {

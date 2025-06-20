@@ -143,7 +143,9 @@ impl RedisHandler {
         debug!("POST /strings/{}/setnx", key);
 
         let script = RedisString::set_if_not_exists_script();
-        let result: i32 = match handler.redis.eval_script(&script, &[&key], &[&request.value]) {
+        let result: i32 = match
+            handler.redis.string().eval_script(&script, &[&key], &[&request.value])
+        {
             Ok(result) => result,
             Err(e) => {
                 return Err(handle_redis_error(e));
@@ -170,11 +172,13 @@ impl RedisHandler {
         let script = RedisString::compare_and_set_with_ttl_script();
         let ttl = request.ttl.unwrap_or(DatabasePatterns::DEFAULT_TTL);
         let result: i32 = match
-            handler.redis.eval_script(
-                &script,
-                &[&key],
-                &[&request.expected_value, &request.new_value, &ttl.to_string()]
-            )
+            handler.redis
+                .string()
+                .eval_script(
+                    &script,
+                    &[&key],
+                    &[&request.expected_value, &request.new_value, &ttl.to_string()]
+                )
         {
             Ok(result) => result,
             Err(e) => {

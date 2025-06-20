@@ -13,14 +13,15 @@ use redis::{ Client, Connection, RedisError, RedisResult, Script };
 use client::RedisClient;
 use primitives::string::RedisString;
 use primitives::set::RedisSet;
+use primitives::hash::RedisHash;
 
 /// Redis data type adapters providing type-specific operations
 pub mod types {
     pub use super::primitives::string::RedisString;
+    pub use super::primitives::set::RedisSet;
+    pub use super::primitives::hash::RedisHash;
     // Other Redis types will be added here as they're implemented:
     // pub use super::primitives::list::RedisList;
-    // pub use super::primitives::hash::RedisHash;
-    // pub use super::primitives::set::RedisSet;
     // pub use super::primitives::sorted_set::RedisSortedSet;
 }
 
@@ -56,6 +57,23 @@ pub mod scripts {
     /// Implement a rate limiter pattern
     pub fn rate_limiter() -> Script {
         super::primitives::string::RedisString::rate_limiter_script()
+    }
+
+    /// Hash operations
+    pub fn hash_get_set() -> Script {
+        super::primitives::hash::RedisHash::get_set_script()
+    }
+
+    pub fn hash_set_if_not_exists() -> Script {
+        super::primitives::hash::RedisHash::set_if_not_exists_script()
+    }
+
+    pub fn hash_multi_set() -> Script {
+        super::primitives::hash::RedisHash::multi_set_script()
+    }
+
+    pub fn hash_multi_delete() -> Script {
+        super::primitives::hash::RedisHash::multi_delete_script()
     }
 }
 
@@ -94,6 +112,11 @@ impl Redis {
     /// Get access to set operations
     pub fn set(&self) -> RedisSet {
         RedisSet::new(self.client.connection().clone())
+    }
+
+    /// Get access to hash operations
+    pub fn hash(&self) -> RedisHash {
+        RedisHash::new(self.client.connection().clone())
     }
 
     /// Execute a Lua script directly
