@@ -11,9 +11,9 @@
 //! transactions, and Lua scripts.
 
 pub mod string;
+pub mod set;
 
 // These will be implemented in future versions:
 // pub mod list;
 // pub mod hash;
-// pub mod set;
 // pub mod sorted_set;

@@ -12,6 +12,7 @@ use redis::{ Client, Connection, RedisError, RedisResult, Script };
 
 use client::RedisClient;
 use primitives::string::RedisString;
+use primitives::set::RedisSet;
 
 /// Redis data type adapters providing type-specific operations
 pub mod types {
@@ -88,6 +89,11 @@ impl Redis {
     /// Get access to string operations
     pub fn string(&self) -> RedisString {
         RedisString::new(self.client.connection().clone())
+    }
+
+    /// Get access to set operations
+    pub fn set(&self) -> RedisSet {
+        RedisSet::new(self.client.connection().clone())
     }
 
     /// Execute a Lua script directly

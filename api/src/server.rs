@@ -66,10 +66,12 @@ impl Server {
                 let redis = Redis::from_url(&self.config.database_url).expect(
                     ErrorMessages::REDIS_CLIENT_CREATION_FAILED
                 );
-                let redis_handler = RedisHandler::new(Arc::new(redis));
-                let websocket_handler = WebSocketHandler::new(redis_handler.clone());
+                let redis_handler = Arc::new(RedisHandler::new(Arc::new(redis)));
+                let websocket_handler = WebSocketHandler::new((*redis_handler).clone());
 
-                let http_routes = routes::redis::create_routes().with_state(redis_handler);
+                let http_routes = routes
+                    ::create_redis_routes(redis_handler.clone())
+                    .with_state(redis_handler);
                 let ws_routes = routes::websocket::create_routes().with_state(websocket_handler);
 
                 (http_routes, ws_routes)

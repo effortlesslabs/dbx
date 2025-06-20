@@ -1,21 +1,22 @@
 use axum::{ routing::{ get, post, delete }, Router };
+use std::sync::Arc;
 use crate::handlers::redis::RedisHandler;
 
 /// Create Redis-specific routes
-pub fn create_routes() -> Router<RedisHandler> {
+pub fn create_routes(redis_handler: Arc<RedisHandler>) -> Router<Arc<RedisHandler>> {
     Router::new().nest("/api/v1/redis", create_redis_api_routes())
 }
 
 /// Create Redis API routes
-fn create_redis_api_routes() -> Router<RedisHandler> {
+fn create_redis_api_routes() -> Router<Arc<RedisHandler>> {
     Router::new()
         .nest("/strings", create_string_routes())
-        .nest("/scripts", create_script_routes())
+        .nest("/sets", create_set_routes())
         .nest("/keys", create_key_routes())
 }
 
 /// Create string operation routes
-fn create_string_routes() -> Router<RedisHandler> {
+fn create_string_routes() -> Router<Arc<RedisHandler>> {
     Router::new()
         .route("/:key", get(RedisHandler::get_string))
         .route("/:key", post(RedisHandler::set_string))
@@ -33,16 +34,29 @@ fn create_string_routes() -> Router<RedisHandler> {
         .route("/batch/incrby", post(RedisHandler::batch_incr_by))
 }
 
-/// Create script operation routes
-fn create_script_routes() -> Router<RedisHandler> {
+/// Create set operation routes
+fn create_set_routes() -> Router<Arc<RedisHandler>> {
     Router::new()
-        .route("/rate-limiter", post(RedisHandler::rate_limiter_script))
-        .route("/multi-counter", post(RedisHandler::multi_counter_script))
-        .route("/multi-set-ttl", post(RedisHandler::multi_set_ttl_script))
+        .route("/:key", get(RedisHandler::get_set_members))
+        .route("/:key", post(RedisHandler::add_set_members))
+        .route("/:key", delete(RedisHandler::delete_set))
+        .route("/:key/members", get(RedisHandler::get_set_members))
+        .route("/:key/exists", get(RedisHandler::set_member_exists))
+        .route("/:key/cardinality", get(RedisHandler::get_set_cardinality))
+        .route("/:key/random", get(RedisHandler::get_random_member))
+        .route("/:key/pop", post(RedisHandler::pop_random_member))
+        .route("/:key/move", post(RedisHandler::move_set_member))
+        .route("/:key/union", post(RedisHandler::set_union))
+        .route("/:key/intersection", post(RedisHandler::set_intersection))
+        .route("/:key/difference", post(RedisHandler::set_difference))
+        .route("/batch/add", post(RedisHandler::batch_add_set_members))
+        .route("/batch/remove", post(RedisHandler::batch_remove_set_members))
+        .route("/batch/members", post(RedisHandler::batch_get_set_members))
+        .route("/batch/delete", post(RedisHandler::batch_delete_sets))
 }
 
 /// Create key operation routes
-fn create_key_routes() -> Router<RedisHandler> {
+fn create_key_routes() -> Router<Arc<RedisHandler>> {
     Router::new()
         .route("/", get(RedisHandler::list_keys))
         .route("/:key/exists", get(RedisHandler::key_exists))
