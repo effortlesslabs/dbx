@@ -1,0 +1,423 @@
+name: DBX CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      rust: ${{ steps.changes.outputs.rust }}
+      typescript: ${{ steps.changes.outputs.typescript }}
+      docker: ${{ steps.changes.outputs.docker }}
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dorny/paths-filter@v3
+      id: changes
+      with:
+        filters: |
+          rust:
+            - 'api/**'
+            - 'crates/**'
+            - 'Cargo.toml'
+            - 'Cargo.lock'
+            - '.github/workflows/rust-tests.yml'
+            - '.github/workflows/ci.yml'
+          typescript:
+            - 'ts/**'
+            - '.github/workflows/typescript-tests.yml'
+            - '.github/workflows/ci.yml'
+          docker:
+            - 'Dockerfile'
+            - 'docker-compose.yml'
+            - '.dockerignore'
+            - 'scripts/**'
+
+  rust-quick-check:
+    name: Rust Quick Check
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
+        
+    - name: Cache cargo
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        
+    - name: Check formatting
+      run: cargo fmt --all -- --check
+      
+    - name: Run clippy
+      run: cargo clippy --all-targets --all-features -- -D warnings
+      
+    - name: Check if code compiles
+      run: cargo check --all
+
+  typescript-quick-check:
+    name: TypeScript Quick Check
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.typescript == 'true'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: latest
+        
+    - name: Install dependencies
+      working-directory: ./ts
+      run: pnpm install
+      
+    - name: Type check
+      working-directory: ./ts
+      run: pnpm run build
+      
+    - name: Lint check
+      working-directory: ./ts
+      run: pnpm run lint
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: [changes, rust-quick-check]
+    if: always() && needs.changes.outputs.rust == 'true' && needs.rust-quick-check.result == 'success'
+    
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      
+    - name: Cache cargo
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        
+    - name: Run unit tests
+      run: cargo test --lib --all
+      env:
+        REDIS_URL: redis://localhost:6379
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [changes, unit-tests]
+    if: always() && needs.changes.outputs.rust == 'true' && needs.unit-tests.result == 'success'
+    
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      
+    - name: Cache cargo
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        
+    - name: Run integration tests
+      run: cargo test --test "*" --all
+      env:
+        REDIS_URL: redis://localhost:6379
+        DATABASE_TYPE: redis
+        HOST: 127.0.0.1
+        PORT: 3000
+
+  docker-tests:
+    name: Docker Tests
+    runs-on: ubuntu-latest
+    needs: [changes, integration-tests]
+    if: always() && (needs.changes.outputs.docker == 'true' || needs.changes.outputs.rust == 'true') && (needs.integration-tests.result == 'success' || needs.integration-tests.result == 'skipped')
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Build Docker images
+      run: docker-compose build
+      
+    - name: Start services
+      run: docker-compose up -d
+      
+    - name: Wait for services
+      run: |
+        echo "Waiting for DBX API..."
+        for i in {1..30}; do
+          if curl -f http://localhost:3000/health; then
+            echo "Services are ready!"
+            break
+          fi
+          sleep 2
+        done
+        
+    - name: Run Docker tests
+      run: docker-compose exec -T dbx-api cargo test
+      
+    - name: Test API endpoints
+      run: |
+        curl -f http://localhost:3000/health
+        curl -f -X POST http://localhost:3000/api/redis/set \
+          -H "Content-Type: application/json" \
+          -d '{"key":"test:ci","value":"docker-test","expiry":60}'
+        curl -f http://localhost:3000/api/redis/get/test:ci
+        
+    - name: Cleanup
+      if: always()
+      run: docker-compose down -v
+
+  typescript-tests:
+    name: TypeScript Tests
+    runs-on: ubuntu-latest
+    needs: [changes, typescript-quick-check, integration-tests]
+    if: always() && needs.changes.outputs.typescript == 'true' && needs.typescript-quick-check.result == 'success' && (needs.integration-tests.result == 'success' || needs.integration-tests.result == 'skipped')
+    
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: latest
+        
+    - name: Install Rust for DBX API
+      uses: dtolnay/rust-toolchain@stable
+      
+    - name: Cache cargo
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        
+    - name: Build and start DBX API
+      run: |
+        cargo build --release --bin dbx-api
+        REDIS_URL=redis://localhost:6379 cargo run --release --bin dbx-api &
+        
+        echo "Waiting for DBX API..."
+        for i in {1..30}; do
+          if curl -f http://localhost:3000/health; then
+            echo "DBX API is ready!"
+            break
+          fi
+          sleep 2
+        done
+      env:
+        DATABASE_TYPE: redis
+        HOST: 0.0.0.0
+        PORT: 3000
+        
+    - name: Install TypeScript dependencies
+      working-directory: ./ts
+      run: pnpm install
+      
+    - name: Run TypeScript tests
+      working-directory: ./ts
+      run: pnpm test
+      env:
+        DBX_API_URL: http://localhost:3000
+
+  e2e-tests:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    needs: [docker-tests, typescript-tests]
+    if: always() && (needs.docker-tests.result == 'success' || needs.docker-tests.result == 'skipped') && (needs.typescript-tests.result == 'success' || needs.typescript-tests.result == 'skipped')
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: latest
+        
+    - name: Start DBX services
+      run: docker-compose up -d
+      
+    - name: Wait for services
+      run: |
+        echo "Waiting for all services..."
+        for i in {1..30}; do
+          if curl -f http://localhost:3000/health && \
+             docker exec dbx-redis redis-cli ping; then
+            echo "All services are ready!"
+            break
+          fi
+          sleep 2
+        done
+        
+    - name: Install TypeScript SDK
+      working-directory: ./ts
+      run: pnpm install && pnpm run build
+      
+    - name: Run comprehensive E2E tests
+      run: |
+        echo "=== Testing HTTP API ==="
+        curl -f http://localhost:3000/health
+        
+        echo "=== Testing Redis operations ==="
+        curl -f -X POST http://localhost:3000/api/redis/set \
+          -H "Content-Type: application/json" \
+          -d '{"key":"e2e:test","value":"end-to-end-test","expiry":300}'
+          
+        RESULT=$(curl -f http://localhost:3000/api/redis/get/e2e:test)
+        echo "Retrieved value: $RESULT"
+        
+        echo "=== Testing TypeScript SDK ==="
+        cd ts && node -e "
+          const { DbxClient } = require('./dist/index.js');
+          const client = new DbxClient({ apiUrl: 'http://localhost:3000' });
+          console.log('TypeScript SDK loaded successfully!');
+        "
+        
+    - name: Cleanup
+      if: always()
+      run: docker-compose down -v
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      
+    - name: Install cargo-audit
+      run: cargo install --locked cargo-audit
+      
+    - name: Run Rust security audit
+      run: cargo audit
+      
+    - name: Setup Node.js for TypeScript audit
+      if: needs.changes.outputs.typescript == 'true'
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        
+    - name: Setup pnpm
+      if: needs.changes.outputs.typescript == 'true'
+      uses: pnpm/action-setup@v4
+      with:
+        version: latest
+        
+    - name: Run TypeScript security audit
+      if: needs.changes.outputs.typescript == 'true'
+      working-directory: ./ts
+      run: |
+        pnpm install
+        pnpm audit
+
+  build-status:
+    name: Build Status
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, docker-tests, typescript-tests, e2e-tests]
+    if: always()
+    
+    steps:
+    - name: Check build status
+      run: |
+        echo "Build Status Summary:"
+        echo "Unit Tests: ${{ needs.unit-tests.result }}"
+        echo "Integration Tests: ${{ needs.integration-tests.result }}"
+        echo "Docker Tests: ${{ needs.docker-tests.result }}"
+        echo "TypeScript Tests: ${{ needs.typescript-tests.result }}"
+        echo "E2E Tests: ${{ needs.e2e-tests.result }}"
+        
+        if [[ "${{ needs.unit-tests.result }}" == "failure" ]] || \
+           [[ "${{ needs.integration-tests.result }}" == "failure" ]] || \
+           [[ "${{ needs.docker-tests.result }}" == "failure" ]] || \
+           [[ "${{ needs.typescript-tests.result }}" == "failure" ]] || \
+           [[ "${{ needs.e2e-tests.result }}" == "failure" ]]; then
+          echo "❌ Build failed!"
+          exit 1
+        else
+          echo "✅ All tests passed!"
+        fi

@@ -1,0 +1,243 @@
+name: TypeScript SDK Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths: 
+      - 'ts/**'
+      - '.github/workflows/typescript-tests.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'ts/**'
+      - '.github/workflows/typescript-tests.yml'
+
+jobs:
+  typescript-tests:
+    name: TypeScript SDK Tests
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+        
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      dbx-api:
+        image: node:18-alpine
+        ports:
+          - 3000:3000
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: latest
+        
+    - name: Get pnpm store directory
+      id: pnpm-cache
+      shell: bash
+      run: |
+        echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+        
+    - name: Setup pnpm cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
+          
+    - name: Install Rust for DBX API
+      uses: dtolnay/rust-toolchain@stable
+      
+    - name: Build and start DBX API
+      run: |
+        cargo build --release --bin dbx-api
+        REDIS_URL=redis://localhost:6379 cargo run --release --bin dbx-api &
+        sleep 10
+      env:
+        DATABASE_TYPE: redis
+        HOST: 0.0.0.0
+        PORT: 3000
+        
+    - name: Wait for DBX API to be ready
+      run: |
+        echo "Waiting for DBX API to be ready..."
+        for i in {1..30}; do
+          if curl -f http://localhost:3000/health; then
+            echo "DBX API is ready!"
+            break
+          fi
+          echo "Attempt $i failed, waiting 2 seconds..."
+          sleep 2
+        done
+        
+    - name: Install TypeScript dependencies
+      working-directory: ./ts
+      run: pnpm install
+      
+    - name: Type check
+      working-directory: ./ts
+      run: pnpm run build
+      
+    - name: Lint TypeScript code
+      working-directory: ./ts
+      run: pnpm run lint
+      
+    - name: Format check
+      working-directory: ./ts
+      run: |
+        pnpm run format
+        git diff --exit-code || (echo "Code is not formatted. Please run 'pnpm run format'" && exit 1)
+        
+    - name: Run TypeScript tests
+      working-directory: ./ts
+      run: pnpm test
+      env:
+        DBX_API_URL: http://localhost:3000
+        
+    - name: Run integration tests against live API
+      working-directory: ./ts
+      run: |
+        # Test basic connectivity
+        curl -f http://localhost:3000/health
+        
+        # Run SDK integration tests if they exist
+        if [ -f "src/__tests__/integration.test.ts" ]; then
+          pnpm test -- --testPathPattern=integration
+        fi
+      env:
+        DBX_API_URL: http://localhost:3000
+
+  typescript-build-matrix:
+    name: TypeScript Build Matrix
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [18, 20]
+        
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: latest
+        
+    - name: Install dependencies
+      working-directory: ./ts
+      run: pnpm install
+      
+    - name: Build TypeScript SDK
+      working-directory: ./ts
+      run: pnpm run build
+      
+    - name: Test import/export
+      working-directory: ./ts
+      run: node -e "const dbx = require('./dist/index.js'); console.log('Build successful!')"
+
+  typescript-security:
+    name: TypeScript Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: latest
+        
+    - name: Install dependencies
+      working-directory: ./ts
+      run: pnpm install
+      
+    - name: Run security audit
+      working-directory: ./ts
+      run: pnpm audit
+      
+    - name: Check for vulnerabilities
+      working-directory: ./ts
+      run: pnpm audit --audit-level high
+
+  typescript-coverage:
+    name: TypeScript Coverage
+    runs-on: ubuntu-latest
+    
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+          
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: latest
+        
+    - name: Install Rust for DBX API
+      uses: dtolnay/rust-toolchain@stable
+      
+    - name: Build and start DBX API
+      run: |
+        cargo build --release --bin dbx-api
+        REDIS_URL=redis://localhost:6379 cargo run --release --bin dbx-api &
+        sleep 10
+      env:
+        DATABASE_TYPE: redis
+        HOST: 0.0.0.0
+        PORT: 3000
+        
+    - name: Install TypeScript dependencies
+      working-directory: ./ts
+      run: pnpm install
+      
+    - name: Run tests with coverage
+      working-directory: ./ts
+      run: pnpm test -- --coverage --coverageReporters=lcov
+      env:
+        DBX_API_URL: http://localhost:3000
+        
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        files: ./ts/coverage/lcov.info
+        flags: typescript
+        token: ${{ secrets.CODECOV_TOKEN }}
