@@ -165,6 +165,12 @@ impl Redis {
 /// Batch operations helper for multiple Redis operations
 pub struct BatchOperations;
 
+impl Default for BatchOperations {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl BatchOperations {
     /// Create a new batch operations helper
     pub fn new() -> Self {

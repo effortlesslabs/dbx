@@ -303,10 +303,10 @@ impl RedisString {
         script.key(keys).arg(args).invoke(&mut *conn)
     }
 
-    /// Adds a script invocation to a pipeline
-    pub fn add_script_to_pipeline<'a, 'b, K, A>(
+    /// Add a Lua script to a pipeline
+    pub fn add_script_to_pipeline<'a, K, A>(
         pipe: &'a mut Pipeline,
-        script: &'b Script,
+        script: &Script,
         keys: K,
         args: A,
     ) -> &'a mut Pipeline
