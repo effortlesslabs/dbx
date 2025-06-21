@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the DBX Crates package will be documented in this file.
+All notable changes to DBX Crates will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -9,39 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Comprehensive Redis adapter with string, hash, and set operations
-- Connection pooling support with async features
-- Pipeline and transaction support for atomic operations
-- Lua script integration for complex business logic
-- Batch operations for performance optimization
-- Comprehensive error handling with custom error types
+- Redis adapter with string, hash, and set operations
+- Connection pooling with async features
+- Pipeline and transaction support
+- Lua script integration
+- Batch operations for performance
+- Comprehensive error handling
 - Type-safe operations for all Redis data types
-- Connection health checks and automatic reconnection
-- Rate limiting with Redis scripts
-- TTL and expiry management
-- Set operations (intersections, unions, differences)
-- Hash operations with field-value pairs
-- String operations with counters and basic operations
 
 ### Changed
 
 - Initial release of DBX Crates package
-
-### Deprecated
-
-- None
-
-### Removed
-
-- None
-
-### Fixed
-
-- None
-
-### Security
-
-- None
 
 ## [0.1.0] - 2024-01-XX
 
