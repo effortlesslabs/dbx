@@ -529,9 +529,6 @@ mod tests {
     use redis::pipe;
     use std::sync::{ Arc, Mutex };
 
-    // Mock a Connection for testing
-    struct MockConnection;
-
     // Create a connection for tests that's used just for compilation
     fn create_test_connection() -> Arc<Mutex<redis::Connection>> {
         // For tests, just create a client but don't actually connect
