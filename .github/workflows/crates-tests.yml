@@ -2,14 +2,14 @@ name: DBX Crates Tests
 
 on:
   push:
-    branches: [main, develop]
+    branches: [master]
     paths:
       - "crates/**"
       - "Cargo.toml"
       - "Cargo.lock"
       - ".github/workflows/crates-tests.yml"
   pull_request:
-    branches: [main, develop]
+    branches: [master]
     paths:
       - "crates/**"
       - "Cargo.toml"
