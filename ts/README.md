@@ -1,199 +1,428 @@
-# DBX TypeScript SDK
+# DBX TypeScript Client
 
-A TypeScript SDK for DBX - A minimal API layer for databases. Built with native fetch API for modern environments.
-
-## Requirements
-
-- Node.js 18.0.0 or higher (for native fetch support)
-- TypeScript 5.0.0 or higher
+A comprehensive TypeScript client for the DBX API, providing easy access to Redis operations through HTTP and WebSocket interfaces.
 
 ## Installation
 
 ```bash
-npm install @dbx/sdk
+npm install @effortlesslabs/dbx
 ```
 
 ## Quick Start
 
 ```typescript
-import { DbxClient } from "@dbx/sdk";
+import { createDbxClient } from "@effortlesslabs/dbx";
 
-// Create a new client
-const client = new DbxClient({
-  baseUrl: "http://localhost:3000",
-  timeout: 5000,
-});
+// Create a client
+const client = createDbxClient("http://localhost:8080");
 
 // Basic operations
-await client.setString("my-key", "my-value", 3600); // Set with 1 hour TTL
-const value = await client.getString("my-key");
-const exists = await client.exists("my-key");
-const counter = await client.incr("my-counter");
+await client.setString("key", "value", 3600); // Set with TTL
+const value = await client.getString("key");
+console.log(value); // 'value'
 ```
 
-## Features
+## Configuration
 
-- **Fetch-based**: Uses native fetch API for HTTP requests (no external dependencies)
-- **Full TypeScript Support**: Complete type definitions for all API operations
-- **String Operations**: Get, set, delete, increment, TTL management
-- **Batch Operations**: Efficient bulk operations for multiple keys
-- **Key Management**: List, check existence, TTL, delete keys
-- **Lua Scripts**: Execute rate limiting and multi-counter scripts
-- **Error Handling**: Comprehensive error handling with meaningful messages
-- **Health & Info**: Server health checks and information
-- **Timeout Support**: Configurable request timeouts with AbortController
+```typescript
+import { DbxClient } from "@effortlesslabs/dbx";
+
+const client = new DbxClient({
+  baseUrl: "http://localhost:8080",
+  timeout: 10000, // 10 seconds
+  headers: {
+    Authorization: "Bearer your-token",
+  },
+});
+```
 
 ## API Reference
 
-### Client Configuration
+### Server Operations
+
+#### Health Check
 
 ```typescript
-interface DbxConfig {
-  baseUrl: string;
-  timeout?: number; // Default: 10000ms
-  headers?: Record<string, string>;
-}
+const health = await client.health();
+// Returns: { status: string, redis_connected: boolean, timestamp: string }
+```
+
+#### Server Info
+
+```typescript
+const info = await client.info();
+// Returns: { name: string, version: string, redis_url: string, pool_size: number }
+```
+
+#### Database Size
+
+```typescript
+const size = await client.dbSize();
+// Returns: number
+```
+
+#### Flush Operations
+
+```typescript
+await client.flushAll(); // Flush all databases
+await client.flushDb(); // Flush current database
 ```
 
 ### String Operations
 
+#### Basic String Operations
+
 ```typescript
-// Basic string operations
-await client.setString(key: string, value: string, ttl?: number): Promise<string>
-await client.getString(key: string): Promise<string>
-await client.deleteString(key: string): Promise<number>
+// Set a string value
+await client.setString("key", "value", 3600); // Optional TTL in seconds
 
-// Counter operations
-await client.incr(key: string): Promise<number>
-await client.incrBy(key: string, increment: number): Promise<number>
+// Get a string value
+const value = await client.getString("key");
 
-// Conditional operations
-await client.setNx(key: string, value: string, ttl?: number): Promise<boolean>
-await client.compareAndSet(key: string, expectedValue: string, newValue: string, ttl?: number): Promise<boolean>
+// Delete a string
+const deleted = await client.deleteString("key");
 
-// Utility operations
-await client.exists(key: string): Promise<boolean>
-await client.getTtl(key: string): Promise<number>
+// Check if key exists
+const exists = await client.exists("key");
+
+// Get TTL
+const ttl = await client.getTtl("key");
 ```
 
-### Batch Operations
+#### Counter Operations
 
 ```typescript
-// Batch operations for efficiency
-await client.batchSet(keyValues: Record<string, string>, ttl?: number): Promise<Record<string, string>>
-await client.batchGet(keys: string[]): Promise<Record<string, string>>
-await client.batchDelete(keys: string[]): Promise<number>
-await client.batchIncr(keys: string[]): Promise<number[]>
+// Increment by 1
+const newValue = await client.incr("counter");
+
+// Increment by specific amount
+const newValue = await client.incrBy("counter", 5);
+```
+
+#### Conditional Operations
+
+```typescript
+// Set only if key doesn't exist
+const set = await client.setNx("key", "value", 3600);
+
+// Compare and set (CAS)
+const success = await client.compareAndSet("key", "expected", "new-value", 3600);
+```
+
+#### Batch String Operations
+
+```typescript
+// Batch set multiple key-value pairs
+await client.batchSet(
+  {
+    key1: "value1",
+    key2: "value2",
+  },
+  3600
+); // Optional TTL
+
+// Batch get multiple values
+const values = await client.batchGet(["key1", "key2", "key3"]);
+
+// Batch delete multiple keys
+const deleted = await client.batchDelete(["key1", "key2"]);
+
+// Batch increment multiple counters
+const newValues = await client.batchIncr(["counter1", "counter2"]);
+
+// Batch increment by specific amounts
+const newValues = await client.batchIncrBy([
+  ["counter1", 5],
+  ["counter2", 10],
+]);
+```
+
+### Set Operations
+
+#### Basic Set Operations
+
+```typescript
+// Add members to a set
+await client.addSetMembers("set1", ["member1", "member2", "member3"]);
+
+// Get all members of a set
+const members = await client.getSetMembers("set1");
+
+// Delete a set
+const deleted = await client.deleteSet("set1");
+
+// Check if member exists
+const exists = await client.setMemberExists("set1", "member1");
+
+// Get set cardinality (size)
+const size = await client.getSetCardinality("set1");
+```
+
+#### Set Member Operations
+
+```typescript
+// Get a random member
+const member = await client.getRandomSetMember("set1");
+
+// Pop a random member
+const member = await client.popRandomSetMember("set1");
+
+// Move a member to another set
+const moved = await client.moveSetMember("set1", "member1", "set2");
+```
+
+#### Set Operations
+
+```typescript
+// Union of multiple sets
+const union = await client.setUnion("result", ["set1", "set2", "set3"]);
+
+// Intersection of multiple sets
+const intersection = await client.setIntersection("result", ["set1", "set2"]);
+
+// Difference of multiple sets
+const difference = await client.setDifference("result", ["set1", "set2"]);
+```
+
+#### Batch Set Operations
+
+```typescript
+// Batch add members to multiple sets
+await client.batchAddSetMembers({
+  set1: ["member1", "member2"],
+  set2: ["member3", "member4"],
+});
+
+// Batch remove members from multiple sets
+await client.batchRemoveSetMembers({
+  set1: ["member1"],
+  set2: ["member3"],
+});
+
+// Batch get members from multiple sets
+const allMembers = await client.batchGetSetMembers(["set1", "set2"]);
+
+// Batch delete multiple sets
+const deleted = await client.batchDeleteSets(["set1", "set2"]);
+```
+
+### Hash Operations
+
+#### Basic Hash Operations
+
+```typescript
+// Set a hash field
+await client.setHashField("hash1", "field1", "value1");
+
+// Get a hash field
+const value = await client.getHashField("hash1", "field1");
+
+// Delete a hash field
+const deleted = await client.deleteHashField("hash1", "field1");
+
+// Check if hash field exists
+const exists = await client.hashFieldExists("hash1", "field1");
+
+// Delete entire hash
+const deleted = await client.deleteHash("hash1");
+```
+
+#### Hash Field Operations
+
+```typescript
+// Increment a hash field
+const newValue = await client.incrementHashField("hash1", "counter", 5);
+
+// Set hash field only if it doesn't exist
+const set = await client.setHashFieldNx("hash1", "field1", "value1");
+
+// Get random hash field
+const field = await client.getRandomHashField("hash1");
+```
+
+#### Hash Information
+
+```typescript
+// Get hash length (number of fields)
+const length = await client.getHashLength("hash1");
+
+// Get all hash field names
+const keys = await client.getHashKeys("hash1");
+
+// Get all hash field values
+const values = await client.getHashValues("hash1");
+
+// Get all hash fields and values
+const all = await client.getHashAll("hash1");
+```
+
+#### Multiple Hash Fields
+
+```typescript
+// Set multiple hash fields
+await client.setHashMultiple("hash1", {
+  field1: "value1",
+  field2: "value2",
+  field3: "value3",
+});
+
+// Get multiple hash fields
+const values = await client.getMultipleHashFields("hash1", ["field1", "field2"]);
+```
+
+#### Batch Hash Operations
+
+```typescript
+// Batch set hash fields across multiple hashes
+await client.batchSetHashFields({
+  hash1: { field1: "value1", field2: "value2" },
+  hash2: { field3: "value3" },
+});
+
+// Batch get hash fields across multiple hashes
+const values = await client.batchGetHashFields({
+  hash1: ["field1", "field2"],
+  hash2: ["field3"],
+});
+
+// Batch delete hash fields across multiple hashes
+const deleted = await client.batchDeleteHashFields({
+  hash1: ["field1"],
+  hash2: ["field3"],
+});
+
+// Batch get all fields from multiple hashes
+const allFields = await client.batchGetHashAll(["hash1", "hash2"]);
+
+// Batch check if hash fields exist
+const exists = await client.batchCheckHashFields({
+  hash1: ["field1", "field2"],
+  hash2: ["field3"],
+});
+
+// Batch get hash lengths
+const lengths = await client.batchGetHashLengths(["hash1", "hash2"]);
 ```
 
 ### Key Operations
 
 ```typescript
-// Key management
-await client.listKeys(pattern?: string): Promise<string[]>
-await client.keyExists(key: string): Promise<boolean>
-await client.keyTtl(key: string): Promise<number>
-await client.deleteKey(key: string): Promise<number>
+// List all keys
+const keys = await client.listKeys();
+
+// List keys matching pattern
+const keys = await client.listKeys("user:*");
+
+// Check if key exists
+const exists = await client.keyExists("key1");
+
+// Get key TTL
+const ttl = await client.keyTtl("key1");
+
+// Delete a key
+const deleted = await client.deleteKey("key1");
 ```
 
-### Script Operations
+### WebSocket Support
+
+The client provides WebSocket support for real-time operations:
 
 ```typescript
-// Lua script execution
-await client.rateLimiter(key: string, limit: number, window: number): Promise<boolean>
-await client.multiCounter(counters: [string, number][]): Promise<number[]>
-await client.multiSetTtl(keyValues: Record<string, string>, ttl: number): Promise<Record<string, string>>
-```
-
-### Server Information
-
-```typescript
-// Server health and info
-await client.health(): Promise<HealthResponse>
-await client.info(): Promise<InfoResponse>
-```
-
-## Examples
-
-### Basic Usage
-
-```typescript
-import { DbxClient } from "@dbx/sdk";
-
-const client = new DbxClient({
-  baseUrl: "http://localhost:3000",
+// Create WebSocket connection
+const ws = client.createWebSocket({
+  url: "ws://localhost:8080/ws",
+  onOpen: () => {
+    console.log("Connected to WebSocket");
+  },
+  onMessage: (response) => {
+    console.log("Received:", response);
+  },
+  onError: (error) => {
+    console.error("WebSocket error:", error);
+  },
+  onClose: () => {
+    console.log("WebSocket closed");
+  },
 });
 
-async function example() {
-  // Set and get values
-  await client.setString("user:123", "John Doe", 3600);
-  const user = await client.getString("user:123");
+// Send commands
+client.sendWebSocketCommand(
+  ws,
+  {
+    action: "get",
+    params: { key: "my-key" },
+  },
+  "cmd1"
+);
 
-  // Counter operations
-  const views = await client.incr("page:views");
+client.sendWebSocketCommand(
+  ws,
+  {
+    action: "set",
+    params: { key: "my-key", value: "my-value", ttl: 3600 },
+  },
+  "cmd2"
+);
 
-  // Batch operations
-  await client.batchSet({
-    "session:1": "active",
-    "session:2": "inactive",
-    "session:3": "active",
-  });
-
-  // Rate limiting
-  const allowed = await client.rateLimiter("api:user:123", 100, 3600);
-}
+client.sendWebSocketCommand(
+  ws,
+  {
+    action: "batch_get",
+    params: { keys: ["key1", "key2", "key3"] },
+  },
+  "cmd3"
+);
 ```
 
-### Error Handling
+#### Supported WebSocket Commands
+
+- `get` - Get a string value
+- `set` - Set a string value
+- `delete` - Delete a key
+- `exists` - Check if key exists
+- `ttl` - Get key TTL
+- `incr` - Increment counter
+- `incrby` - Increment by amount
+- `setnx` - Set if not exists
+- `cas` - Compare and set
+- `batch_get` - Batch get multiple values
+- `batch_set` - Batch set multiple values
+- `batch_delete` - Batch delete multiple keys
+- `batch_incr` - Batch increment counters
+- `batch_incrby` - Batch increment by amounts
+- `list_keys` - List keys with optional pattern
+- `ping` - Ping the server
+- `subscribe` - Subscribe to channels
+- `unsubscribe` - Unsubscribe from channels
+
+## Error Handling
+
+The client throws errors for failed operations:
 
 ```typescript
 try {
   const value = await client.getString("non-existent-key");
 } catch (error) {
-  if (error.message === "Key not found") {
-    console.log("Key does not exist");
-  } else {
-    console.error("Unexpected error:", error);
-  }
+  console.error("Operation failed:", error.message);
 }
 ```
 
-### Advanced Usage
+## Examples
+
+See the `examples/` directory for complete usage examples:
+
+- `basic-usage.ts` - Comprehensive example showing all operations
+- WebSocket usage examples
+
+## TypeScript Support
+
+The library is written in TypeScript and provides full type safety:
 
 ```typescript
-// Compare and set for atomic updates
-const success = await client.compareAndSet("user:balance", "100", "90", 3600);
+import { DbxClient, ApiResponse, StringValue } from "@effortlesslabs/dbx";
 
-// Multi-counter for analytics
-const results = await client.multiCounter([
-  ["page:views", 1],
-  ["user:clicks", 5],
-  ["api:requests", 1],
-]);
-
-// Pattern-based key listing
-const userKeys = await client.listKeys("user:*");
-const sessionKeys = await client.listKeys("session:*");
-```
-
-## Development
-
-### Building
-
-```bash
-npm run build
-```
-
-### Testing
-
-```bash
-npm test
-```
-
-### Linting
-
-```bash
-npm run lint
+const client: DbxClient = createDbxClient("http://localhost:8080");
+const response: ApiResponse<StringValue> = await client.getString("key");
 ```
 
 ## License

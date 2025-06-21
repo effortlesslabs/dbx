@@ -67,7 +67,9 @@ impl Server {
                     ErrorMessages::REDIS_CLIENT_CREATION_FAILED
                 );
                 let redis_handler = Arc::new(RedisHandler::new(redis_client));
-                let websocket_handler = WebSocketHandler::new((*redis_handler).clone());
+                let websocket_handler = WebSocketHandler::new(
+                    Arc::new(tokio::sync::Mutex::new((*redis_handler).clone()))
+                );
 
                 let http_routes = crate::routes::redis::create_routes(redis_handler.clone());
                 let ws_routes = routes::websocket::create_routes().with_state(websocket_handler);

@@ -104,50 +104,72 @@ export interface SetManyRequest {
 }
 
 /**
- * Rate limiter request
+ * Move set member request
  */
-export interface RateLimiterRequest {
-  key: string;
-  limit: number;
-  window: number;
+export interface MoveSetMemberRequest {
+  member: string;
+  destination: string;
 }
 
 /**
- * Multi-counter request
+ * Set operation request (union, intersection, difference)
  */
-export interface MultiCounterRequest {
-  counters: [string, number][];
+export interface SetOperationRequest {
+  keys: string[];
 }
 
 /**
- * Multi-set TTL request
+ * Batch set members request
  */
-export interface MultiSetTtlRequest {
-  key_values: Record<string, string>;
-  ttl: number;
+export interface BatchSetMembersRequest {
+  [key: string]: string[];
+}
+
+/**
+ * Batch hash fields request
+ */
+export interface BatchHashFieldsRequest {
+  [key: string]: Record<string, string>;
+}
+
+/**
+ * Batch hash field check request
+ */
+export interface BatchHashFieldCheckRequest {
+  [key: string]: string[];
+}
+
+/**
+ * Batch hash field get request
+ */
+export interface BatchHashFieldGetRequest {
+  [key: string]: string[];
+}
+
+/**
+ * Batch hash field delete request
+ */
+export interface BatchHashFieldDeleteRequest {
+  [key: string]: string[];
 }
 
 /**
  * Health check response
  */
 export interface HealthResponse {
-  service: string;
   status: string;
+  redis_connected: boolean;
   timestamp: string;
 }
 
 /**
- * Info response
+ * Server info response
  */
-export interface InfoResponse {
-  service: string;
+export interface ServerInfo {
+  name: string;
   version: string;
-  database_type: string;
-  database_url: string;
-  host: string;
-  port: number;
+  redis_url: string;
   pool_size: number;
-  timestamp: string;
 }
 
 /**
@@ -160,6 +182,62 @@ export interface DbxConfig {
 }
 
 /**
+ * WebSocket command types
+ */
+export type WebSocketCommand =
+  | { action: "get"; params: { key: string } }
+  | { action: "set"; params: { key: string; value: string; ttl?: number } }
+  | { action: "delete"; params: { key: string } }
+  | { action: "exists"; params: { key: string } }
+  | { action: "ttl"; params: { key: string } }
+  | { action: "incr"; params: { key: string } }
+  | { action: "incrby"; params: { key: string; increment: number } }
+  | { action: "setnx"; params: { key: string; value: string; ttl?: number } }
+  | {
+      action: "cas";
+      params: { key: string; expected_value: string; new_value: string; ttl?: number };
+    }
+  | { action: "batch_get"; params: { keys: string[] } }
+  | { action: "batch_set"; params: { key_values: Record<string, string>; ttl?: number } }
+  | { action: "batch_delete"; params: { keys: string[] } }
+  | { action: "batch_incr"; params: { keys: string[] } }
+  | { action: "batch_incrby"; params: { key_increments: [string, number][] } }
+  | { action: "list_keys"; params: { pattern?: string } }
+  | { action: "ping"; params: {} }
+  | { action: "subscribe"; params: { channels: string[] } }
+  | { action: "unsubscribe"; params: { channels: string[] } };
+
+/**
+ * WebSocket message wrapper
+ */
+export interface WebSocketMessage {
+  id?: string;
+  command: WebSocketCommand;
+}
+
+/**
+ * WebSocket response
+ */
+export interface WebSocketResponse {
+  id?: string;
+  success: boolean;
+  data?: any;
+  error?: string;
+  timestamp: string;
+}
+
+/**
+ * WebSocket client configuration
+ */
+export interface WebSocketConfig {
+  url: string;
+  onMessage?: (response: WebSocketResponse) => void;
+  onError?: (error: Event) => void;
+  onClose?: (event: Event) => void;
+  onOpen?: (event: Event) => void;
+}
+
+/**
  * Database types supported by DBX
  */
-export type DatabaseType = 'redis' | 'postgres' | 'mongodb' | 'sqlite'; 
+export type DatabaseType = "redis" | "postgres" | "mongodb" | "sqlite";

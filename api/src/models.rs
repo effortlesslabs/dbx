@@ -128,6 +128,7 @@ pub struct ServerInfo {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(tag = "action", content = "params")]
 pub enum WebSocketCommand {
+    // String commands
     #[serde(rename = "get")] Get {
         key: String,
     },
@@ -179,11 +180,105 @@ pub enum WebSocketCommand {
     #[serde(rename = "batch_incrby")] BatchIncrBy {
         key_increments: Vec<(String, i64)>,
     },
+
+    // Set commands
+    #[serde(rename = "sadd")] Sadd {
+        key: String,
+        members: Vec<String>,
+    },
+    #[serde(rename = "srem")] Srem {
+        key: String,
+        members: Vec<String>,
+    },
+    #[serde(rename = "smembers")] Smembers {
+        key: String,
+    },
+    #[serde(rename = "scard")] Scard {
+        key: String,
+    },
+    #[serde(rename = "sismember")] Sismember {
+        key: String,
+        member: String,
+    },
+    #[serde(rename = "spop")] Spop {
+        key: String,
+    },
+    #[serde(rename = "srandmember")] Srandmember {
+        key: String,
+    },
+    #[serde(rename = "smove")] Smove {
+        source: String,
+        destination: String,
+        member: String,
+    },
+    #[serde(rename = "sunion")] Sunion {
+        keys: Vec<String>,
+    },
+    #[serde(rename = "sinter")] Sinter {
+        keys: Vec<String>,
+    },
+    #[serde(rename = "sdiff")] Sdiff {
+        keys: Vec<String>,
+    },
+
+    // Hash commands
+    #[serde(rename = "hset")] Hset {
+        key: String,
+        field: String,
+        value: String,
+    },
+    #[serde(rename = "hget")] Hget {
+        key: String,
+        field: String,
+    },
+    #[serde(rename = "hdel")] Hdel {
+        key: String,
+        field: String,
+    },
+    #[serde(rename = "hexists")] Hexists {
+        key: String,
+        field: String,
+    },
+    #[serde(rename = "hlen")] Hlen {
+        key: String,
+    },
+    #[serde(rename = "hkeys")] Hkeys {
+        key: String,
+    },
+    #[serde(rename = "hvals")] Hvals {
+        key: String,
+    },
+    #[serde(rename = "hgetall")] Hgetall {
+        key: String,
+    },
+    #[serde(rename = "hmset")] Hmset {
+        key: String,
+        fields: HashMap<String, String>,
+    },
+    #[serde(rename = "hmget")] Hmget {
+        key: String,
+        fields: Vec<String>,
+    },
+
+    // Key commands
+    #[serde(rename = "keys")] Keys {
+        pattern: Option<String>,
+    },
+    #[serde(rename = "del")] Del {
+        keys: Vec<String>,
+    },
+
+    // Admin commands
+    #[serde(rename = "flushall")] FlushAll,
+    #[serde(rename = "flushdb")] FlushDb,
+    #[serde(rename = "dbsize")] DbSize,
+    #[serde(rename = "info")] Info,
+
+    // Utility
     #[serde(rename = "list_keys")] ListKeys {
         pattern: Option<String>,
     },
-    #[serde(rename = "ping")]
-    Ping,
+    #[serde(rename = "ping")] Ping,
     #[serde(rename = "subscribe")] Subscribe {
         channels: Vec<String>,
     },
