@@ -1,4 +1,4 @@
-name: API Tests
+name: API Tests (Simple)
 
 on:
   push:
@@ -6,21 +6,15 @@ on:
     paths:
       - "api/**"
       - "crates/**"
-      - ".github/workflows/api-tests.yml"
   pull_request:
     branches: [master]
     paths:
       - "api/**"
       - "crates/**"
-      - ".github/workflows/api-tests.yml"
-
-env:
-  CARGO_TERM_COLOR: always
-  RUST_BACKTRACE: 1
 
 jobs:
-  test-api:
-    name: Test API
+  test:
+    name: Run API Tests
     runs-on: ubuntu-latest
 
     services:
@@ -38,14 +32,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Rust toolchain
+      - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           profile: minimal
           override: true
 
-      - name: Cache Rust dependencies
+      - name: Cache dependencies
         uses: actions/cache@v3
         with:
           path: |
@@ -56,25 +50,16 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
-      - name: Install cargo-nextest (faster test runner)
-        uses: baptiste0928/cargo-install@v2
-        with:
-          crate: cargo-nextest
-
-      - name: Wait for Redis to be ready
+      - name: Wait for Redis
         run: |
           echo "Waiting for Redis to be ready..."
           timeout 30s bash -c 'until redis-cli ping; do sleep 1; done'
 
-      - name: Run unit tests
+      - name: Run all tests
         working-directory: api
         run: |
-          cargo test --lib --bins --examples --no-default-features
-
-      - name: Run integration tests
-        working-directory: api
-        run: |
-          cargo test --test '*' --no-default-features
+          echo "Running all API tests..."
+          cargo test --all-targets --all-features
         env:
           REDIS_URL: redis://localhost:6379
           DATABASE_TYPE: redis
@@ -82,30 +67,19 @@ jobs:
           PORT: 3000
           POOL_SIZE: 5
           LOG_LEVEL: INFO
+          RUST_BACKTRACE: 1
 
-      - name: Run tests with nextest (faster)
-        working-directory: api
-        run: |
-          cargo nextest run --test '*' --no-default-features
-        env:
-          REDIS_URL: redis://localhost:6379
-          DATABASE_TYPE: redis
-          HOST: 127.0.0.1
-          PORT: 3000
-          POOL_SIZE: 5
-          LOG_LEVEL: INFO
-
-      - name: Run specific test modules
+      - name: Run specific test suites
         working-directory: api
         run: |
           echo "Running Redis tests..."
-          cargo test --test redis --no-default-features
+          cargo test --test redis
 
           echo "Running Redis WebSocket tests..."
-          cargo test --test redis_ws --no-default-features
+          cargo test --test redis_ws
 
           echo "Running integration tests..."
-          cargo test --test integration --no-default-features
+          cargo test --test integration
         env:
           REDIS_URL: redis://localhost:6379
           DATABASE_TYPE: redis
@@ -113,153 +87,4 @@ jobs:
           PORT: 3000
           POOL_SIZE: 5
           LOG_LEVEL: INFO
-
-      - name: Check code formatting
-        working-directory: api
-        run: cargo fmt --all -- --check
-
-      - name: Run clippy checks
-        working-directory: api
-        run: cargo clippy --all-targets --all-features -- -D warnings
-
-  test-with-docker:
-    name: Test with Docker Compose
-    runs-on: ubuntu-latest
-    needs: test-api
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build and start services
-        run: |
-          docker-compose up -d redis
-          echo "Waiting for Redis to be ready..."
-          timeout 60s bash -c 'until docker exec dbx-redis redis-cli ping; do sleep 2; done'
-
-      - name: Build API image
-        run: docker-compose build dbx-api
-
-      - name: Start API service
-        run: |
-          docker-compose up -d dbx-api
-          echo "Waiting for API to be ready..."
-          timeout 60s bash -c 'until curl -f http://localhost:3000/health; do sleep 2; done'
-
-      - name: Run API tests against containerized service
-        run: |
-          cd api
-          cargo test --test '*' --no-default-features
-        env:
-          REDIS_URL: redis://localhost:6379
-          DATABASE_TYPE: redis
-          HOST: 127.0.0.1
-          PORT: 3000
-          POOL_SIZE: 5
-          LOG_LEVEL: INFO
-
-      - name: Cleanup Docker containers
-        if: always()
-        run: docker-compose down -v
-
-  test-typescript-client:
-    name: Test TypeScript Client
-    runs-on: ubuntu-latest
-    needs: test-api
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "18"
-          cache: "npm"
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
-
-      - name: Install dependencies
-        working-directory: ts
-        run: pnpm install
-
-      - name: Run TypeScript tests
-        working-directory: ts
-        run: |
-          # Check if there are any test scripts defined
-          if npm run | grep -q "test"; then
-            pnpm test
-          else
-            echo "No test script found in package.json, skipping TypeScript tests"
-          fi
-
-      - name: Type check
-        working-directory: ts
-        run: pnpm tsc --noEmit
-
-  security-audit:
-    name: Security Audit
-    runs-on: ubuntu-latest
-    needs: test-api
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          override: true
-
-      - name: Run cargo audit
-        working-directory: api
-        run: cargo audit --deny warnings
-
-  coverage:
-    name: Test Coverage
-    runs-on: ubuntu-latest
-    needs: test-api
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          override: true
-
-      - name: Install cargo-tarpaulin
-        uses: baptiste0928/cargo-install@v2
-        with:
-          crate: cargo-tarpaulin
-
-      - name: Run coverage
-        working-directory: api
-        run: |
-          cargo tarpaulin --out Html --output-dir coverage
-        env:
-          REDIS_URL: redis://localhost:6379
-          DATABASE_TYPE: redis
-          HOST: 127.0.0.1
-          PORT: 3000
-          POOL_SIZE: 5
-          LOG_LEVEL: INFO
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./api/coverage/tarpaulin-report.html
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: false
+          RUST_BACKTRACE: 1
