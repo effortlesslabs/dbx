@@ -6,27 +6,43 @@ This document outlines the development roadmap for the DBX project, detailing bo
 
 As of now, DBX has implemented:
 
-- **Redis Adapter**: Basic Redis client functionality with connection management
-  - String primitives with comprehensive operations
-  - Pipeline support for batched commands
-  - Transaction support for atomic operations
-  - Lua scripting capabilities
-  - Predefined utility scripts for common patterns
-- **REST API Layer (Redis)**: Modular REST API server for Redis, with per-database routes/handlers
-- **WebSocket API Layer (Redis)**: Real-time WebSocket interface for low-latency operations and batch commands
+- **Redis Adapter**: Complete Redis client functionality with connection management
+  - [x] String primitives with comprehensive operations
+  - [x] **Hash primitives with full CRUD operations, batch operations, pipeline support, transactions, and Lua scripts**
+  - [x] Set primitives with comprehensive operations
+  - [x] Pipeline support for batched commands
+  - [x] Transaction support for atomic operations
+  - [x] Lua scripting capabilities
+  - [x] Predefined utility scripts for common patterns
+- **REST API Layer (Redis)**: Complete REST API server for Redis with modular architecture
+  - [x] String operations API endpoints
+  - [x] **Hash operations API endpoints (GET, SET, DELETE, batch operations)**
+  - [x] Set operations API endpoints
+  - [x] Key management endpoints
+  - [x] Script execution endpoints
+  - [x] Proper route nesting under `/api/v1/redis`
+  - [x] State management and server compilation fixes
+- **WebSocket API Layer (Redis)**: Real-time WebSocket interface for low-latency operations
   - [x] JSON-encoded command protocol
   - [x] Support for all Redis string operations
+  - [x] Support for Redis hash operations
   - [x] Batch operations for efficient multi-key operations
   - [x] Connection management and error handling
   - [x] Client examples in Rust and JavaScript
   - [ ] PubSub/streaming support (future enhancement)
 - **Multi-database CLI**: Unified CLI to select database type and connection URL at runtime
-- **Extensible Architecture**: Easy to add new databases (Postgres, MongoDB, etc.) by adding handler/route modules and updating the enum/CLI
-- **TypeScript SDK**: Complete TypeScript SDK with full type definitions, covering all API operations including string operations, batch operations, key management, and Lua scripts
+- **Extensible Architecture**: Easy to add new databases (Postgres, MongoDB, etc.) by adding handler/route modules
+- **TypeScript SDK**: Complete TypeScript SDK with full type definitions
+- **Server Infrastructure**:
+  - [x] Proper state management and router configuration
+  - [x] CORS support
+  - [x] Error handling and fallback routes
+  - [x] Health check endpoints
+  - [x] Redis connection validation
 
 ## Short-term Goals (0-3 months)
 
-### High Priority - Hosting & Deployment
+### High Priority - Production Readiness
 
 - [ ] **Docker Support**
   - [ ] Add `Dockerfile` for the API server
@@ -37,62 +53,52 @@ As of now, DBX has implemented:
   - [ ] Support for `.env` files
   - [ ] Environment variable overrides for all config options
   - [ ] Default configurations for common deployment scenarios
+- [ ] **Authentication & Security**
+  - [ ] Add authentication and authorization mechanisms
+  - [ ] API key management
+  - [ ] Rate limiting
+  - [ ] Input validation and sanitization
 - [ ] **Deployment Documentation**
   - [ ] Quick start guide with Docker
   - [ ] Deployment guides for common platforms (Heroku, Railway, DigitalOcean)
   - [ ] Production configuration examples
 
-### Core Features
+### Core Features - Redis Completion
 
-- [x] **Core Interfaces**
-  - [x] Define common traits across all database types
-  - [x] Implement error handling framework
-  - [x] Add comprehensive logging
-- [x] **REST API Layer (Redis)**
-  - [x] Design REST API endpoints for Redis operations
-  - [x] Implement REST API server for Redis
-  - [x] Modularize routes/handlers per database
-  - [ ] Add authentication and authorization mechanisms
-- [x] **WebSocket API Layer (Redis)**
-  - [x] Design WebSocket protocol for Redis operations
-  - [x] Implement WebSocket server for Redis
-  - [x] JSON-encoded command/response format
-  - [x] Support for all Redis string operations
-  - [x] Batch operations for efficient multi-key operations
-  - [x] Connection management and error handling
-  - [x] Client examples and documentation
-  - [ ] Add Redis PubSub support for real-time streaming (future)
-- [x] **CLI System**
-  - [x] Develop CLI tool to run REST API server
-  - [x] Support configuration via database type and URL
-  - [x] Provide usage commands and help documentation
-
-### Medium Priority
-
-- [ ] **Process Management**
-  - [ ] Graceful shutdown handling
-  - [ ] Signal handling (SIGTERM, SIGINT)
-  - [ ] Process monitoring and restart capabilities
-- [ ] **Health & Monitoring**
-  - [ ] Enhanced health check endpoint with database connectivity
-  - [ ] Basic metrics endpoint
-  - [ ] Logging configuration for production
 - [ ] **Redis Adapter Enhancements**
-  - [ ] Add support for all Redis data types (Lists, Sets, Hashes, Sorted Sets)
+  - [ ] Add support for remaining Redis data types (Lists, Sorted Sets)
   - [ ] Implement PubSub functionality
   - [ ] Add cluster support
   - [ ] Implement connection pooling improvements
+  - [ ] Add Redis Streams support
+- [ ] **API Enhancements**
+  - [ ] Add List operations API endpoints
+  - [ ] Add Sorted Set operations API endpoints
+  - [ ] Add Stream operations API endpoints
+  - [ ] Add PubSub endpoints
+  - [ ] Add cluster management endpoints
+- [ ] **Performance & Monitoring**
+  - [ ] Graceful shutdown handling
+  - [ ] Signal handling (SIGTERM, SIGINT)
+  - [ ] Enhanced health check endpoint with detailed metrics
+  - [ ] Basic metrics endpoint
+  - [ ] Logging configuration for production
+  - [ ] Performance benchmarking suite
+
+### Medium Priority
+
 - [ ] **New Database Adapters**
-  - [ ] SQLite adapter
-  - [ ] Basic PostgreSQL adapter (with REST API)
+  - [ ] SQLite adapter with REST API
+  - [ ] Basic PostgreSQL adapter with REST API
   - [ ] Add modular routes/handlers for new databases
 - [ ] **Documentation**
   - [x] CLI and API usage examples
   - [x] WebSocket API documentation and examples
   - [x] Modular architecture and extension guide
-  - [ ] Comprehensive API documentation
+  - [ ] Comprehensive API documentation with OpenAPI/Swagger
   - [ ] Usage examples for all implemented features
   - [ ] Integration guides
+  - [ ] Performance tuning guide
 
 ## Mid-term Goals (3-6 months)
 
@@ -100,20 +106,22 @@ As of now, DBX has implemented:
   - [ ] Query builder interface
   - [ ] Migration support
   - [ ] Schema validation
+  - [ ] Backup and restore functionality
 - [ ] **Additional Database Adapters**
   - [ ] MongoDB adapter (with REST API and WebSocket)
   - [ ] MySQL adapter (with REST API and WebSocket)
   - [ ] DynamoDB adapter
+  - [ ] Cassandra adapter
 - [ ] **Runtime Compatibility**
-
   - [ ] WASM compatibility
   - [ ] Embedded systems support
   - [ ] Worker runtime support
-
-- [ ] **Performance Optimizations**
-  - [ ] Benchmarking suite
-  - [ ] Performance tuning
-  - [ ] Connection pooling improvements
+- [ ] **Advanced Use Cases**
+  - [ ] Caching layer with TTL management
+  - [ ] Distributed locks implementation
+  - [ ] Job queues with Redis
+  - [ ] Session management
+  - [ ] Real-time analytics
 
 ## Long-term Goals (6+ months)
 
@@ -123,30 +131,41 @@ As of now, DBX has implemented:
   - [ ] Ruby bindings
   - [ ] C# bindings
   - [ ] Java bindings
+  - [ ] Go bindings
 - [ ] **Enterprise Features**
-  - [ ] Advanced security features
-  - [ ] Monitoring and observability
-  - [ ] Distributed tracing integration
-- [ ] **Advanced Use Cases**
-  - [ ] Caching layer
-  - [ ] Rate limiting
-  - [ ] Distributed locks
-  - [ ] Job queues
+  - [ ] Advanced security features (encryption, audit logs)
+  - [ ] Monitoring and observability (Prometheus, Grafana)
+  - [ ] Distributed tracing integration (Jaeger, Zipkin)
+  - [ ] Multi-tenancy support
+  - [ ] Data replication and failover
+- [ ] **Cloud Integration**
+  - [ ] AWS ElastiCache integration
+  - [ ] Azure Cache for Redis integration
+  - [ ] Google Cloud Memorystore integration
+  - [ ] Kubernetes operator
 
 ## Community Goals
 
 - [ ] **Community Building**
-
   - [ ] Contributor guidelines
   - [ ] Code of conduct
   - [ ] Regular release schedule
   - [ ] Community meetings
-
+  - [ ] Discord/Slack community
 - [ ] **Quality Assurance**
-  - [ ] Comprehensive test suite
-  - [ ] CI/CD pipeline
+  - [ ] Comprehensive test suite (unit, integration, e2e)
+  - [ ] CI/CD pipeline with GitHub Actions
   - [ ] Code coverage reporting
   - [ ] Security scanning
+  - [ ] Performance regression testing
+
+## Recent Achievements
+
+- ✅ **Redis Hash API**: Complete implementation with full CRUD operations
+- ✅ **Server Compilation**: Fixed type mismatches and state management issues
+- ✅ **Route Registration**: Proper nesting of Redis routes under `/api/v1/redis`
+- ✅ **Connection Management**: Robust Redis connection handling with validation
+- ✅ **Error Handling**: Comprehensive error responses and fallback routes
 
 ## How to Add a New Database
 
@@ -172,3 +191,11 @@ We welcome contributions to help us achieve these roadmap items! If you're inter
 3. Fork the repository and submit a pull request with your changes
 
 For major features, please discuss them first in the issues to ensure they align with the project's direction.
+
+## Next Immediate Steps
+
+1. **Docker Support**: Containerize the application for easy deployment
+2. **Authentication**: Add basic API key authentication
+3. **Redis Lists**: Implement List data type support
+4. **Documentation**: Create comprehensive API documentation
+5. **Testing**: Add integration tests for all endpoints
