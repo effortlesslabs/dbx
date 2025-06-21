@@ -1,5 +1,5 @@
 pub mod redis;
-pub mod websocket;
+pub mod redis_ws;
 
 // Future database handlers
 // pub mod postgres;

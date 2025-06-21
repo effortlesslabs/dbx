@@ -1,104 +1,76 @@
-/// WebSocket command actions
-pub struct WebSocketActions;
+/// WebSocket message constants
+pub const WS_ENDPOINT: &str = "/redis_ws";
+pub const WS_PROTOCOL: &str = "ws";
 
-impl WebSocketActions {
-    /// Get action
-    pub const GET: &'static str = "get";
+/// WebSocket message types
+pub const MESSAGE_TYPE_COMMAND: &str = "command";
+pub const MESSAGE_TYPE_RESPONSE: &str = "response";
+pub const MESSAGE_TYPE_ERROR: &str = "error";
 
-    /// Set action
-    pub const SET: &'static str = "set";
+/// WebSocket connection constants
+pub const MAX_MESSAGE_SIZE: usize = 1024 * 1024; // 1MB
+pub const CONNECTION_TIMEOUT: u64 = 300; // 5 minutes
+pub const PING_INTERVAL: u64 = 30; // 30 seconds
 
-    /// Delete action
-    pub const DELETE: &'static str = "delete";
-
-    /// Exists action
-    pub const EXISTS: &'static str = "exists";
-
-    /// TTL action
-    pub const TTL: &'static str = "ttl";
-
-    /// Increment action
-    pub const INCR: &'static str = "incr";
-
-    /// Increment by action
-    pub const INCRBY: &'static str = "incrby";
-
-    /// Set if not exists action
-    pub const SETNX: &'static str = "setnx";
-
-    /// Compare and set action
-    pub const CAS: &'static str = "cas";
-
-    /// Batch get action
-    pub const BATCH_GET: &'static str = "batch_get";
-
-    /// Batch set action
-    pub const BATCH_SET: &'static str = "batch_set";
-
-    /// Batch delete action
-    pub const BATCH_DELETE: &'static str = "batch_delete";
-
-    /// Batch increment action
-    pub const BATCH_INCR: &'static str = "batch_incr";
-
-    /// Batch increment by action
-    pub const BATCH_INCRBY: &'static str = "batch_incrby";
-
-    /// List keys action
-    pub const LIST_KEYS: &'static str = "list_keys";
-
-    /// Ping action
-    pub const PING: &'static str = "ping";
-
-    /// Subscribe action
-    pub const SUBSCRIBE: &'static str = "subscribe";
-
-    /// Unsubscribe action
-    pub const UNSUBSCRIBE: &'static str = "unsubscribe";
-}
-
-/// WebSocket message fields
-pub struct WebSocketFields;
-
-impl WebSocketFields {
-    /// ID field
-    pub const ID: &'static str = "id";
-
-    /// Command field
-    pub const COMMAND: &'static str = "command";
-
-    /// Action field
-    pub const ACTION: &'static str = "action";
-
-    /// Params field
-    pub const PARAMS: &'static str = "params";
-
-    /// Success field
-    pub const SUCCESS: &'static str = "success";
-
-    /// Data field
-    pub const DATA: &'static str = "data";
-
-    /// Error field
-    pub const ERROR: &'static str = "error";
-
-    /// Timestamp field
-    pub const TIMESTAMP: &'static str = "timestamp";
-}
+/// WebSocket error messages
+pub const ERROR_INVALID_MESSAGE: &str = "Invalid message format";
+pub const ERROR_UNSUPPORTED_COMMAND: &str = "Unsupported command";
+pub const ERROR_REDIS_CONNECTION: &str = "Redis connection error";
+pub const ERROR_SERIALIZATION: &str = "Message serialization error";
+pub const ERROR_BINARY_MESSAGES: &str = "Binary messages not supported";
 
 /// WebSocket welcome message
-pub struct WebSocketWelcome;
+pub const WELCOME_MESSAGE: &str = "Connected to DBX WebSocket API";
+pub const CONNECTION_ID_FIELD: &str = "connection_id";
+pub const SUPPORTED_COMMANDS_FIELD: &str = "supported_commands";
 
-impl WebSocketWelcome {
-    /// Welcome message
-    pub const MESSAGE: &'static str = "Connected to DBX WebSocket API";
-
-    /// Connection ID field
-    pub const CONNECTION_ID_FIELD: &'static str = "connection_id";
-
-    /// Supported commands field
-    pub const SUPPORTED_COMMANDS_FIELD: &'static str = "supported_commands";
-
-    /// Pong response value
-    pub const PONG_VALUE: bool = true;
-}
+/// Supported WebSocket commands
+pub const SUPPORTED_COMMANDS: &[&str] = &[
+    // String commands
+    "get",
+    "set",
+    "delete",
+    "exists",
+    "ttl",
+    "incr",
+    "incrby",
+    "setnx",
+    "cas",
+    // Batch commands
+    "batch_get",
+    "batch_set",
+    "batch_delete",
+    "batch_incr",
+    "batch_incrby",
+    // Set commands
+    "sadd",
+    "srem",
+    "smembers",
+    "scard",
+    "sismember",
+    "spop",
+    // Hash commands
+    "hset",
+    "hget",
+    "hdel",
+    "hexists",
+    "hlen",
+    "hkeys",
+    "hvals",
+    "hgetall",
+    "hmset",
+    "hmget",
+    // Key commands
+    "keys",
+    "del",
+    // Admin commands
+    "flush_all",
+    "flush_db",
+    "db_size",
+    "info",
+    // Utility commands
+    "list_keys",
+    "ping",
+    "subscribe",
+    "unsubscribe",
+];

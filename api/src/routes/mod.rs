@@ -1,5 +1,5 @@
 pub mod common;
 pub mod redis;
-pub mod websocket;
+pub mod redis_ws;
 
-pub use redis::create_redis_routes;
+pub use redis_ws::redis_ws_routes;

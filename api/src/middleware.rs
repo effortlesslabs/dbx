@@ -1,29 +1,11 @@
-use crate::{constants::errors::ErrorMessages, models::ApiResponse};
-use axum::{
-    http::StatusCode,
-    response::{IntoResponse, Json},
-};
-use tracing::error;
+use axum::{ http::StatusCode, response::Json };
 
-/// Global error handler
-pub async fn error_handler(err: axum::BoxError) -> impl IntoResponse {
-    error!("Unhandled error: {}", err);
+use crate::{ constants::errors::ErrorMessages, models::ApiResponse };
 
+/// Handle Redis errors and convert them to HTTP responses
+pub fn handle_redis_error(_error: impl std::fmt::Display) -> (StatusCode, Json<ApiResponse<()>>) {
     (
         StatusCode::INTERNAL_SERVER_ERROR,
-        Json(ApiResponse::<()>::error(
-            ErrorMessages::INTERNAL_SERVER_ERROR.to_string(),
-        )),
-    )
-}
-
-/// Handle Redis errors and convert them to appropriate HTTP responses
-pub fn handle_redis_error(err: impl std::fmt::Display) -> (StatusCode, Json<ApiResponse<()>>) {
-    error!("Redis error: {}", err);
-    (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Json(ApiResponse::<()>::error(
-            ErrorMessages::INTERNAL_SERVER_ERROR.to_string(),
-        )),
+        Json(ApiResponse::<()>::error(ErrorMessages::INTERNAL_SERVER_ERROR.to_string())),
     )
 }
