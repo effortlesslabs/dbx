@@ -8,7 +8,7 @@
 pub mod client;
 pub mod primitives;
 
-use redis::{Client, Connection, RedisError, RedisResult, Script};
+use redis::{Connection, RedisError, RedisResult, Script};
 
 use client::RedisClient;
 use primitives::hash::RedisHash;
@@ -227,6 +227,7 @@ impl RedisPoolAdapter {
 
     /// Get a Redis instance with a connection from the pool
     pub fn get_instance(&self) -> RedisResult<Redis> {
+        use redis::Client;
         let connection = self.get_connection()?;
         let client = Client::clone(self.pool.client());
         let redis_client = RedisClient::new(client, connection);

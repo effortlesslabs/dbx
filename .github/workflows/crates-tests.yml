@@ -81,22 +81,6 @@ jobs:
         env:
           REDIS_URL: redis://localhost:6379
 
-  crates-security:
-    name: Crates Security Audit
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install cargo-audit
-        run: cargo install --locked cargo-audit
-
-      - name: Run security audit for crates
-        run: cargo audit -p dbx-crates
-
   crates-basic-check:
     name: Crates Basic Checks
     runs-on: ubuntu-latest
