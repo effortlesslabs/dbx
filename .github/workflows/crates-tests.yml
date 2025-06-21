@@ -27,7 +27,7 @@ jobs:
     strategy:
       matrix:
         rust: [stable]
-        features: [default, "async", "connection-pool", "async,connection-pool"]
+        features: [default, "async", "connection-pool", "all"]
 
     services:
       redis:
@@ -66,18 +66,38 @@ jobs:
         run: cargo fmt --all -- --check
 
       - name: Run clippy
-        run: cargo clippy -p dbx-crates --features "${{ matrix.features }}" -- -D warnings
+        run: |
+          if [ "${{ matrix.features }}" = "all" ]; then
+            cargo clippy -p dbx-crates --features "async,connection-pool" -- -D warnings
+          else
+            cargo clippy -p dbx-crates --features "${{ matrix.features }}" -- -D warnings
+          fi
 
       - name: Build crates package
-        run: cargo build -p dbx-crates --features "${{ matrix.features }}" --verbose
+        run: |
+          if [ "${{ matrix.features }}" = "all" ]; then
+            cargo build -p dbx-crates --features "async,connection-pool" --verbose
+          else
+            cargo build -p dbx-crates --features "${{ matrix.features }}" --verbose
+          fi
 
       - name: Run unit tests
-        run: cargo test -p dbx-crates --features "${{ matrix.features }}" --verbose --lib
+        run: |
+          if [ "${{ matrix.features }}" = "all" ]; then
+            cargo test -p dbx-crates --features "async,connection-pool" --verbose --lib
+          else
+            cargo test -p dbx-crates --features "${{ matrix.features }}" --verbose --lib
+          fi
         env:
           REDIS_URL: redis://localhost:6379
 
       - name: Run doc tests
-        run: cargo test -p dbx-crates --features "${{ matrix.features }}" --verbose --doc
+        run: |
+          if [ "${{ matrix.features }}" = "all" ]; then
+            cargo test -p dbx-crates --features "async,connection-pool" --verbose --doc
+          else
+            cargo test -p dbx-crates --features "${{ matrix.features }}" --verbose --doc
+          fi
         env:
           REDIS_URL: redis://localhost:6379
 
