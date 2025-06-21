@@ -1,6 +1,6 @@
-use futures_util::{ SinkExt, StreamExt };
+use futures_util::{SinkExt, StreamExt};
 use serde_json::json;
-use tokio_tungstenite::{ connect_async, tungstenite::protocol::Message };
+use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 use url::Url;
 
 #[tokio::main]
@@ -15,8 +15,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (mut write, mut read) = ws_stream.split();
 
     // Send a ping command
-    let ping_message =
-        json!({
+    let ping_message = json!({
         "id": "ping-1",
         "command": {
             "action": "ping"
@@ -27,8 +26,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     write.send(Message::Text(ping_message.to_string())).await?;
 
     // Send a set command
-    let set_message =
-        json!({
+    let set_message = json!({
         "id": "set-1",
         "command": {
             "action": "set",
@@ -44,8 +42,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     write.send(Message::Text(set_message.to_string())).await?;
 
     // Send a get command
-    let get_message =
-        json!({
+    let get_message = json!({
         "id": "get-1",
         "command": {
             "action": "get",
@@ -59,8 +56,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     write.send(Message::Text(get_message.to_string())).await?;
 
     // Send a batch set command
-    let batch_set_message =
-        json!({
+    let batch_set_message = json!({
         "id": "batch-set-1",
         "command": {
             "action": "batch_set",
@@ -76,11 +72,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     println!("Sending batch set command: {}", batch_set_message);
-    write.send(Message::Text(batch_set_message.to_string())).await?;
+    write
+        .send(Message::Text(batch_set_message.to_string()))
+        .await?;
 
     // Send a batch get command
-    let batch_get_message =
-        json!({
+    let batch_get_message = json!({
         "id": "batch-get-1",
         "command": {
             "action": "batch_get",
@@ -91,7 +88,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     println!("Sending batch get command: {}", batch_get_message);
-    write.send(Message::Text(batch_get_message.to_string())).await?;
+    write
+        .send(Message::Text(batch_get_message.to_string()))
+        .await?;
 
     // Listen for responses
     println!("Listening for responses...");

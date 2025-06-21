@@ -1,14 +1,19 @@
-use axum::{ body::Body, http::{ Request, StatusCode }, response::Response, Router };
+use axum::body::to_bytes;
+use axum::{
+    body::Body,
+    http::{Request, StatusCode},
+    response::Response,
+    Router,
+};
 use dbx_crates::adapter::redis::Redis;
 use serde_json::Value;
 use std::sync::Arc;
 use tower::util::ServiceExt;
-use axum::body::to_bytes;
 
 use dbx_api::{
-    config::{ Config, DatabaseType },
-    server::Server,
+    config::{Config, DatabaseType},
     constants::database::DatabaseUrls,
+    server::Server,
 };
 
 // Helper to create a test server
@@ -20,11 +25,13 @@ async fn create_test_server() -> (Router, Arc<Redis>) {
         port: 3001,
         pool_size: 5,
     };
-    let server = Server::new(config).await.expect("Failed to create test server");
+    let server = Server::new(config)
+        .await
+        .expect("Failed to create test server");
 
     // Create Redis client directly for testing
     let redis = Arc::new(
-        Redis::from_url(&DatabaseUrls::redis_test_url()).expect("Failed to create Redis client")
+        Redis::from_url(&DatabaseUrls::redis_test_url()).expect("Failed to create Redis client"),
     );
     let router = server.create_router();
     (router, redis)
@@ -35,7 +42,7 @@ async fn make_request(
     router: Router,
     method: &str,
     path: &str,
-    body: Option<Value>
+    body: Option<Value>,
 ) -> Response<Body> {
     let mut request_builder = Request::builder()
         .method(method)

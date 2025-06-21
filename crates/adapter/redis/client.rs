@@ -4,12 +4,12 @@
 //! Redis connections, including support for connection pooling and different
 //! connection types.
 
-use redis::{ Client, Connection, RedisError, RedisResult };
-use std::sync::{ Arc, Mutex };
+use redis::{Client, Connection, RedisError, RedisResult};
+use std::sync::{Arc, Mutex};
 
-use super::primitives::string::RedisString;
-use super::primitives::set::RedisSet;
 use super::primitives::hash::RedisHash;
+use super::primitives::set::RedisSet;
+use super::primitives::string::RedisString;
 
 /// A simple Redis client wrapper that manages a single connection
 pub struct RedisClient {

@@ -1,5 +1,5 @@
-use serde_json;
 use crate::models::WebSocketResponse;
+use serde_json;
 
 impl super::WebSocketCommandProcessor {
     /// Handle LIST KEYS command
@@ -22,7 +22,7 @@ impl super::WebSocketCommandProcessor {
     /// Handle UNSUBSCRIBE command
     pub async fn handle_unsubscribe_command(
         &self,
-        command_id: Option<String>
+        command_id: Option<String>,
     ) -> WebSocketResponse {
         // This would need Redis PubSub implementation
         WebSocketResponse::error(command_id, "Unsubscribe not yet implemented".to_string())

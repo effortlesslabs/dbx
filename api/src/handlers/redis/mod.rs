@@ -1,16 +1,16 @@
-pub mod string;
-pub mod set;
+pub mod hash;
 pub mod keys;
 pub mod scripts;
-pub mod hash;
+pub mod set;
+pub mod string;
 
-use axum::{ extract::State, http::StatusCode, response::Json };
+use axum::{extract::State, http::StatusCode, response::Json};
 use std::sync::Arc;
 use tracing::debug;
 
 use crate::{
     middleware::handle_redis_error,
-    models::{ ApiResponse, BooleanValue, IntegerValue, StringValue },
+    models::{ApiResponse, BooleanValue, IntegerValue, StringValue},
 };
 
 use dbx_crates::adapter::redis::client::RedisClient;
@@ -23,32 +23,33 @@ pub struct RedisHandler {
 impl RedisHandler {
     /// Create a new Redis handler
     pub fn new(redis: RedisClient) -> Self {
-        Self { redis: Arc::new(redis) }
+        Self {
+            redis: Arc::new(redis),
+        }
     }
 
     /// Health check endpoint
-    pub async fn health(State(handler): State<Arc<RedisHandler>>) -> Result<
-        Json<ApiResponse<StringValue>>,
-        (StatusCode, Json<ApiResponse<()>>)
-    > {
+    pub async fn health(
+        State(handler): State<Arc<RedisHandler>>,
+    ) -> Result<Json<ApiResponse<StringValue>>, (StatusCode, Json<ApiResponse<()>>)> {
         debug!("GET /health");
 
         match handler.redis.ping() {
-            Ok(true) => Ok(Json(ApiResponse::success(StringValue { value: "OK".to_string() }))),
-            Ok(false) =>
-                Err((
-                    StatusCode::SERVICE_UNAVAILABLE,
-                    Json(ApiResponse::error("Redis ping failed".to_string())),
-                )),
+            Ok(true) => Ok(Json(ApiResponse::success(StringValue {
+                value: "OK".to_string(),
+            }))),
+            Ok(false) => Err((
+                StatusCode::SERVICE_UNAVAILABLE,
+                Json(ApiResponse::error("Redis ping failed".to_string())),
+            )),
             Err(e) => Err(handle_redis_error(e)),
         }
     }
 
     /// Get Redis info
-    pub async fn info(State(handler): State<Arc<RedisHandler>>) -> Result<
-        Json<ApiResponse<StringValue>>,
-        (StatusCode, Json<ApiResponse<()>>)
-    > {
+    pub async fn info(
+        State(handler): State<Arc<RedisHandler>>,
+    ) -> Result<Json<ApiResponse<StringValue>>, (StatusCode, Json<ApiResponse<()>>)> {
         debug!("GET /info");
 
         let mut conn = handler.redis.connection().lock().unwrap();
@@ -59,10 +60,9 @@ impl RedisHandler {
     }
 
     /// Get Redis database size
-    pub async fn dbsize(State(handler): State<Arc<RedisHandler>>) -> Result<
-        Json<ApiResponse<IntegerValue>>,
-        (StatusCode, Json<ApiResponse<()>>)
-    > {
+    pub async fn dbsize(
+        State(handler): State<Arc<RedisHandler>>,
+    ) -> Result<Json<ApiResponse<IntegerValue>>, (StatusCode, Json<ApiResponse<()>>)> {
         debug!("GET /dbsize");
 
         let mut conn = handler.redis.connection().lock().unwrap();
@@ -73,10 +73,9 @@ impl RedisHandler {
     }
 
     /// Flush all databases
-    pub async fn flushall(State(handler): State<Arc<RedisHandler>>) -> Result<
-        Json<ApiResponse<BooleanValue>>,
-        (StatusCode, Json<ApiResponse<()>>)
-    > {
+    pub async fn flushall(
+        State(handler): State<Arc<RedisHandler>>,
+    ) -> Result<Json<ApiResponse<BooleanValue>>, (StatusCode, Json<ApiResponse<()>>)> {
         debug!("POST /flushall");
 
         let mut conn = handler.redis.connection().lock().unwrap();
@@ -87,10 +86,9 @@ impl RedisHandler {
     }
 
     /// Flush current database
-    pub async fn flushdb(State(handler): State<Arc<RedisHandler>>) -> Result<
-        Json<ApiResponse<BooleanValue>>,
-        (StatusCode, Json<ApiResponse<()>>)
-    > {
+    pub async fn flushdb(
+        State(handler): State<Arc<RedisHandler>>,
+    ) -> Result<Json<ApiResponse<BooleanValue>>, (StatusCode, Json<ApiResponse<()>>)> {
         debug!("POST /flushdb");
 
         let mut conn = handler.redis.connection().lock().unwrap();
@@ -103,6 +101,8 @@ impl RedisHandler {
 
 impl Clone for RedisHandler {
     fn clone(&self) -> Self {
-        Self { redis: self.redis.clone() }
+        Self {
+            redis: self.redis.clone(),
+        }
     }
 }

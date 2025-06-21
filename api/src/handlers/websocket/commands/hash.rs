@@ -1,6 +1,6 @@
+use crate::models::WebSocketResponse;
 use serde_json;
 use std::collections::HashMap;
-use crate::models::WebSocketResponse;
 
 impl super::WebSocketCommandProcessor {
     pub async fn handle_hset_command(
@@ -8,7 +8,7 @@ impl super::WebSocketCommandProcessor {
         id: Option<String>,
         key: String,
         field: String,
-        value: String
+        value: String,
     ) -> WebSocketResponse {
         WebSocketResponse::error(id, "Hash commands not yet implemented".to_string())
     }
@@ -17,7 +17,7 @@ impl super::WebSocketCommandProcessor {
         &self,
         id: Option<String>,
         key: String,
-        field: String
+        field: String,
     ) -> WebSocketResponse {
         WebSocketResponse::error(id, "Hash commands not yet implemented".to_string())
     }
@@ -26,7 +26,7 @@ impl super::WebSocketCommandProcessor {
         &self,
         id: Option<String>,
         key: String,
-        field: String
+        field: String,
     ) -> WebSocketResponse {
         WebSocketResponse::error(id, "Hash commands not yet implemented".to_string())
     }
@@ -35,7 +35,7 @@ impl super::WebSocketCommandProcessor {
         &self,
         id: Option<String>,
         key: String,
-        field: String
+        field: String,
     ) -> WebSocketResponse {
         WebSocketResponse::error(id, "Hash commands not yet implemented".to_string())
     }
@@ -55,7 +55,7 @@ impl super::WebSocketCommandProcessor {
     pub async fn handle_hgetall_command(
         &self,
         id: Option<String>,
-        key: String
+        key: String,
     ) -> WebSocketResponse {
         WebSocketResponse::error(id, "Hash commands not yet implemented".to_string())
     }
@@ -64,7 +64,7 @@ impl super::WebSocketCommandProcessor {
         &self,
         id: Option<String>,
         key: String,
-        fields: HashMap<String, String>
+        fields: HashMap<String, String>,
     ) -> WebSocketResponse {
         WebSocketResponse::error(id, "Hash commands not yet implemented".to_string())
     }
@@ -73,7 +73,7 @@ impl super::WebSocketCommandProcessor {
         &self,
         id: Option<String>,
         key: String,
-        fields: Vec<String>
+        fields: Vec<String>,
     ) -> WebSocketResponse {
         WebSocketResponse::error(id, "Hash commands not yet implemented".to_string())
     }

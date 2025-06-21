@@ -1,18 +1,18 @@
-use axum::{ extract::State, http::StatusCode, response::Json };
+use axum::{extract::State, http::StatusCode, response::Json};
+use redis::Script;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tracing::debug;
-use redis::Script;
 
 use crate::{
     handlers::redis::RedisHandler,
     middleware::handle_redis_error,
-    models::{ ApiResponse, BooleanValue, IntegerValue, KeyValues },
+    models::{ApiResponse, BooleanValue, IntegerValue, KeyValues},
 };
 
 pub async fn rate_limiter_script(
     State(handler): State<Arc<RedisHandler>>,
-    Json(request): Json<RateLimiterRequest>
+    Json(request): Json<RateLimiterRequest>,
 ) -> Result<Json<ApiResponse<BooleanValue>>, (StatusCode, Json<ApiResponse<()>>)> {
     debug!("POST /scripts/rate-limiter");
 
@@ -35,13 +35,15 @@ pub async fn rate_limiter_script(
         
         redis.call('INCR', key)
         return 1
-    "#
+    "#,
     );
 
     let key_slice: [&str; 1] = [&request.key];
     let arg_slice: [String; 2] = [request.limit.to_string(), request.window.to_string()];
-    let result: i32 = match
-        handler.redis.string().eval_script::<i32, _, _>(&script, &key_slice, &arg_slice)
+    let result: i32 = match handler
+        .redis
+        .string()
+        .eval_script::<i32, _, _>(&script, &key_slice, &arg_slice)
     {
         Ok(result) => result,
         Err(e) => {
@@ -49,12 +51,14 @@ pub async fn rate_limiter_script(
         }
     };
 
-    Ok(Json(ApiResponse::success(BooleanValue { value: result == 1 })))
+    Ok(Json(ApiResponse::success(BooleanValue {
+        value: result == 1,
+    })))
 }
 
 pub async fn multi_counter_script(
     State(handler): State<Arc<RedisHandler>>,
-    Json(request): Json<MultiCounterRequest>
+    Json(request): Json<MultiCounterRequest>,
 ) -> Result<Json<ApiResponse<Vec<IntegerValue>>>, (StatusCode, Json<ApiResponse<()>>)> {
     debug!("POST /scripts/multi-counter");
 
@@ -67,16 +71,19 @@ pub async fn multi_counter_script(
             table.insert(results, result)
         end
         return results
-    "#
+    "#,
     );
 
-    let args: Vec<String> = request.counters
+    let args: Vec<String> = request
+        .counters
         .iter()
         .map(|(key, increment)| format!("{}:{}", key, increment))
         .collect();
 
-    let result: Vec<i64> = match
-        handler.redis.string().eval_script::<Vec<i64>, &[&str], &[String]>(&script, &[], &args)
+    let result: Vec<i64> = match handler
+        .redis
+        .string()
+        .eval_script::<Vec<i64>, &[&str], &[String]>(&script, &[], &args)
     {
         Ok(result) => result,
         Err(e) => {
@@ -84,17 +91,14 @@ pub async fn multi_counter_script(
         }
     };
 
-    let values: Vec<IntegerValue> = result
-        .iter()
-        .map(|v| IntegerValue { value: *v })
-        .collect();
+    let values: Vec<IntegerValue> = result.iter().map(|v| IntegerValue { value: *v }).collect();
 
     Ok(Json(ApiResponse::success(values)))
 }
 
 pub async fn multi_set_ttl_script(
     State(handler): State<Arc<RedisHandler>>,
-    Json(request): Json<MultiSetTtlRequest>
+    Json(request): Json<MultiSetTtlRequest>,
 ) -> Result<Json<ApiResponse<KeyValues>>, (StatusCode, Json<ApiResponse<()>>)> {
     debug!("POST /scripts/multi-set-ttl");
 
@@ -111,7 +115,7 @@ pub async fn multi_set_ttl_script(
         end
         
         return results
-    "#
+    "#,
     );
 
     let mut args = vec![request.ttl.to_string()];
@@ -120,8 +124,10 @@ pub async fn multi_set_ttl_script(
         args.push(value.clone());
     }
 
-    let _: () = match
-        handler.redis.string().eval_script::<(), &[&str], &[String]>(&script, &[], &args)
+    let _: () = match handler
+        .redis
+        .string()
+        .eval_script::<(), &[&str], &[String]>(&script, &[], &args)
     {
         Ok(_) => (),
         Err(e) => {
@@ -129,7 +135,9 @@ pub async fn multi_set_ttl_script(
         }
     };
 
-    Ok(Json(ApiResponse::success(KeyValues { key_values: request.key_values })))
+    Ok(Json(ApiResponse::success(KeyValues {
+        key_values: request.key_values,
+    })))
 }
 
 pub struct RateLimiterRequest {

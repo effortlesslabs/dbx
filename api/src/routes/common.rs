@@ -1,41 +1,38 @@
-use axum::{ extract::State, http::StatusCode, response::Json, routing::get, Router };
+use crate::handlers::redis::RedisHandler;
+use axum::{extract::State, http::StatusCode, response::Json, routing::get, Router};
 use serde_json::json;
 use std::sync::Arc;
-use crate::handlers::redis::RedisHandler;
 
 /// Health check endpoint
 pub async fn health_check() -> (StatusCode, Json<serde_json::Value>) {
     (
         StatusCode::OK,
-        Json(
-            json!({
+        Json(json!({
             "status": "healthy",
             "service": "dbx-api",
             "timestamp": chrono::Utc::now().to_rfc3339()
-        })
-        ),
+        })),
     )
 }
 
 /// Server information endpoint
-pub async fn server_info(State(_redis_handler): State<Arc<RedisHandler>>) -> (
-    StatusCode,
-    Json<serde_json::Value>,
-) {
+pub async fn server_info(
+    State(_redis_handler): State<Arc<RedisHandler>>,
+) -> (StatusCode, Json<serde_json::Value>) {
     (
         StatusCode::OK,
-        Json(
-            json!({
+        Json(json!({
             "service": "dbx-api",
             "version": env!("CARGO_PKG_VERSION"),
             "database_type": "redis",
             "timestamp": chrono::Utc::now().to_rfc3339()
-        })
-        ),
+        })),
     )
 }
 
 /// Create common routes
 pub fn create_routes() -> Router<Arc<RedisHandler>> {
-    Router::new().route("/health", get(health_check)).route("/info", get(server_info))
+    Router::new()
+        .route("/health", get(health_check))
+        .route("/info", get(server_info))
 }

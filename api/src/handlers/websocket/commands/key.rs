@@ -5,7 +5,7 @@ impl super::WebSocketCommandProcessor {
         &self,
         id: Option<String>,
         key: String,
-        seconds: i64
+        seconds: i64,
     ) -> WebSocketResponse {
         WebSocketResponse::error(id, "Key commands not yet implemented".to_string())
     }
@@ -13,7 +13,7 @@ impl super::WebSocketCommandProcessor {
     pub async fn handle_keys_command(
         &self,
         id: Option<String>,
-        pattern: String
+        pattern: String,
     ) -> WebSocketResponse {
         WebSocketResponse::error(id, "Key commands not yet implemented".to_string())
     }
@@ -22,7 +22,7 @@ impl super::WebSocketCommandProcessor {
         &self,
         id: Option<String>,
         key: String,
-        new_key: String
+        new_key: String,
     ) -> WebSocketResponse {
         WebSocketResponse::error(id, "Key commands not yet implemented".to_string())
     }

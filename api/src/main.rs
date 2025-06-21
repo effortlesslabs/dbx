@@ -1,6 +1,6 @@
 use clap::Parser;
 use std::net::SocketAddr;
-use tracing::{ info, Level };
+use tracing::{info, Level};
 
 mod config;
 mod constants;
@@ -10,8 +10,8 @@ mod models;
 mod routes;
 mod server;
 
-use config::{ Config, DatabaseType };
-use constants::{ config::ConfigDefaults, database::DatabaseUrls, errors::ErrorMessages };
+use config::{Config, DatabaseType};
+use constants::{config::ConfigDefaults, database::DatabaseUrls, errors::ErrorMessages};
 use server::Server;
 
 #[derive(Parser, Debug)]
@@ -50,13 +50,9 @@ async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
     // Initialize tracing
-    let log_level = args.log_level
-        .or_else(||
-            std::env
-                ::var("LOG_LEVEL")
-                .ok()
-                .and_then(|s| s.parse().ok())
-        )
+    let log_level = args
+        .log_level
+        .or_else(|| std::env::var("LOG_LEVEL").ok().and_then(|s| s.parse().ok()))
         .unwrap_or(Level::INFO);
 
     tracing_subscriber::fmt().with_max_level(log_level).init();
@@ -67,7 +63,8 @@ async fn main() -> anyhow::Result<()> {
     // Create configuration with environment variables taking precedence
     let config = Config {
         database_type,
-        database_url: args.database_url
+        database_url: args
+            .database_url
             .or_else(|| std::env::var("DATABASE_URL").ok())
             .unwrap_or_else(|| {
                 match args.database_type {
@@ -77,24 +74,17 @@ async fn main() -> anyhow::Result<()> {
                     // DatabaseType::MySQL => DatabaseUrls::mysql_url(),
                 }
             }),
-        host: args.host
+        host: args
+            .host
             .or_else(|| std::env::var("HOST").ok())
             .unwrap_or_else(|| ConfigDefaults::HOST.to_string()),
-        port: args.port
-            .or_else(||
-                std::env
-                    ::var("PORT")
-                    .ok()
-                    .and_then(|s| s.parse().ok())
-            )
+        port: args
+            .port
+            .or_else(|| std::env::var("PORT").ok().and_then(|s| s.parse().ok()))
             .unwrap_or(ConfigDefaults::PORT),
-        pool_size: args.pool_size
-            .or_else(||
-                std::env
-                    ::var("POOL_SIZE")
-                    .ok()
-                    .and_then(|s| s.parse().ok())
-            )
+        pool_size: args
+            .pool_size
+            .or_else(|| std::env::var("POOL_SIZE").ok().and_then(|s| s.parse().ok()))
             .unwrap_or(ConfigDefaults::POOL_SIZE),
     };
 

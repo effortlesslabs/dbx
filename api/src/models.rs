@@ -1,4 +1,4 @@
-use serde::{ Deserialize, Serialize };
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// API response wrapper
@@ -129,162 +129,133 @@ pub struct ServerInfo {
 #[serde(tag = "action", content = "params")]
 pub enum WebSocketCommand {
     // String commands
-    #[serde(rename = "get")] Get {
-        key: String,
-    },
-    #[serde(rename = "set")] Set {
-        key: String,
-        value: String,
-        ttl: Option<u64>,
-    },
-    #[serde(rename = "delete")] Delete {
-        key: String,
-    },
-    #[serde(rename = "exists")] Exists {
-        key: String,
-    },
-    #[serde(rename = "ttl")] Ttl {
-        key: String,
-    },
-    #[serde(rename = "incr")] Incr {
-        key: String,
-    },
-    #[serde(rename = "incrby")] IncrBy {
-        key: String,
-        increment: i64,
-    },
-    #[serde(rename = "setnx")] SetNx {
+    #[serde(rename = "get")]
+    Get { key: String },
+    #[serde(rename = "set")]
+    Set {
         key: String,
         value: String,
         ttl: Option<u64>,
     },
-    #[serde(rename = "cas")] CompareAndSet {
+    #[serde(rename = "delete")]
+    Delete { key: String },
+    #[serde(rename = "exists")]
+    Exists { key: String },
+    #[serde(rename = "ttl")]
+    Ttl { key: String },
+    #[serde(rename = "incr")]
+    Incr { key: String },
+    #[serde(rename = "incrby")]
+    IncrBy { key: String, increment: i64 },
+    #[serde(rename = "setnx")]
+    SetNx {
+        key: String,
+        value: String,
+        ttl: Option<u64>,
+    },
+    #[serde(rename = "cas")]
+    CompareAndSet {
         key: String,
         expected_value: String,
         new_value: String,
         ttl: Option<u64>,
     },
-    #[serde(rename = "batch_get")] BatchGet {
-        keys: Vec<String>,
-    },
-    #[serde(rename = "batch_set")] BatchSet {
+    #[serde(rename = "batch_get")]
+    BatchGet { keys: Vec<String> },
+    #[serde(rename = "batch_set")]
+    BatchSet {
         key_values: HashMap<String, String>,
         ttl: Option<u64>,
     },
-    #[serde(rename = "batch_delete")] BatchDelete {
-        keys: Vec<String>,
-    },
-    #[serde(rename = "batch_incr")] BatchIncr {
-        keys: Vec<String>,
-    },
-    #[serde(rename = "batch_incrby")] BatchIncrBy {
-        key_increments: Vec<(String, i64)>,
-    },
+    #[serde(rename = "batch_delete")]
+    BatchDelete { keys: Vec<String> },
+    #[serde(rename = "batch_incr")]
+    BatchIncr { keys: Vec<String> },
+    #[serde(rename = "batch_incrby")]
+    BatchIncrBy { key_increments: Vec<(String, i64)> },
 
     // Set commands
-    #[serde(rename = "sadd")] Sadd {
-        key: String,
-        members: Vec<String>,
-    },
-    #[serde(rename = "srem")] Srem {
-        key: String,
-        members: Vec<String>,
-    },
-    #[serde(rename = "smembers")] Smembers {
-        key: String,
-    },
-    #[serde(rename = "scard")] Scard {
-        key: String,
-    },
-    #[serde(rename = "sismember")] Sismember {
-        key: String,
-        member: String,
-    },
-    #[serde(rename = "spop")] Spop {
-        key: String,
-    },
-    #[serde(rename = "srandmember")] Srandmember {
-        key: String,
-    },
-    #[serde(rename = "smove")] Smove {
+    #[serde(rename = "sadd")]
+    Sadd { key: String, members: Vec<String> },
+    #[serde(rename = "srem")]
+    Srem { key: String, members: Vec<String> },
+    #[serde(rename = "smembers")]
+    Smembers { key: String },
+    #[serde(rename = "scard")]
+    Scard { key: String },
+    #[serde(rename = "sismember")]
+    Sismember { key: String, member: String },
+    #[serde(rename = "spop")]
+    Spop { key: String },
+    #[serde(rename = "srandmember")]
+    Srandmember { key: String },
+    #[serde(rename = "smove")]
+    Smove {
         source: String,
         destination: String,
         member: String,
     },
-    #[serde(rename = "sunion")] Sunion {
-        keys: Vec<String>,
-    },
-    #[serde(rename = "sinter")] Sinter {
-        keys: Vec<String>,
-    },
-    #[serde(rename = "sdiff")] Sdiff {
-        keys: Vec<String>,
-    },
+    #[serde(rename = "sunion")]
+    Sunion { keys: Vec<String> },
+    #[serde(rename = "sinter")]
+    Sinter { keys: Vec<String> },
+    #[serde(rename = "sdiff")]
+    Sdiff { keys: Vec<String> },
 
     // Hash commands
-    #[serde(rename = "hset")] Hset {
+    #[serde(rename = "hset")]
+    Hset {
         key: String,
         field: String,
         value: String,
     },
-    #[serde(rename = "hget")] Hget {
-        key: String,
-        field: String,
-    },
-    #[serde(rename = "hdel")] Hdel {
-        key: String,
-        field: String,
-    },
-    #[serde(rename = "hexists")] Hexists {
-        key: String,
-        field: String,
-    },
-    #[serde(rename = "hlen")] Hlen {
-        key: String,
-    },
-    #[serde(rename = "hkeys")] Hkeys {
-        key: String,
-    },
-    #[serde(rename = "hvals")] Hvals {
-        key: String,
-    },
-    #[serde(rename = "hgetall")] Hgetall {
-        key: String,
-    },
-    #[serde(rename = "hmset")] Hmset {
+    #[serde(rename = "hget")]
+    Hget { key: String, field: String },
+    #[serde(rename = "hdel")]
+    Hdel { key: String, field: String },
+    #[serde(rename = "hexists")]
+    Hexists { key: String, field: String },
+    #[serde(rename = "hlen")]
+    Hlen { key: String },
+    #[serde(rename = "hkeys")]
+    Hkeys { key: String },
+    #[serde(rename = "hvals")]
+    Hvals { key: String },
+    #[serde(rename = "hgetall")]
+    Hgetall { key: String },
+    #[serde(rename = "hmset")]
+    Hmset {
         key: String,
         fields: HashMap<String, String>,
     },
-    #[serde(rename = "hmget")] Hmget {
-        key: String,
-        fields: Vec<String>,
-    },
+    #[serde(rename = "hmget")]
+    Hmget { key: String, fields: Vec<String> },
 
     // Key commands
-    #[serde(rename = "keys")] Keys {
-        pattern: Option<String>,
-    },
-    #[serde(rename = "del")] Del {
-        keys: Vec<String>,
-    },
+    #[serde(rename = "keys")]
+    Keys { pattern: Option<String> },
+    #[serde(rename = "del")]
+    Del { keys: Vec<String> },
 
     // Admin commands
-    #[serde(rename = "flushall")] FlushAll,
-    #[serde(rename = "flushdb")] FlushDb,
-    #[serde(rename = "dbsize")] DbSize,
-    #[serde(rename = "info")] Info,
+    #[serde(rename = "flushall")]
+    FlushAll,
+    #[serde(rename = "flushdb")]
+    FlushDb,
+    #[serde(rename = "dbsize")]
+    DbSize,
+    #[serde(rename = "info")]
+    Info,
 
     // Utility
-    #[serde(rename = "list_keys")] ListKeys {
-        pattern: Option<String>,
-    },
-    #[serde(rename = "ping")] Ping,
-    #[serde(rename = "subscribe")] Subscribe {
-        channels: Vec<String>,
-    },
-    #[serde(rename = "unsubscribe")] Unsubscribe {
-        channels: Vec<String>,
-    },
+    #[serde(rename = "list_keys")]
+    ListKeys { pattern: Option<String> },
+    #[serde(rename = "ping")]
+    Ping,
+    #[serde(rename = "subscribe")]
+    Subscribe { channels: Vec<String> },
+    #[serde(rename = "unsubscribe")]
+    Unsubscribe { channels: Vec<String> },
 }
 
 /// WebSocket message wrapper

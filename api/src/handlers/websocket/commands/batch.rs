@@ -1,13 +1,13 @@
+use crate::{middleware::handle_redis_error, models::WebSocketResponse};
 use serde_json;
 use std::collections::HashMap;
-use crate::{ models::WebSocketResponse, middleware::handle_redis_error };
 
 impl super::WebSocketCommandProcessor {
     /// Handle BATCH GET command
     pub async fn handle_batch_get_command(
         &self,
         command_id: Option<String>,
-        keys: Vec<String>
+        keys: Vec<String>,
     ) -> WebSocketResponse {
         let redis_handler = self.get_redis_handler().await;
         let mut results = HashMap::new();
@@ -24,15 +24,17 @@ impl super::WebSocketCommandProcessor {
         &self,
         command_id: Option<String>,
         key_values: HashMap<String, String>,
-        ttl: Option<u64>
+        ttl: Option<u64>,
     ) -> WebSocketResponse {
         let redis_handler = self.get_redis_handler().await;
         let mut results = HashMap::new();
         for (key, value) in key_values {
             let result = if let Some(ttl) = ttl {
-                redis_handler.redis
-                    .string()
-                    .set_with_expiry(&key, &value, ttl.try_into().unwrap_or(usize::MAX))
+                redis_handler.redis.string().set_with_expiry(
+                    &key,
+                    &value,
+                    ttl.try_into().unwrap_or(usize::MAX),
+                )
             } else {
                 redis_handler.redis.string().set(&key, &value)
             };
@@ -48,7 +50,7 @@ impl super::WebSocketCommandProcessor {
     pub async fn handle_batch_delete_command(
         &self,
         command_id: Option<String>,
-        keys: Vec<String>
+        keys: Vec<String>,
     ) -> WebSocketResponse {
         let redis_handler = self.get_redis_handler().await;
         let mut deleted_count = 0;
@@ -59,7 +61,7 @@ impl super::WebSocketCommandProcessor {
         }
         WebSocketResponse::success(
             command_id,
-            serde_json::json!({ "deleted_count": deleted_count })
+            serde_json::json!({ "deleted_count": deleted_count }),
         )
     }
 
@@ -67,7 +69,7 @@ impl super::WebSocketCommandProcessor {
     pub async fn handle_batch_incr_command(
         &self,
         command_id: Option<String>,
-        keys: Vec<String>
+        keys: Vec<String>,
     ) -> WebSocketResponse {
         let redis_handler = self.get_redis_handler().await;
         let mut results = Vec::new();
@@ -83,7 +85,7 @@ impl super::WebSocketCommandProcessor {
     pub async fn handle_batch_incr_by_command(
         &self,
         command_id: Option<String>,
-        key_increments: Vec<(String, i64)>
+        key_increments: Vec<(String, i64)>,
     ) -> WebSocketResponse {
         let redis_handler = self.get_redis_handler().await;
         let mut results = Vec::new();

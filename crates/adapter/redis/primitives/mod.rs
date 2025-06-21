@@ -10,9 +10,9 @@
 //! Each implementation supports individual commands, pipelined operations,
 //! transactions, and Lua scripts.
 
-pub mod string;
-pub mod set;
 pub mod hash;
+pub mod set;
+pub mod string;
 
 // These will be implemented in future versions:
 // pub mod list;

@@ -1,15 +1,18 @@
-use axum::{ extract::{ ws::WebSocketUpgrade, State }, response::IntoResponse };
+use axum::{
+    extract::{ws::WebSocketUpgrade, State},
+    response::IntoResponse,
+};
 use std::sync::Arc;
+use tokio::sync::Mutex;
 use tracing::info;
 use uuid::Uuid;
-use tokio::sync::Mutex;
 
+use super::connection::WebSocketConnection;
 use crate::{
-    models::{ WebSocketMessage, WebSocketResponse },
     handlers::redis::RedisHandler,
     handlers::websocket::commands::WebSocketCommandProcessor,
+    models::{WebSocketMessage, WebSocketResponse},
 };
-use super::connection::WebSocketConnection;
 
 /// WebSocket handler that processes JSON commands
 #[derive(Clone)]
@@ -31,7 +34,7 @@ impl WebSocketHandler {
     /// Handle WebSocket upgrade and connection
     pub async fn handle_websocket(
         ws: WebSocketUpgrade,
-        State(handler): State<Self>
+        State(handler): State<Self>,
     ) -> impl IntoResponse {
         let connection_id = Uuid::new_v4().to_string();
         info!("WebSocket connection established: {}", connection_id);

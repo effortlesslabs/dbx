@@ -1,22 +1,20 @@
-use axum::{ body::Body, http::{ Request, StatusCode }, response::Response, Router };
+use axum::body::to_bytes;
+use axum::{
+    body::Body,
+    http::{Request, StatusCode},
+    response::Response,
+    Router,
+};
 use dbx_crates::adapter::redis::Redis;
-use serde_json::{ json, Value };
+use serde_json::{json, Value};
 use std::sync::Arc;
 use tower::util::ServiceExt;
-use axum::body::to_bytes;
 
 use dbx_api::{
-    config::{ Config, DatabaseType },
+    config::{Config, DatabaseType},
     models::{
-        ApiResponse,
-        BooleanValue,
-        DeleteResponse,
-        ExistsResponse,
-        IntegerValue,
-        KeyValues,
-        KeysResponse,
-        StringValue,
-        TtlResponse,
+        ApiResponse, BooleanValue, DeleteResponse, ExistsResponse, IntegerValue, KeyValues,
+        KeysResponse, StringValue, TtlResponse,
     },
     server::Server,
 };
@@ -31,13 +29,14 @@ async fn create_test_server() -> (Router, Arc<Redis>) {
         pool_size: 5,
     };
 
-    let server = Server::new(config).await.expect("Failed to create test server");
+    let server = Server::new(config)
+        .await
+        .expect("Failed to create test server");
 
     // Create Redis client directly for testing
     let redis = Arc::new(
-        Redis::from_url("redis://default:redispw@localhost:55000").expect(
-            "Failed to create Redis client"
-        )
+        Redis::from_url("redis://default:redispw@localhost:55000")
+            .expect("Failed to create Redis client"),
     );
     let router = server.create_router();
 
@@ -49,7 +48,7 @@ async fn make_request(
     router: Router,
     method: &str,
     path: &str,
-    body: Option<Value>
+    body: Option<Value>,
 ) -> Response<Body> {
     let mut request_builder = Request::builder()
         .method(method)
@@ -94,7 +93,10 @@ async fn test_info_endpoint() {
     let info_response: Value = extract_json(response).await;
     assert_eq!(info_response["service"], "dbx-api");
     assert!(info_response["version"].is_string());
-    assert_eq!(info_response["database_url"], "redis://default:redispw@localhost:55000");
+    assert_eq!(
+        info_response["database_url"],
+        "redis://default:redispw@localhost:55000"
+    );
 }
 
 #[tokio::test]
@@ -115,8 +117,9 @@ async fn test_string_operations() {
         router.clone(),
         "POST",
         &format!("/api/v1/redis/strings/{}", test_key),
-        Some(set_request)
-    ).await;
+        Some(set_request),
+    )
+    .await;
 
     assert_eq!(response.status(), StatusCode::OK);
     let set_response: ApiResponse<StringValue> = extract_json(response).await;
@@ -128,8 +131,9 @@ async fn test_string_operations() {
         router.clone(),
         "GET",
         &format!("/api/v1/redis/strings/{}", test_key),
-        None
-    ).await;
+        None,
+    )
+    .await;
 
     assert_eq!(response.status(), StatusCode::OK);
     let get_response: ApiResponse<StringValue> = extract_json(response).await;
@@ -141,8 +145,9 @@ async fn test_string_operations() {
         router.clone(),
         "GET",
         &format!("/api/v1/redis/strings/{}/exists", test_key),
-        None
-    ).await;
+        None,
+    )
+    .await;
 
     assert_eq!(response.status(), StatusCode::OK);
     let exists_response: ApiResponse<ExistsResponse> = extract_json(response).await;
@@ -154,8 +159,9 @@ async fn test_string_operations() {
         router.clone(),
         "GET",
         &format!("/api/v1/redis/strings/{}/ttl", test_key),
-        None
-    ).await;
+        None,
+    )
+    .await;
 
     assert_eq!(response.status(), StatusCode::OK);
     let ttl_response: ApiResponse<TtlResponse> = extract_json(response).await;
@@ -167,8 +173,9 @@ async fn test_string_operations() {
         router.clone(),
         "DELETE",
         &format!("/api/v1/redis/strings/{}", test_key),
-        None
-    ).await;
+        None,
+    )
+    .await;
 
     assert_eq!(response.status(), StatusCode::OK);
     let delete_response: ApiResponse<DeleteResponse> = extract_json(response).await;
@@ -180,8 +187,9 @@ async fn test_string_operations() {
         router.clone(),
         "GET",
         &format!("/api/v1/redis/strings/{}", test_key),
-        None
-    ).await;
+        None,
+    )
+    .await;
 
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
 }
@@ -199,8 +207,9 @@ async fn test_increment_operations() {
         router.clone(),
         "POST",
         &format!("/api/v1/redis/strings/{}/incr", test_key),
-        None
-    ).await;
+        None,
+    )
+    .await;
 
     assert_eq!(response.status(), StatusCode::OK);
     let incr_response: ApiResponse<IntegerValue> = extract_json(response).await;
@@ -216,8 +225,9 @@ async fn test_increment_operations() {
         router.clone(),
         "POST",
         &format!("/api/v1/redis/strings/{}/incrby", test_key),
-        Some(incr_by_request)
-    ).await;
+        Some(incr_by_request),
+    )
+    .await;
 
     assert_eq!(response.status(), StatusCode::OK);
     let incr_by_response: ApiResponse<IntegerValue> = extract_json(response).await;
@@ -246,8 +256,9 @@ async fn test_set_if_not_exists() {
         router.clone(),
         "POST",
         &format!("/api/v1/redis/strings/{}/setnx", test_key),
-        Some(setnx_request)
-    ).await;
+        Some(setnx_request),
+    )
+    .await;
 
     assert_eq!(response.status(), StatusCode::OK);
     let setnx_response: ApiResponse<BooleanValue> = extract_json(response).await;
@@ -264,8 +275,9 @@ async fn test_set_if_not_exists() {
         router.clone(),
         "POST",
         &format!("/api/v1/redis/strings/{}/setnx", test_key),
-        Some(setnx_request2)
-    ).await;
+        Some(setnx_request2),
+    )
+    .await;
 
     assert_eq!(response.status(), StatusCode::OK);
     let setnx_response2: ApiResponse<BooleanValue> = extract_json(response).await;
@@ -277,8 +289,9 @@ async fn test_set_if_not_exists() {
         router.clone(),
         "GET",
         &format!("/api/v1/redis/strings/{}", test_key),
-        None
-    ).await;
+        None,
+    )
+    .await;
 
     assert_eq!(response.status(), StatusCode::OK);
     let get_response: ApiResponse<StringValue> = extract_json(response).await;
@@ -305,12 +318,12 @@ async fn test_compare_and_set() {
         router.clone(),
         "POST",
         &format!("/api/v1/redis/strings/{}", test_key),
-        Some(set_request)
-    ).await;
+        Some(set_request),
+    )
+    .await;
 
     // Test CAS with correct expected value
-    let cas_request =
-        json!({
+    let cas_request = json!({
         "expected_value": "initial_value",
         "new_value": "updated_value",
         "ttl": 3600
@@ -320,8 +333,9 @@ async fn test_compare_and_set() {
         router.clone(),
         "POST",
         &format!("/api/v1/redis/strings/{}/cas", test_key),
-        Some(cas_request)
-    ).await;
+        Some(cas_request),
+    )
+    .await;
 
     assert_eq!(response.status(), StatusCode::OK);
     let cas_response: ApiResponse<BooleanValue> = extract_json(response).await;
@@ -329,8 +343,7 @@ async fn test_compare_and_set() {
     assert!(cas_response.data.unwrap().value);
 
     // Test CAS with incorrect expected value
-    let cas_request2 =
-        json!({
+    let cas_request2 = json!({
         "expected_value": "wrong_value",
         "new_value": "another_value",
         "ttl": 3600
@@ -340,8 +353,9 @@ async fn test_compare_and_set() {
         router.clone(),
         "POST",
         &format!("/api/v1/redis/strings/{}/cas", test_key),
-        Some(cas_request2)
-    ).await;
+        Some(cas_request2),
+    )
+    .await;
 
     assert_eq!(response.status(), StatusCode::OK);
     let cas_response2: ApiResponse<BooleanValue> = extract_json(response).await;
@@ -353,8 +367,9 @@ async fn test_compare_and_set() {
         router.clone(),
         "GET",
         &format!("/api/v1/redis/strings/{}", test_key),
-        None
-    ).await;
+        None,
+    )
+    .await;
 
     assert_eq!(response.status(), StatusCode::OK);
     let get_response: ApiResponse<StringValue> = extract_json(response).await;
@@ -375,8 +390,7 @@ async fn test_batch_operations() {
     }
 
     // Test batch SET
-    let batch_set_request =
-        json!({
+    let batch_set_request = json!({
         "key_values": {
             "batch_key1": "value1",
             "batch_key2": "value2",
@@ -389,8 +403,9 @@ async fn test_batch_operations() {
         router.clone(),
         "POST",
         "/api/v1/redis/strings/batch/set",
-        Some(batch_set_request)
-    ).await;
+        Some(batch_set_request),
+    )
+    .await;
 
     assert_eq!(response.status(), StatusCode::OK);
     let batch_set_response: ApiResponse<KeyValues> = extract_json(response).await;
@@ -403,8 +418,9 @@ async fn test_batch_operations() {
         router.clone(),
         "POST",
         "/api/v1/redis/strings/batch/get",
-        Some(batch_get_request)
-    ).await;
+        Some(batch_get_request),
+    )
+    .await;
 
     assert_eq!(response.status(), StatusCode::OK);
     let batch_get_response: ApiResponse<KeyValues> = extract_json(response).await;
@@ -422,8 +438,9 @@ async fn test_batch_operations() {
         router.clone(),
         "POST",
         "/api/v1/redis/strings/batch/incr",
-        Some(batch_incr_request)
-    ).await;
+        Some(batch_incr_request),
+    )
+    .await;
 
     assert_eq!(response.status(), StatusCode::OK);
     let batch_incr_response: ApiResponse<Vec<IntegerValue>> = extract_json(response).await;
@@ -442,8 +459,9 @@ async fn test_batch_operations() {
         router.clone(),
         "POST",
         "/api/v1/redis/strings/batch/delete",
-        Some(batch_delete_request)
-    ).await;
+        Some(batch_delete_request),
+    )
+    .await;
 
     assert_eq!(response.status(), StatusCode::OK);
     let batch_delete_response: ApiResponse<DeleteResponse> = extract_json(response).await;
@@ -471,8 +489,9 @@ async fn test_key_operations() {
             router.clone(),
             "POST",
             &format!("/api/v1/redis/strings/{}", key),
-            Some(set_request)
-        ).await;
+            Some(set_request),
+        )
+        .await;
     }
 
     // Test list keys
@@ -480,8 +499,9 @@ async fn test_key_operations() {
         router.clone(),
         "GET",
         "/api/v1/redis/keys?pattern=key_op*",
-        None
-    ).await;
+        None,
+    )
+    .await;
 
     assert_eq!(response.status(), StatusCode::OK);
     let keys_response: ApiResponse<KeysResponse> = extract_json(response).await;
@@ -493,8 +513,9 @@ async fn test_key_operations() {
         router.clone(),
         "GET",
         "/api/v1/redis/keys/key_op1/exists",
-        None
-    ).await;
+        None,
+    )
+    .await;
 
     assert_eq!(response.status(), StatusCode::OK);
     let exists_response: ApiResponse<ExistsResponse> = extract_json(response).await;
@@ -506,8 +527,9 @@ async fn test_key_operations() {
         router.clone(),
         "GET",
         "/api/v1/redis/keys/key_op1/ttl",
-        None
-    ).await;
+        None,
+    )
+    .await;
 
     assert_eq!(response.status(), StatusCode::OK);
     let ttl_response: ApiResponse<TtlResponse> = extract_json(response).await;
@@ -526,8 +548,9 @@ async fn test_key_operations() {
         router.clone(),
         "GET",
         "/api/v1/redis/keys/key_op1/exists",
-        None
-    ).await;
+        None,
+    )
+    .await;
 
     assert_eq!(response.status(), StatusCode::OK);
     let exists_response: ApiResponse<ExistsResponse> = extract_json(response).await;
@@ -544,8 +567,7 @@ async fn test_lua_script_operations() {
     let (router, redis) = create_test_server().await;
 
     // Test rate limiter script
-    let rate_limiter_request =
-        json!({
+    let rate_limiter_request = json!({
         "key": "rate_limit_test",
         "limit": 5,
         "window": 60
@@ -555,8 +577,9 @@ async fn test_lua_script_operations() {
         router.clone(),
         "POST",
         "/api/v1/redis/scripts/rate-limiter",
-        Some(rate_limiter_request)
-    ).await;
+        Some(rate_limiter_request),
+    )
+    .await;
 
     assert_eq!(response.status(), StatusCode::OK);
     let rate_limiter_response: ApiResponse<BooleanValue> = extract_json(response).await;
@@ -564,8 +587,7 @@ async fn test_lua_script_operations() {
     assert!(rate_limiter_response.data.unwrap().value);
 
     // Test multi-counter script
-    let multi_counter_request =
-        json!({
+    let multi_counter_request = json!({
         "counters": [
             ["counter1", 1],
             ["counter2", 2],
@@ -577,8 +599,9 @@ async fn test_lua_script_operations() {
         router.clone(),
         "POST",
         "/api/v1/redis/scripts/multi-counter",
-        Some(multi_counter_request)
-    ).await;
+        Some(multi_counter_request),
+    )
+    .await;
 
     assert_eq!(response.status(), StatusCode::OK);
     let multi_counter_response: ApiResponse<Vec<IntegerValue>> = extract_json(response).await;
@@ -586,8 +609,7 @@ async fn test_lua_script_operations() {
     assert_eq!(multi_counter_response.data.unwrap().len(), 3);
 
     // Test multi-set-ttl script
-    let multi_set_ttl_request =
-        json!({
+    let multi_set_ttl_request = json!({
         "key_values": {
             "lua_key1": "lua_value1",
             "lua_key2": "lua_value2"
@@ -599,8 +621,9 @@ async fn test_lua_script_operations() {
         router.clone(),
         "POST",
         "/api/v1/redis/scripts/multi-set-ttl",
-        Some(multi_set_ttl_request)
-    ).await;
+        Some(multi_set_ttl_request),
+    )
+    .await;
 
     assert_eq!(response.status(), StatusCode::OK);
     let multi_set_ttl_response: ApiResponse<KeyValues> = extract_json(response).await;
@@ -624,8 +647,9 @@ async fn test_error_handling() {
         router.clone(),
         "POST",
         "/api/v1/redis/strings/test_key",
-        Some(json!("invalid json"))
-    ).await;
+        Some(json!("invalid json")),
+    )
+    .await;
 
     assert_eq!(response.status(), StatusCode::UNPROCESSABLE_ENTITY);
 
@@ -638,8 +662,9 @@ async fn test_error_handling() {
         router.clone(),
         "POST",
         "/api/v1/redis/strings/test_key",
-        Some(invalid_request)
-    ).await;
+        Some(invalid_request),
+    )
+    .await;
 
     assert_eq!(response.status(), StatusCode::UNPROCESSABLE_ENTITY);
 
@@ -666,8 +691,9 @@ async fn test_concurrent_operations() {
         router.clone(),
         "POST",
         &format!("/api/v1/redis/strings/{}", test_key),
-        Some(set_request)
-    ).await;
+        Some(set_request),
+    )
+    .await;
 
     // Perform concurrent increments
     let mut handles = vec![];
@@ -681,8 +707,9 @@ async fn test_concurrent_operations() {
                 router_clone,
                 "POST",
                 &format!("/api/v1/redis/strings/{}/incr", key),
-                None
-            ).await
+                None,
+            )
+            .await
         });
 
         handles.push(handle);
@@ -705,8 +732,9 @@ async fn test_concurrent_operations() {
         router.clone(),
         "GET",
         &format!("/api/v1/redis/strings/{}", test_key),
-        None
-    ).await;
+        None,
+    )
+    .await;
 
     assert_eq!(response.status(), StatusCode::OK);
     let get_response: ApiResponse<StringValue> = extract_json(response).await;

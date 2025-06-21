@@ -1,11 +1,15 @@
-use axum::{ extract::{ Path, State }, http::StatusCode, response::Json };
+use axum::{
+    extract::{Path, State},
+    http::StatusCode,
+    response::Json,
+};
 use std::sync::Arc;
 use tracing::debug;
 
 use crate::{
     handlers::redis::RedisHandler,
     middleware::handle_redis_error,
-    models::{ ApiResponse, BooleanValue, DeleteResponse, IntegerValue, KeyValues, StringValue },
+    models::{ApiResponse, BooleanValue, DeleteResponse, IntegerValue, KeyValues, StringValue},
 };
 
 impl RedisHandler {
@@ -13,7 +17,7 @@ impl RedisHandler {
 
     pub async fn get_set_members(
         State(handler): State<Arc<RedisHandler>>,
-        Path(key): Path<String>
+        Path(key): Path<String>,
     ) -> Result<Json<ApiResponse<KeyValues>>, (StatusCode, Json<ApiResponse<()>>)> {
         debug!("GET /sets/{}", key);
 
@@ -30,7 +34,7 @@ impl RedisHandler {
     pub async fn add_set_members(
         State(handler): State<Arc<RedisHandler>>,
         Path(key): Path<String>,
-        Json(request): Json<crate::models::SetRequest>
+        Json(request): Json<crate::models::SetRequest>,
     ) -> Result<Json<ApiResponse<BooleanValue>>, (StatusCode, Json<ApiResponse<()>>)> {
         debug!("POST /sets/{}", key);
 
@@ -42,12 +46,14 @@ impl RedisHandler {
 
     pub async fn delete_set(
         State(handler): State<Arc<RedisHandler>>,
-        Path(key): Path<String>
+        Path(key): Path<String>,
     ) -> Result<Json<ApiResponse<DeleteResponse>>, (StatusCode, Json<ApiResponse<()>>)> {
         debug!("DELETE /sets/{}", key);
 
         match handler.redis.set().del(&key) {
-            Ok(_) => Ok(Json(ApiResponse::success(DeleteResponse { deleted_count: 1 }))),
+            Ok(_) => Ok(Json(ApiResponse::success(DeleteResponse {
+                deleted_count: 1,
+            }))),
             Err(e) => Err(handle_redis_error(e)),
         }
     }
@@ -55,7 +61,9 @@ impl RedisHandler {
     pub async fn set_member_exists(
         State(handler): State<Arc<RedisHandler>>,
         Path(key): Path<String>,
-        axum::extract::Query(query): axum::extract::Query<std::collections::HashMap<String, String>>
+        axum::extract::Query(query): axum::extract::Query<
+            std::collections::HashMap<String, String>,
+        >,
     ) -> Result<Json<ApiResponse<BooleanValue>>, (StatusCode, Json<ApiResponse<()>>)> {
         debug!("GET /sets/{}/exists", key);
 
@@ -68,39 +76,44 @@ impl RedisHandler {
 
     pub async fn get_set_cardinality(
         State(handler): State<Arc<RedisHandler>>,
-        Path(key): Path<String>
+        Path(key): Path<String>,
     ) -> Result<Json<ApiResponse<IntegerValue>>, (StatusCode, Json<ApiResponse<()>>)> {
         debug!("GET /sets/{}/cardinality", key);
 
         match handler.redis.set().scard(&key) {
-            Ok(cardinality) =>
-                Ok(Json(ApiResponse::success(IntegerValue { value: cardinality as i64 }))),
+            Ok(cardinality) => Ok(Json(ApiResponse::success(IntegerValue {
+                value: cardinality as i64,
+            }))),
             Err(e) => Err(handle_redis_error(e)),
         }
     }
 
     pub async fn get_random_member(
         State(handler): State<Arc<RedisHandler>>,
-        Path(key): Path<String>
+        Path(key): Path<String>,
     ) -> Result<Json<ApiResponse<StringValue>>, (StatusCode, Json<ApiResponse<()>>)> {
         debug!("GET /sets/{}/random", key);
 
         match handler.redis.set().srandmember(&key) {
             Ok(Some(member)) => Ok(Json(ApiResponse::success(StringValue { value: member }))),
-            Ok(None) => Ok(Json(ApiResponse::success(StringValue { value: String::new() }))),
+            Ok(None) => Ok(Json(ApiResponse::success(StringValue {
+                value: String::new(),
+            }))),
             Err(e) => Err(handle_redis_error(e)),
         }
     }
 
     pub async fn pop_random_member(
         State(handler): State<Arc<RedisHandler>>,
-        Path(key): Path<String>
+        Path(key): Path<String>,
     ) -> Result<Json<ApiResponse<StringValue>>, (StatusCode, Json<ApiResponse<()>>)> {
         debug!("POST /sets/{}/pop", key);
 
         match handler.redis.set().spop(&key) {
             Ok(Some(member)) => Ok(Json(ApiResponse::success(StringValue { value: member }))),
-            Ok(None) => Ok(Json(ApiResponse::success(StringValue { value: String::new() }))),
+            Ok(None) => Ok(Json(ApiResponse::success(StringValue {
+                value: String::new(),
+            }))),
             Err(e) => Err(handle_redis_error(e)),
         }
     }
@@ -108,7 +121,7 @@ impl RedisHandler {
     pub async fn move_set_member(
         State(handler): State<Arc<RedisHandler>>,
         Path(key): Path<String>,
-        Json(request): Json<std::collections::HashMap<String, String>>
+        Json(request): Json<std::collections::HashMap<String, String>>,
     ) -> Result<Json<ApiResponse<BooleanValue>>, (StatusCode, Json<ApiResponse<()>>)> {
         debug!("POST /sets/{}/move", key);
 
@@ -124,15 +137,12 @@ impl RedisHandler {
     pub async fn set_union(
         State(handler): State<Arc<RedisHandler>>,
         Path(key): Path<String>,
-        Json(mut keys): Json<Vec<String>>
+        Json(mut keys): Json<Vec<String>>,
     ) -> Result<Json<ApiResponse<KeyValues>>, (StatusCode, Json<ApiResponse<()>>)> {
         debug!("POST /sets/{}/union", key);
 
         keys.push(key.clone());
-        let key_refs: Vec<&str> = keys
-            .iter()
-            .map(|k| k.as_str())
-            .collect();
+        let key_refs: Vec<&str> = keys.iter().map(|k| k.as_str()).collect();
         match handler.redis.set().sunion(&key_refs) {
             Ok(members) => {
                 let mut map = std::collections::HashMap::new();
@@ -146,15 +156,12 @@ impl RedisHandler {
     pub async fn set_intersection(
         State(handler): State<Arc<RedisHandler>>,
         Path(key): Path<String>,
-        Json(mut keys): Json<Vec<String>>
+        Json(mut keys): Json<Vec<String>>,
     ) -> Result<Json<ApiResponse<KeyValues>>, (StatusCode, Json<ApiResponse<()>>)> {
         debug!("POST /sets/{}/intersection", key);
 
         keys.push(key.clone());
-        let key_refs: Vec<&str> = keys
-            .iter()
-            .map(|k| k.as_str())
-            .collect();
+        let key_refs: Vec<&str> = keys.iter().map(|k| k.as_str()).collect();
         match handler.redis.set().sinter(&key_refs) {
             Ok(members) => {
                 let mut map = std::collections::HashMap::new();
@@ -168,15 +175,12 @@ impl RedisHandler {
     pub async fn set_difference(
         State(handler): State<Arc<RedisHandler>>,
         Path(key): Path<String>,
-        Json(mut keys): Json<Vec<String>>
+        Json(mut keys): Json<Vec<String>>,
     ) -> Result<Json<ApiResponse<KeyValues>>, (StatusCode, Json<ApiResponse<()>>)> {
         debug!("POST /sets/{}/difference", key);
 
         keys.push(key.clone());
-        let key_refs: Vec<&str> = keys
-            .iter()
-            .map(|k| k.as_str())
-            .collect();
+        let key_refs: Vec<&str> = keys.iter().map(|k| k.as_str()).collect();
         match handler.redis.set().sdiff(&key_refs) {
             Ok(members) => {
                 let mut map = std::collections::HashMap::new();
@@ -189,7 +193,7 @@ impl RedisHandler {
 
     pub async fn batch_add_set_members(
         State(handler): State<Arc<RedisHandler>>,
-        Json(request): Json<std::collections::HashMap<String, Vec<String>>>
+        Json(request): Json<std::collections::HashMap<String, Vec<String>>>,
     ) -> Result<Json<ApiResponse<DeleteResponse>>, (StatusCode, Json<ApiResponse<()>>)> {
         debug!("POST /sets/batch/add");
 
@@ -198,25 +202,21 @@ impl RedisHandler {
             .iter()
             .map(|(key, members)| {
                 total_added += members.len() as u64;
-                (
-                    key.as_str(),
-                    members
-                        .iter()
-                        .map(|s| s.as_str())
-                        .collect(),
-                )
+                (key.as_str(), members.iter().map(|s| s.as_str()).collect())
             })
             .collect();
 
         match handler.redis.set().sadd_many(set_members) {
-            Ok(_) => Ok(Json(ApiResponse::success(DeleteResponse { deleted_count: total_added }))),
+            Ok(_) => Ok(Json(ApiResponse::success(DeleteResponse {
+                deleted_count: total_added,
+            }))),
             Err(e) => Err(handle_redis_error(e)),
         }
     }
 
     pub async fn batch_remove_set_members(
         State(handler): State<Arc<RedisHandler>>,
-        Json(request): Json<std::collections::HashMap<String, Vec<String>>>
+        Json(request): Json<std::collections::HashMap<String, Vec<String>>>,
     ) -> Result<Json<ApiResponse<DeleteResponse>>, (StatusCode, Json<ApiResponse<()>>)> {
         debug!("POST /sets/batch/remove");
 
@@ -225,36 +225,28 @@ impl RedisHandler {
             .iter()
             .map(|(key, members)| {
                 total_removed += members.len() as u64;
-                (
-                    key.as_str(),
-                    members
-                        .iter()
-                        .map(|s| s.as_str())
-                        .collect(),
-                )
+                (key.as_str(), members.iter().map(|s| s.as_str()).collect())
             })
             .collect();
 
         match handler.redis.set().srem_many(set_members) {
-            Ok(_) =>
-                Ok(Json(ApiResponse::success(DeleteResponse { deleted_count: total_removed }))),
+            Ok(_) => Ok(Json(ApiResponse::success(DeleteResponse {
+                deleted_count: total_removed,
+            }))),
             Err(e) => Err(handle_redis_error(e)),
         }
     }
 
     pub async fn batch_get_set_members(
         State(handler): State<Arc<RedisHandler>>,
-        Json(keys): Json<Vec<String>>
+        Json(keys): Json<Vec<String>>,
     ) -> Result<
         Json<ApiResponse<std::collections::HashMap<String, Vec<String>>>>,
-        (StatusCode, Json<ApiResponse<()>>)
+        (StatusCode, Json<ApiResponse<()>>),
     > {
         debug!("POST /sets/batch/members");
 
-        let key_refs: Vec<&str> = keys
-            .iter()
-            .map(|s| s.as_str())
-            .collect();
+        let key_refs: Vec<&str> = keys.iter().map(|s| s.as_str()).collect();
         match handler.redis.set().smembers_many(key_refs) {
             Ok(members_vec) => {
                 let mut result = std::collections::HashMap::new();
@@ -269,17 +261,15 @@ impl RedisHandler {
 
     pub async fn batch_delete_sets(
         State(handler): State<Arc<RedisHandler>>,
-        Json(keys): Json<Vec<String>>
+        Json(keys): Json<Vec<String>>,
     ) -> Result<Json<ApiResponse<DeleteResponse>>, (StatusCode, Json<ApiResponse<()>>)> {
         debug!("POST /sets/batch/delete");
 
-        let key_refs: Vec<&str> = keys
-            .iter()
-            .map(|s| s.as_str())
-            .collect();
+        let key_refs: Vec<&str> = keys.iter().map(|s| s.as_str()).collect();
         match handler.redis.string().del_many(key_refs) {
-            Ok(_) =>
-                Ok(Json(ApiResponse::success(DeleteResponse { deleted_count: keys.len() as u64 }))),
+            Ok(_) => Ok(Json(ApiResponse::success(DeleteResponse {
+                deleted_count: keys.len() as u64,
+            }))),
             Err(e) => Err(handle_redis_error(e)),
         }
     }

@@ -1,12 +1,12 @@
+use crate::handlers::redis::RedisHandler;
 use axum::{
     extract::State,
     http::StatusCode,
     response::Json,
-    routing::{ delete, get, post },
+    routing::{delete, get, post},
     Router,
 };
 use std::sync::Arc;
-use crate::handlers::redis::RedisHandler;
 
 /// Create Redis-specific routes
 pub fn create_routes(redis_handler: Arc<RedisHandler>) -> Router<Arc<RedisHandler>> {
@@ -61,7 +61,10 @@ fn create_set_routes() -> Router<Arc<RedisHandler>> {
         .route("/:key/intersection", post(RedisHandler::set_intersection))
         .route("/:key/difference", post(RedisHandler::set_difference))
         .route("/batch/add", post(RedisHandler::batch_add_set_members))
-        .route("/batch/remove", post(RedisHandler::batch_remove_set_members))
+        .route(
+            "/batch/remove",
+            post(RedisHandler::batch_remove_set_members),
+        )
         .route("/batch/members", post(RedisHandler::batch_get_set_members))
         .route("/batch/delete", post(RedisHandler::batch_delete_sets))
 }
@@ -76,7 +79,10 @@ fn create_hash_routes() -> Router<Arc<RedisHandler>> {
         .route("/:key/:field", post(RedisHandler::set_hash_field))
         .route("/:key/:field", delete(RedisHandler::delete_hash_field))
         .route("/:key/:field/exists", get(RedisHandler::hash_field_exists))
-        .route("/:key/:field/incr", post(RedisHandler::increment_hash_field))
+        .route(
+            "/:key/:field/incr",
+            post(RedisHandler::increment_hash_field),
+        )
         .route("/:key/:field/setnx", post(RedisHandler::set_hash_field_nx))
         .route("/:key/length", get(RedisHandler::get_hash_length))
         .route("/:key/keys", get(RedisHandler::get_hash_keys))
@@ -85,7 +91,10 @@ fn create_hash_routes() -> Router<Arc<RedisHandler>> {
         .route("/:key/mget", post(RedisHandler::get_multiple_hash_fields))
         .route("/batch/set", post(RedisHandler::batch_set_hash_fields))
         .route("/batch/get", post(RedisHandler::batch_get_hash_fields))
-        .route("/batch/delete", post(RedisHandler::batch_delete_hash_fields))
+        .route(
+            "/batch/delete",
+            post(RedisHandler::batch_delete_hash_fields),
+        )
         .route("/batch/all", post(RedisHandler::batch_get_hash_all))
         .route("/batch/exists", post(RedisHandler::batch_check_hash_fields))
         .route("/batch/lengths", post(RedisHandler::batch_get_hash_lengths))

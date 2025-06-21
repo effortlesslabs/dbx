@@ -1,11 +1,11 @@
-use axum::extract::ws::{ Message, WebSocket };
-use futures_util::{ sink::SinkExt, stream::StreamExt };
+use axum::extract::ws::{Message, WebSocket};
+use futures_util::{sink::SinkExt, stream::StreamExt};
 use serde_json;
 use std::sync::Arc;
-use tracing::{ debug, error, info };
+use tracing::{debug, error, info};
 
-use crate::{ models::{ WebSocketMessage, WebSocketResponse, WebSocketState } };
 use super::handler::WebSocketHandler;
+use crate::models::{WebSocketMessage, WebSocketResponse, WebSocketState};
 
 /// WebSocket connection handler
 pub struct WebSocketConnection;
@@ -15,7 +15,7 @@ impl WebSocketConnection {
     pub async fn handle_connection(
         socket: WebSocket,
         handler: WebSocketHandler,
-        connection_id: String
+        connection_id: String,
     ) {
         let (mut sender, mut receiver) = socket.split();
         let ws_state = WebSocketState {
@@ -37,10 +37,13 @@ impl WebSocketConnection {
                     "batch_incr", "batch_incrby", "list_keys", "ping",
                     "subscribe", "unsubscribe"
                 ]
-            })
+            }),
         );
 
-        if let Err(e) = sender.send(Message::Text(serde_json::to_string(&welcome).unwrap())).await {
+        if let Err(e) = sender
+            .send(Message::Text(serde_json::to_string(&welcome).unwrap()))
+            .await
+        {
             error!("Failed to send welcome message: {}", e);
             return;
         }
@@ -54,10 +57,9 @@ impl WebSocketConnection {
                         Ok(ws_message) => {
                             let response = handler.handle_message(ws_message).await;
 
-                            if
-                                let Err(e) = sender.send(
-                                    Message::Text(serde_json::to_string(&response).unwrap())
-                                ).await
+                            if let Err(e) = sender
+                                .send(Message::Text(serde_json::to_string(&response).unwrap()))
+                                .await
                             {
                                 error!("Failed to send response: {}", e);
                                 break;
@@ -65,15 +67,14 @@ impl WebSocketConnection {
                         }
                         Err(e) => {
                             error!("Failed to parse WebSocket message: {}", e);
-                            let error_response = WebSocketResponse::error(
-                                None,
-                                format!("Invalid JSON: {}", e)
-                            );
+                            let error_response =
+                                WebSocketResponse::error(None, format!("Invalid JSON: {}", e));
 
-                            if
-                                let Err(e) = sender.send(
-                                    Message::Text(serde_json::to_string(&error_response).unwrap())
-                                ).await
+                            if let Err(e) = sender
+                                .send(Message::Text(
+                                    serde_json::to_string(&error_response).unwrap(),
+                                ))
+                                .await
                             {
                                 error!("Failed to send error response: {}", e);
                                 break;
@@ -95,14 +96,13 @@ impl WebSocketConnection {
                     // Ignore pong messages
                 }
                 Ok(Message::Binary(_)) => {
-                    let error_response = WebSocketResponse::error(
-                        None,
-                        "Binary messages not supported".to_string()
-                    );
-                    if
-                        let Err(e) = sender.send(
-                            Message::Text(serde_json::to_string(&error_response).unwrap())
-                        ).await
+                    let error_response =
+                        WebSocketResponse::error(None, "Binary messages not supported".to_string());
+                    if let Err(e) = sender
+                        .send(Message::Text(
+                            serde_json::to_string(&error_response).unwrap(),
+                        ))
+                        .await
                     {
                         error!("Failed to send error response: {}", e);
                         break;

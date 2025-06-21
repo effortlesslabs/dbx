@@ -1,5 +1,5 @@
-use crate::constants::{ config::ConfigDefaults, database::DatabaseUrls, errors::ErrorMessages };
-use serde::{ Deserialize, Serialize };
+use crate::constants::{config::ConfigDefaults, database::DatabaseUrls, errors::ErrorMessages};
+use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
 /// Supported database types
@@ -73,8 +73,7 @@ impl Config {
 
     /// Create a new configuration from environment variables
     pub fn from_env() -> Self {
-        let database_type = std::env
-            ::var("DATABASE_TYPE")
+        let database_type = std::env::var("DATABASE_TYPE")
             .unwrap_or_else(|_| ConfigDefaults::DATABASE_TYPE.to_string())
             .parse()
             .unwrap_or(DatabaseType::Redis);
@@ -90,13 +89,11 @@ impl Config {
             database_type,
             database_url: std::env::var("DATABASE_URL").unwrap_or_else(|_| default_url),
             host: std::env::var("HOST").unwrap_or_else(|_| ConfigDefaults::HOST.to_string()),
-            port: std::env
-                ::var("PORT")
+            port: std::env::var("PORT")
                 .unwrap_or_else(|_| ConfigDefaults::PORT.to_string())
                 .parse()
                 .unwrap_or(ConfigDefaults::PORT),
-            pool_size: std::env
-                ::var("POOL_SIZE")
+            pool_size: std::env::var("POOL_SIZE")
                 .unwrap_or_else(|_| ConfigDefaults::POOL_SIZE.to_string())
                 .parse()
                 .unwrap_or(ConfigDefaults::POOL_SIZE),
