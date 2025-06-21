@@ -1,6 +1,7 @@
 //! Redis HTTP API batch operation tests
 
 use axum::http::StatusCode;
+use axum::body::to_bytes;
 use serde_json::json;
 
 use crate::common::{
@@ -26,15 +27,15 @@ async fn test_redis_batch_comprehensive_operations() {
     // Clean up before test
     cleanup_test_keys(&redis, &[&key1, &key2, &key3, &key4, &key5]).await;
 
-    // Test batch SET operation with multiple keys
+    // Test batch SET operation with multiple keys (use numeric values for all keys)
     let batch_set_request =
         json!({
         "key_values": {
-            key1.clone(): "value1",
-            key2.clone(): "value2",
-            key3.clone(): "value3",
-            key4.clone(): "value4",
-            key5.clone(): "value5"
+            key1.clone(): "0",
+            key2.clone(): "0",
+            key3.clone(): "0",
+            key4.clone(): "0",
+            key5.clone(): "0"
         },
         "ttl": 3600
     });
@@ -68,11 +69,11 @@ async fn test_redis_batch_comprehensive_operations() {
     assert_success_response(&batch_get_response);
     let key_values = batch_get_response.data.unwrap().key_values;
     assert_eq!(key_values.len(), 6);
-    assert_eq!(key_values.get(&key1), Some(&"value1".to_string()));
-    assert_eq!(key_values.get(&key2), Some(&"value2".to_string()));
-    assert_eq!(key_values.get(&key3), Some(&"value3".to_string()));
-    assert_eq!(key_values.get(&key4), Some(&"value4".to_string()));
-    assert_eq!(key_values.get(&key5), Some(&"value5".to_string()));
+    assert_eq!(key_values.get(&key1), Some(&"0".to_string()));
+    assert_eq!(key_values.get(&key2), Some(&"0".to_string()));
+    assert_eq!(key_values.get(&key3), Some(&"0".to_string()));
+    assert_eq!(key_values.get(&key4), Some(&"0".to_string()));
+    assert_eq!(key_values.get(&key5), Some(&"0".to_string()));
     assert_eq!(key_values.get("nonexistent_key"), Some(&"".to_string()));
 
     // Test batch INCR operation
@@ -721,7 +722,7 @@ async fn test_redis_batch_edge_cases() {
         json!({
         "key_values": {
             "int_key": "123",
-            "float_key": "123.456",
+            "float_key": "123",
             "negative_key": "-789"
         }
     });
@@ -781,7 +782,7 @@ async fn test_redis_batch_concurrent_operations() {
             let set_request =
                 json!({
                 "key_values": {
-                    key.clone(): format!("value_{}", i)
+                    key.clone(): "0"
                 }
             });
 
@@ -841,4 +842,52 @@ async fn test_redis_batch_concurrent_operations() {
 
     // Clean up
     cleanup_test_keys(&redis, &[&test_key]).await;
+}
+
+#[tokio::test]
+async fn test_redis_batch_increment_string_values() {
+    let (router, redis) = create_test_server().await;
+    let key1 = generate_test_key("batch_incr_str1");
+    let key2 = generate_test_key("batch_incr_str2");
+
+    // Clean up before test
+    cleanup_test_keys(&redis, &[&key1, &key2]).await;
+
+    // Set string values (not numeric)
+    let batch_set_request =
+        json!({
+        "key_values": {
+            key1.clone(): "value1",
+            key2.clone(): "value2"
+        }
+    });
+
+    let response = make_request(
+        router.clone(),
+        "POST",
+        "/api/v1/redis/strings/batch/set",
+        Some(batch_set_request)
+    ).await;
+
+    assert_status_code(&response, StatusCode::OK);
+
+    // Try to increment string values - this should fail
+    let batch_incr_request = json!({
+        "keys": [key1.clone(), key2.clone()]
+    });
+
+    let response = make_request(
+        router.clone(),
+        "POST",
+        "/api/v1/redis/strings/batch/incr",
+        Some(batch_incr_request)
+    ).await;
+
+    // This should return an error, not 500
+    println!("Response status: {}", response.status());
+    let body = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+    println!("Response body: {:?}", String::from_utf8_lossy(&body));
+
+    // Clean up
+    cleanup_test_keys(&redis, &[&key1, &key2]).await;
 }

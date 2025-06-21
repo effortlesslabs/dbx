@@ -312,11 +312,11 @@ impl RedisHandler {
     pub async fn set_hash_multiple(
         State(handler): State<Arc<RedisHandler>>,
         Path(key): Path<String>,
-        Json(request): Json<crate::models::SetManyRequest>
+        Json(request): Json<crate::models::HashSetRequest>
     ) -> Result<Json<ApiResponse<KeyValues>>, (StatusCode, Json<ApiResponse<()>>)> {
         debug!("POST /hashes/{}", key);
 
-        let field_values: Vec<(&str, &str)> = request.key_values
+        let field_values: Vec<(&str, &str)> = request.fields
             .iter()
             .map(|(k, v)| (k.as_str(), v.as_str()))
             .collect();
@@ -333,7 +333,7 @@ impl RedisHandler {
                 Ok(
                     Json(
                         ApiResponse::success(KeyValues {
-                            key_values: request.key_values,
+                            key_values: request.fields,
                         })
                     )
                 ),

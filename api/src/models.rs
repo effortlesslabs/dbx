@@ -41,6 +41,12 @@ pub struct SetManyRequest {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct HashSetRequest {
+    pub fields: HashMap<String, String>,
+    pub ttl: Option<u64>,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct IncrByRequest {
     pub increment: i64,
 }

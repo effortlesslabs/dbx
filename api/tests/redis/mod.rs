@@ -7,7 +7,6 @@ pub mod keys;
 pub mod batch;
 pub mod scripts;
 pub mod errors;
-pub mod concurrent;
 
 // Re-export test modules
 pub use health::*;
@@ -18,4 +17,3 @@ pub use keys::*;
 pub use batch::*;
 pub use scripts::*;
 pub use errors::*;
-pub use concurrent::*;

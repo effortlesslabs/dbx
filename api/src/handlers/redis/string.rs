@@ -379,7 +379,17 @@ impl RedisHandler {
                     .collect();
                 Ok(Json(ApiResponse::success(values)))
             }
-            Err(e) => Err(handle_redis_error(e)),
+            Err(e) => {
+                let err_str = e.to_string();
+                if err_str.contains("not an integer") || err_str.contains("out of range") {
+                    let api_err = ApiResponse::<()>::error(
+                        format!("Batch increment failed: {}", err_str)
+                    );
+                    Err((StatusCode::BAD_REQUEST, Json(api_err)))
+                } else {
+                    Err(handle_redis_error(e))
+                }
+            }
         }
     }
 
