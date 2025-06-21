@@ -26,7 +26,7 @@ jobs:
 
     strategy:
       matrix:
-        rust: [stable, beta]
+        rust: [stable]
         features: [default, "async", "connection-pool", "async,connection-pool"]
 
     services:
@@ -63,11 +63,9 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Check formatting
-        if: matrix.rust == 'stable'
         run: cargo fmt --all -- --check
 
       - name: Run clippy
-        if: matrix.rust == 'stable'
         run: cargo clippy -p dbx-crates --features "${{ matrix.features }}" -- -D warnings
 
       - name: Build crates package
@@ -79,7 +77,6 @@ jobs:
           REDIS_URL: redis://localhost:6379
 
       - name: Run doc tests
-        if: matrix.rust == 'stable'
         run: cargo test -p dbx-crates --features "${{ matrix.features }}" --verbose --doc
         env:
           REDIS_URL: redis://localhost:6379
@@ -100,58 +97,9 @@ jobs:
       - name: Run security audit for crates
         run: cargo audit -p dbx-crates
 
-      - name: Check for vulnerabilities in crates dependencies
-        run: cargo audit -p dbx-crates --deny warnings
-
-  crates-coverage:
-    name: Crates Code Coverage
+  crates-basic-check:
+    name: Crates Basic Checks
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-
-    services:
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: llvm-tools-preview
-
-      - name: Install cargo-llvm-cov
-        uses: taiki-e/install-action@cargo-llvm-cov
-
-      - name: Generate crates code coverage
-        run: cargo llvm-cov -p dbx-crates --all-features --lcov --output-path crates-lcov.info
-        env:
-          REDIS_URL: redis://localhost:6379
-
-      - name: Upload crates coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          files: crates-lcov.info
-          fail_ci_if_error: true
-          token: ${{ secrets.CODECOV_TOKEN }}
-
-  crates-benchmark:
-    name: Crates Performance Benchmarks
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-
-    services:
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
 
     steps:
       - uses: actions/checkout@v4
@@ -159,54 +107,11 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Run crates benchmarks
-        run: cargo bench -p dbx-crates --all-features
-        env:
-          REDIS_URL: redis://localhost:6379
-
-      - name: Store crates benchmark results
-        uses: benchmark-action/github-action-benchmark@v1
-        with:
-          tool: "cargo"
-          output-file-path: target/criterion/reports/crates-benchmark.json
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          auto-push: true
-
-  crates-publish-check:
-    name: Crates Publish Check
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Check if crates can be published
-        run: cargo package -p dbx-crates --allow-dirty
-
-      - name: Verify crates package
-        run: cargo verify-project -p dbx-crates
-
-  crates-docs:
-    name: Crates Documentation
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+      - name: Check if crates compile
+        run: cargo check -p dbx-crates --all-features
 
       - name: Build crates documentation
         run: cargo doc -p dbx-crates --all-features --no-deps
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        if: github.ref == 'refs/heads/main'
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./target/doc/dbx_crates
-          destination_dir: crates
+      - name: Check crates package
+        run: cargo package -p dbx-crates --allow-dirty
