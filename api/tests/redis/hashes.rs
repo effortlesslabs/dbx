@@ -9,7 +9,6 @@ use crate::common::{
     extract_json,
     assert_status_code,
     assert_success_response,
-    assert_error_response,
     cleanup_test_keys,
     generate_test_key,
 };

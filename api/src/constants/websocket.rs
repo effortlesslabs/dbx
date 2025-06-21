@@ -1,3 +1,5 @@
+use crate::constants::redis_ws;
+
 /// WebSocket error messages
 pub const ERROR_BINARY_MESSAGES: &str = "Binary messages not supported";
 
@@ -6,7 +8,12 @@ pub const WELCOME_MESSAGE: &str = "Connected to DBX WebSocket API";
 pub const CONNECTION_ID_FIELD: &str = "connection_id";
 pub const SUPPORTED_COMMANDS_FIELD: &str = "supported_commands";
 
-/// Supported WebSocket commands
+/// Get all supported commands as string slice
+pub fn get_supported_commands() -> Vec<&'static str> {
+    redis_ws::get_supported_commands()
+}
+
+/// Supported WebSocket commands (for backward compatibility)
 pub const SUPPORTED_COMMANDS: &[&str] = &[
     // String commands
     "get",

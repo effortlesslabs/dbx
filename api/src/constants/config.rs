@@ -12,5 +12,6 @@ impl ConfigDefaults {
     pub const POOL_SIZE: u32 = 10;
 
     /// Default database type
+    #[allow(dead_code)]
     pub const DATABASE_TYPE: &'static str = "redis";
 }

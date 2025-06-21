@@ -17,17 +17,6 @@ jobs:
     name: Run API Tests
     runs-on: ubuntu-latest
 
-    services:
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -50,23 +39,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
-      - name: Install Redis CLI
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y redis-tools
-
-      - name: Wait for Redis
-        run: |
-          echo "Waiting for Redis to be ready..."
-          timeout 30s bash -c 'until redis-cli ping; do sleep 1; done'
-
       - name: Run all tests
         working-directory: api
         run: |
           echo "Running all API tests..."
           cargo test --all-targets --all-features
         env:
-          REDIS_URL: redis://localhost:6379
+          REDIS_URL: ${{ secrets.REDIS_URL }}
           DATABASE_TYPE: redis
           HOST: 127.0.0.1
           PORT: 3000
@@ -86,7 +65,7 @@ jobs:
           echo "Running integration tests..."
           cargo test --test integration
         env:
-          REDIS_URL: redis://localhost:6379
+          REDIS_URL: ${{ secrets.REDIS_URL }}
           DATABASE_TYPE: redis
           HOST: 127.0.0.1
           PORT: 3000

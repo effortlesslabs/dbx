@@ -1,8 +1,8 @@
 import { createDbxClient } from "../index";
 
 async function main() {
-  // Create a DBX client
-  const client = createDbxClient("http://localhost:8080");
+  // Create a DBX client (uses HOST_URL from .env file)
+  const client = createDbxClient();
 
   try {
     // Health check

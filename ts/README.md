@@ -1,429 +1,193 @@
-# DBX TypeScript Client
+# DBX TypeScript SDK
 
-A comprehensive TypeScript client for the DBX API, providing easy access to Redis operations through HTTP and WebSocket interfaces.
+A TypeScript SDK for DBX - A minimal API layer for databases (fetch-based).
 
 ## Installation
 
 ```bash
-npm install @effortlesslabs/dbx
-```
-
-## Quick Start
-
-```typescript
-import { createDbxClient } from "@effortlesslabs/dbx";
-
-// Create a client
-const client = createDbxClient("http://localhost:8080");
-
-// Basic operations
-await client.setString("key", "value", 3600); // Set with TTL
-const value = await client.getString("key");
-console.log(value); // 'value'
+npm install @dbx/sdk
 ```
 
 ## Configuration
 
-```typescript
-import { DbxClient } from "@effortlesslabs/dbx";
+The SDK supports environment variables for configuration. Create a `.env` file in your project root:
 
-const client = new DbxClient({
-  baseUrl: "http://localhost:8080",
-  timeout: 10000, // 10 seconds
-  headers: {
-    Authorization: "Bearer your-token",
+```env
+# API Configuration
+HOST_URL=http://127.0.0.1:3000
+WS_HOST_URL=ws://127.0.0.1:3000/redis_ws
+REDIS_URL=redis://127.0.0.1:6379
+```
+
+## Basic Usage
+
+```typescript
+import { createDbxClient } from "@dbx/sdk";
+
+// Create client using environment variables
+const client = createDbxClient();
+
+// Or specify a custom base URL
+const client = createDbxClient("http://localhost:8080");
+
+// Health check
+const health = await client.health();
+console.log("Health:", health);
+
+// Set a value
+await client.setString("key", "value", 3600); // with TTL
+
+// Get a value
+const value = await client.getString("key");
+console.log("Value:", value);
+```
+
+## WebSocket Usage
+
+```typescript
+import { createDbxClient, getConfig } from "@dbx/sdk";
+
+const config = getConfig();
+const client = createDbxClient();
+
+// Create WebSocket connection
+const ws = client.createWebSocket({
+  url: config.wsHostUrl, // Uses WS_HOST_URL from .env
+  onOpen: () => {
+    console.log("Connected!");
+
+    // Send commands
+    client.sendWebSocketCommand(
+      ws,
+      {
+        action: "set",
+        params: { key: "test", value: "Hello WebSocket!" },
+      },
+      "cmd1"
+    );
+  },
+  onMessage: (response) => {
+    console.log("Response:", response);
+  },
+  onError: (error) => {
+    console.error("Error:", error);
+  },
+  onClose: () => {
+    console.log("Disconnected");
   },
 });
 ```
 
-## API Reference
-
-### Server Operations
-
-#### Health Check
+## Configuration API
 
 ```typescript
-const health = await client.health();
-// Returns: { status: string, redis_connected: boolean, timestamp: string }
+import { getConfig, getConfigWithOverrides } from "@dbx/sdk";
+
+// Get configuration from environment variables
+const config = getConfig();
+console.log("Host URL:", config.hostUrl);
+console.log("WebSocket URL:", config.wsHostUrl);
+
+// Get configuration with custom overrides
+const customConfig = getConfigWithOverrides({
+  hostUrl: "http://custom-host:3000",
+});
 ```
 
-#### Server Info
-
-```typescript
-const info = await client.info();
-// Returns: { name: string, version: string, redis_url: string, pool_size: number }
-```
-
-#### Database Size
-
-```typescript
-const size = await client.dbSize();
-// Returns: number
-```
-
-#### Flush Operations
-
-```typescript
-await client.flushAll(); // Flush all databases
-await client.flushDb(); // Flush current database
-```
+## Available Operations
 
 ### String Operations
 
-#### Basic String Operations
-
-```typescript
-// Set a string value
-await client.setString("key", "value", 3600); // Optional TTL in seconds
-
-// Get a string value
-const value = await client.getString("key");
-
-// Delete a string
-const deleted = await client.deleteString("key");
-
-// Check if key exists
-const exists = await client.exists("key");
-
-// Get TTL
-const ttl = await client.getTtl("key");
-```
-
-#### Counter Operations
-
-```typescript
-// Increment by 1
-const newValue = await client.incr("counter");
-
-// Increment by specific amount
-const newValue = await client.incrBy("counter", 5);
-```
-
-#### Conditional Operations
-
-```typescript
-// Set only if key doesn't exist
-const set = await client.setNx("key", "value", 3600);
-
-// Compare and set (CAS)
-const success = await client.compareAndSet("key", "expected", "new-value", 3600);
-```
-
-#### Batch String Operations
-
-```typescript
-// Batch set multiple key-value pairs
-await client.batchSet(
-  {
-    key1: "value1",
-    key2: "value2",
-  },
-  3600
-); // Optional TTL
-
-// Batch get multiple values
-const values = await client.batchGet(["key1", "key2", "key3"]);
-
-// Batch delete multiple keys
-const deleted = await client.batchDelete(["key1", "key2"]);
-
-// Batch increment multiple counters
-const newValues = await client.batchIncr(["counter1", "counter2"]);
-
-// Batch increment by specific amounts
-const newValues = await client.batchIncrBy([
-  ["counter1", 5],
-  ["counter2", 10],
-]);
-```
+- `getString(key)` - Get a string value
+- `setString(key, value, ttl?)` - Set a string value
+- `deleteString(key)` - Delete a string value
+- `exists(key)` - Check if key exists
+- `getTtl(key)` - Get TTL for a key
+- `incr(key)` - Increment a counter
+- `incrBy(key, increment)` - Increment by specific amount
+- `setNx(key, value, ttl?)` - Set only if not exists
+- `compareAndSet(key, expectedValue, newValue, ttl?)` - Compare and set
 
 ### Set Operations
 
-#### Basic Set Operations
-
-```typescript
-// Add members to a set
-await client.addSetMembers("set1", ["member1", "member2", "member3"]);
-
-// Get all members of a set
-const members = await client.getSetMembers("set1");
-
-// Delete a set
-const deleted = await client.deleteSet("set1");
-
-// Check if member exists
-const exists = await client.setMemberExists("set1", "member1");
-
-// Get set cardinality (size)
-const size = await client.getSetCardinality("set1");
-```
-
-#### Set Member Operations
-
-```typescript
-// Get a random member
-const member = await client.getRandomSetMember("set1");
-
-// Pop a random member
-const member = await client.popRandomSetMember("set1");
-
-// Move a member to another set
-const moved = await client.moveSetMember("set1", "member1", "set2");
-```
-
-#### Set Operations
-
-```typescript
-// Union of multiple sets
-const union = await client.setUnion("result", ["set1", "set2", "set3"]);
-
-// Intersection of multiple sets
-const intersection = await client.setIntersection("result", ["set1", "set2"]);
-
-// Difference of multiple sets
-const difference = await client.setDifference("result", ["set1", "set2"]);
-```
-
-#### Batch Set Operations
-
-```typescript
-// Batch add members to multiple sets
-await client.batchAddSetMembers({
-  set1: ["member1", "member2"],
-  set2: ["member3", "member4"],
-});
-
-// Batch remove members from multiple sets
-await client.batchRemoveSetMembers({
-  set1: ["member1"],
-  set2: ["member3"],
-});
-
-// Batch get members from multiple sets
-const allMembers = await client.batchGetSetMembers(["set1", "set2"]);
-
-// Batch delete multiple sets
-const deleted = await client.batchDeleteSets(["set1", "set2"]);
-```
+- `getSetMembers(key)` - Get all set members
+- `addSetMembers(key, members)` - Add members to set
+- `deleteSet(key)` - Delete entire set
+- `setMemberExists(key, member)` - Check if member exists
+- `getSetCardinality(key)` - Get set size
+- `getRandomSetMember(key)` - Get random member
+- `popRandomSetMember(key)` - Remove and return random member
+- `moveSetMember(key, member, destination)` - Move member to another set
+- `setUnion(key, otherKeys)` - Get union of sets
+- `setIntersection(key, otherKeys)` - Get intersection of sets
+- `setDifference(key, otherKeys)` - Get difference of sets
 
 ### Hash Operations
 
-#### Basic Hash Operations
+- `getHashField(key, field)` - Get hash field value
+- `setHashField(key, field, value)` - Set hash field
+- `deleteHashField(key, field)` - Delete hash field
+- `hashFieldExists(key, field)` - Check if field exists
+- `incrementHashField(key, field, increment)` - Increment hash field
+- `setHashFieldNx(key, field, value)` - Set field only if not exists
+- `getHashLength(key)` - Get number of hash fields
+- `getHashKeys(key)` - Get all hash field names
+- `getHashValues(key)` - Get all hash field values
+- `getRandomHashField(key)` - Get random hash field
+- `getMultipleHashFields(key, fields)` - Get multiple fields
+- `getHashAll(key)` - Get all hash fields
+- `setHashMultiple(key, fields)` - Set multiple hash fields
+- `deleteHash(key)` - Delete entire hash
 
-```typescript
-// Set a hash field
-await client.setHashField("hash1", "field1", "value1");
+### Batch Operations
 
-// Get a hash field
-const value = await client.getHashField("hash1", "field1");
-
-// Delete a hash field
-const deleted = await client.deleteHashField("hash1", "field1");
-
-// Check if hash field exists
-const exists = await client.hashFieldExists("hash1", "field1");
-
-// Delete entire hash
-const deleted = await client.deleteHash("hash1");
-```
-
-#### Hash Field Operations
-
-```typescript
-// Increment a hash field
-const newValue = await client.incrementHashField("hash1", "counter", 5);
-
-// Set hash field only if it doesn't exist
-const set = await client.setHashFieldNx("hash1", "field1", "value1");
-
-// Get random hash field
-const field = await client.getRandomHashField("hash1");
-```
-
-#### Hash Information
-
-```typescript
-// Get hash length (number of fields)
-const length = await client.getHashLength("hash1");
-
-// Get all hash field names
-const keys = await client.getHashKeys("hash1");
-
-// Get all hash field values
-const values = await client.getHashValues("hash1");
-
-// Get all hash fields and values
-const all = await client.getHashAll("hash1");
-```
-
-#### Multiple Hash Fields
-
-```typescript
-// Set multiple hash fields
-await client.setHashMultiple("hash1", {
-  field1: "value1",
-  field2: "value2",
-  field3: "value3",
-});
-
-// Get multiple hash fields
-const values = await client.getMultipleHashFields("hash1", ["field1", "field2"]);
-```
-
-#### Batch Hash Operations
-
-```typescript
-// Batch set hash fields across multiple hashes
-await client.batchSetHashFields({
-  hash1: { field1: "value1", field2: "value2" },
-  hash2: { field3: "value3" },
-});
-
-// Batch get hash fields across multiple hashes
-const values = await client.batchGetHashFields({
-  hash1: ["field1", "field2"],
-  hash2: ["field3"],
-});
-
-// Batch delete hash fields across multiple hashes
-const deleted = await client.batchDeleteHashFields({
-  hash1: ["field1"],
-  hash2: ["field3"],
-});
-
-// Batch get all fields from multiple hashes
-const allFields = await client.batchGetHashAll(["hash1", "hash2"]);
-
-// Batch check if hash fields exist
-const exists = await client.batchCheckHashFields({
-  hash1: ["field1", "field2"],
-  hash2: ["field3"],
-});
-
-// Batch get hash lengths
-const lengths = await client.batchGetHashLengths(["hash1", "hash2"]);
-```
+- `batchSet(keyValues, ttl?)` - Set multiple keys
+- `batchGet(keys)` - Get multiple keys
+- `batchDelete(keys)` - Delete multiple keys
+- `batchIncr(keys)` - Increment multiple counters
+- `batchIncrBy(keyIncrements)` - Increment multiple counters by specific amounts
+- `batchAddSetMembers(setMembers)` - Add members to multiple sets
+- `batchRemoveSetMembers(setMembers)` - Remove members from multiple sets
+- `batchGetSetMembers(keys)` - Get members from multiple sets
+- `batchDeleteSets(keys)` - Delete multiple sets
+- `batchSetHashFields(hashFields)` - Set fields in multiple hashes
+- `batchGetHashFields(hashFields)` - Get fields from multiple hashes
+- `batchDeleteHashFields(hashFields)` - Delete fields from multiple hashes
+- `batchGetHashAll(keys)` - Get all fields from multiple hashes
+- `batchCheckHashFields(hashFields)` - Check if fields exist in multiple hashes
+- `batchGetHashLengths(keys)` - Get lengths of multiple hashes
 
 ### Key Operations
 
-```typescript
-// List all keys
-const keys = await client.listKeys();
+- `listKeys(pattern?)` - List keys matching pattern
+- `keyExists(key)` - Check if key exists
+- `keyTtl(key)` - Get TTL for key
+- `deleteKey(key)` - Delete a key
 
-// List keys matching pattern
-const keys = await client.listKeys("user:*");
+### Server Operations
 
-// Check if key exists
-const exists = await client.keyExists("key1");
+- `health()` - Health check
+- `info()` - Server info
+- `dbSize()` - Get database size
+- `flushAll()` - Flush all databases
+- `flushDb()` - Flush current database
 
-// Get key TTL
-const ttl = await client.keyTtl("key1");
+## WebSocket Commands
 
-// Delete a key
-const deleted = await client.deleteKey("key1");
-```
-
-### WebSocket Support
-
-The client provides WebSocket support for real-time operations:
+The WebSocket API supports all the same operations as the HTTP API. Commands are sent using the `sendWebSocketCommand` method:
 
 ```typescript
-// Create WebSocket connection
-const ws = client.createWebSocket({
-  url: "ws://localhost:8080/ws",
-  onOpen: () => {
-    console.log("Connected to WebSocket");
-  },
-  onMessage: (response) => {
-    console.log("Received:", response);
-  },
-  onError: (error) => {
-    console.error("WebSocket error:", error);
-  },
-  onClose: () => {
-    console.log("WebSocket closed");
-  },
-});
-
-// Send commands
-client.sendWebSocketCommand(
-  ws,
-  {
-    action: "get",
-    params: { key: "my-key" },
-  },
-  "cmd1"
-);
-
 client.sendWebSocketCommand(
   ws,
   {
     action: "set",
-    params: { key: "my-key", value: "my-value", ttl: 3600 },
+    params: { key: "test", value: "Hello!", ttl: 3600 },
   },
-  "cmd2"
-);
-
-client.sendWebSocketCommand(
-  ws,
-  {
-    action: "batch_get",
-    params: { keys: ["key1", "key2", "key3"] },
-  },
-  "cmd3"
+  "command-id"
 );
 ```
 
-#### Supported WebSocket Commands
-
-- `get` - Get a string value
-- `set` - Set a string value
-- `delete` - Delete a key
-- `exists` - Check if key exists
-- `ttl` - Get key TTL
-- `incr` - Increment counter
-- `incrby` - Increment by amount
-- `setnx` - Set if not exists
-- `cas` - Compare and set
-- `batch_get` - Batch get multiple values
-- `batch_set` - Batch set multiple values
-- `batch_delete` - Batch delete multiple keys
-- `batch_incr` - Batch increment counters
-- `batch_incrby` - Batch increment by amounts
-- `list_keys` - List keys with optional pattern
-- `ping` - Ping the server
-- `subscribe` - Subscribe to channels
-- `unsubscribe` - Unsubscribe from channels
-
-## Error Handling
-
-The client throws errors for failed operations:
-
-```typescript
-try {
-  const value = await client.getString("non-existent-key");
-} catch (error) {
-  console.error("Operation failed:", error.message);
-}
-```
-
-## Examples
-
-See the `examples/` directory for complete usage examples:
-
-- `basic-usage.ts` - Comprehensive example showing all operations
-- WebSocket usage examples
-
-## TypeScript Support
-
-The library is written in TypeScript and provides full type safety:
-
-```typescript
-import { DbxClient, ApiResponse, StringValue } from "@effortlesslabs/dbx";
-
-const client: DbxClient = createDbxClient("http://localhost:8080");
-const response: ApiResponse<StringValue> = await client.getString("key");
-```
+Available actions: `get`, `set`, `delete`, `exists`, `ttl`, `incr`, `incrby`, `setnx`, `cas`, `batch_set`, `batch_get`, `batch_delete`, `batch_incr`, `batch_incrby`, `get_set_members`, `add_set_members`, `delete_set`, `set_member_exists`, `get_set_cardinality`, `get_random_set_member`, `pop_random_set_member`, `move_set_member`, `set_union`, `set_intersection`, `set_difference`, `batch_add_set_members`, `batch_remove_set_members`, `batch_get_set_members`, `batch_delete_sets`, `get_hash_field`, `set_hash_field`, `delete_hash_field`, `hash_field_exists`, `increment_hash_field`, `set_hash_field_nx`, `get_hash_length`, `get_hash_keys`, `get_hash_values`, `get_random_hash_field`, `get_multiple_hash_fields`, `get_hash_all`, `set_hash_multiple`, `delete_hash`, `batch_set_hash_fields`, `batch_get_hash_fields`, `batch_delete_hash_fields`, `batch_get_hash_all`, `batch_check_hash_fields`, `batch_get_hash_lengths`, `list_keys`, `key_exists`, `key_ttl`, `delete_key`, `ping`.
 
 ## License
 

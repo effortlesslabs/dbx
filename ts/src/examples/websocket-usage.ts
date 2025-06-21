@@ -1,11 +1,12 @@
-import { createDbxClient } from "../index";
+import { createDbxClient, getConfig } from "../index";
 
 async function websocketExample() {
-  const client = createDbxClient("http://localhost:8080");
+  const config = getConfig();
+  const client = createDbxClient();
 
-  // Create WebSocket connection
+  // Create WebSocket connection using WS_HOST_URL from .env
   const ws = client.createWebSocket({
-    url: "ws://localhost:8080/ws",
+    url: config.wsHostUrl,
     onOpen: () => {
       console.log("WebSocket connected successfully");
 
