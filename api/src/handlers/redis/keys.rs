@@ -57,7 +57,7 @@ impl RedisHandler {
         };
 
         match redis.string().exists(&key) {
-            Ok(exists) => Ok(Json(ApiResponse::success(ExistsResponse { exists }))),
+            Ok(exists) => { Ok(Json(ApiResponse::success(ExistsResponse { exists }))) }
             Err(e) => Err(handle_redis_error(e)),
         }
     }
@@ -76,7 +76,17 @@ impl RedisHandler {
         };
 
         match redis.string().ttl(&key) {
-            Ok(ttl) => Ok(Json(ApiResponse::success(TtlResponse { ttl }))),
+            Ok(ttl) => {
+                // If the key does not exist, Redis returns -2 for TTL
+                if ttl == -2 {
+                    Err((
+                        StatusCode::NOT_FOUND,
+                        Json(ApiResponse::error("Key not found".to_string())),
+                    ))
+                } else {
+                    Ok(Json(ApiResponse::success(TtlResponse { ttl })))
+                }
+            }
             Err(e) => Err(handle_redis_error(e)),
         }
     }
@@ -94,15 +104,15 @@ impl RedisHandler {
             }
         };
 
-        match redis.string().del(&key) {
-            Ok(_) =>
-                Ok(
-                    Json(
-                        ApiResponse::success(DeleteResponse {
-                            deleted_count: 1,
-                        })
-                    )
-                ),
+        // Check if key exists first
+        match redis.string().exists(&key) {
+            Ok(false) =>
+                Err((StatusCode::NOT_FOUND, Json(ApiResponse::error("Key not found".to_string())))),
+            Ok(true) =>
+                match redis.string().del(&key) {
+                    Ok(_) => Ok(Json(ApiResponse::success(DeleteResponse { deleted_count: 1 }))),
+                    Err(e) => Err(handle_redis_error(e)),
+                }
             Err(e) => Err(handle_redis_error(e)),
         }
     }

@@ -1,22 +1,4 @@
-/// WebSocket message constants
-pub const WS_ENDPOINT: &str = "/redis_ws";
-pub const WS_PROTOCOL: &str = "ws";
-
-/// WebSocket message types
-pub const MESSAGE_TYPE_COMMAND: &str = "command";
-pub const MESSAGE_TYPE_RESPONSE: &str = "response";
-pub const MESSAGE_TYPE_ERROR: &str = "error";
-
-/// WebSocket connection constants
-pub const MAX_MESSAGE_SIZE: usize = 1024 * 1024; // 1MB
-pub const CONNECTION_TIMEOUT: u64 = 300; // 5 minutes
-pub const PING_INTERVAL: u64 = 30; // 30 seconds
-
 /// WebSocket error messages
-pub const ERROR_INVALID_MESSAGE: &str = "Invalid message format";
-pub const ERROR_UNSUPPORTED_COMMAND: &str = "Unsupported command";
-pub const ERROR_REDIS_CONNECTION: &str = "Redis connection error";
-pub const ERROR_SERIALIZATION: &str = "Message serialization error";
 pub const ERROR_BINARY_MESSAGES: &str = "Binary messages not supported";
 
 /// WebSocket welcome message

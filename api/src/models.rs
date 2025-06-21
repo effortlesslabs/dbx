@@ -388,3 +388,23 @@ pub struct RedisWsState {
     pub connection_id: String,
     pub subscribed_channels: std::sync::Arc<tokio::sync::RwLock<Vec<String>>>,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct BatchGetRequest {
+    pub keys: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BatchDeleteRequest {
+    pub keys: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BatchIncrRequest {
+    pub keys: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BatchIncrByRequest {
+    pub key_increments: Vec<(String, i64)>,
+}

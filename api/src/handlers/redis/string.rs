@@ -19,6 +19,10 @@ use crate::{
         SetRequest,
         StringValue,
         TtlResponse,
+        BatchGetRequest,
+        BatchDeleteRequest,
+        BatchIncrRequest,
+        BatchIncrByRequest,
     },
 };
 
@@ -43,13 +47,7 @@ impl RedisHandler {
         match redis.string().get(&key) {
             Ok(Some(value)) => Ok(Json(ApiResponse::success(StringValue { value }))),
             Ok(None) =>
-                Ok(
-                    Json(
-                        ApiResponse::success(StringValue {
-                            value: String::new(),
-                        })
-                    )
-                ),
+                Err((StatusCode::NOT_FOUND, Json(ApiResponse::error("Key not found".to_string())))),
             Err(e) => Err(handle_redis_error(e)),
         }
     }
@@ -257,7 +255,6 @@ impl RedisHandler {
 
         let mut key_values = std::collections::HashMap::new();
 
-        // Use the batch operations helper
         let kvs: Vec<(&str, &str)> = request.key_values
             .iter()
             .map(|(k, v)| {
@@ -269,25 +266,42 @@ impl RedisHandler {
         let redis = match handler.get_redis() {
             Ok(redis) => redis,
             Err(e) => {
+                println!("Failed to get redis: {}", e);
                 return Err(handle_redis_error(e));
             }
         };
 
-        match redis.string().set_many(kvs) {
+        let result = if let Some(ttl) = request.ttl {
+            // Use set_many_with_expiry if TTL is provided
+            let kvs_with_ttl: Vec<(&str, &str, usize)> = kvs
+                .iter()
+                .map(|(k, v)| (*k, *v, ttl as usize))
+                .collect();
+            println!("set_many_with_expiry: {:?}", kvs_with_ttl);
+            redis.string().set_many_with_expiry(kvs_with_ttl)
+        } else {
+            // Otherwise, use set_many
+            redis.string().set_many(kvs)
+        };
+
+        match result {
             Ok(_) => Ok(Json(ApiResponse::success(KeyValues { key_values }))),
-            Err(e) => Err(handle_redis_error(e)),
+            Err(e) => {
+                println!("Failed to set many: {:?}", e);
+                Err(handle_redis_error(e))
+            }
         }
     }
 
     pub async fn batch_get(
         State(handler): State<Arc<RedisHandler>>,
-        Json(keys): Json<Vec<String>>
+        Json(request): Json<BatchGetRequest>
     ) -> Result<Json<ApiResponse<KeyValues>>, (StatusCode, Json<ApiResponse<()>>)> {
         debug!("POST /strings/batch/get");
 
         let mut key_values = std::collections::HashMap::new();
 
-        let key_refs: Vec<&str> = keys
+        let key_refs: Vec<&str> = request.keys
             .iter()
             .map(|k| k.as_str())
             .collect();
@@ -300,10 +314,9 @@ impl RedisHandler {
 
         match redis.string().get_many(key_refs) {
             Ok(results) => {
-                for (key, result) in keys.iter().zip(results.iter()) {
-                    if let Some(value) = result {
-                        key_values.insert(key.clone(), value.clone());
-                    }
+                for (key, result) in request.keys.iter().zip(results.iter()) {
+                    let value = result.clone().unwrap_or_else(|| "".to_string());
+                    key_values.insert(key.clone(), value);
                 }
                 Ok(Json(ApiResponse::success(KeyValues { key_values })))
             }
@@ -313,11 +326,11 @@ impl RedisHandler {
 
     pub async fn batch_delete(
         State(handler): State<Arc<RedisHandler>>,
-        Json(keys): Json<Vec<String>>
+        Json(request): Json<BatchDeleteRequest>
     ) -> Result<Json<ApiResponse<DeleteResponse>>, (StatusCode, Json<ApiResponse<()>>)> {
         debug!("POST /strings/batch/delete");
 
-        let key_refs: Vec<&str> = keys
+        let key_refs: Vec<&str> = request.keys
             .iter()
             .map(|k| k.as_str())
             .collect();
@@ -333,7 +346,7 @@ impl RedisHandler {
                 Ok(
                     Json(
                         ApiResponse::success(DeleteResponse {
-                            deleted_count: keys.len() as u64,
+                            deleted_count: request.keys.len() as u64,
                         })
                     )
                 ),
@@ -343,11 +356,11 @@ impl RedisHandler {
 
     pub async fn batch_incr(
         State(handler): State<Arc<RedisHandler>>,
-        Json(keys): Json<Vec<String>>
+        Json(request): Json<BatchIncrRequest>
     ) -> Result<Json<ApiResponse<Vec<IntegerValue>>>, (StatusCode, Json<ApiResponse<()>>)> {
         debug!("POST /strings/batch/incr");
 
-        let key_refs: Vec<&str> = keys
+        let key_refs: Vec<&str> = request.keys
             .iter()
             .map(|k| k.as_str())
             .collect();
@@ -372,11 +385,11 @@ impl RedisHandler {
 
     pub async fn batch_incr_by(
         State(handler): State<Arc<RedisHandler>>,
-        Json(kvs): Json<Vec<(String, i64)>>
+        Json(request): Json<BatchIncrByRequest>
     ) -> Result<Json<ApiResponse<Vec<IntegerValue>>>, (StatusCode, Json<ApiResponse<()>>)> {
         debug!("POST /strings/batch/incrby");
 
-        let kv_refs: Vec<(&str, i64)> = kvs
+        let kv_refs: Vec<(&str, i64)> = request.key_increments
             .iter()
             .map(|(k, v)| (k.as_str(), *v))
             .collect();
