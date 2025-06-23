@@ -1,5 +1,3 @@
-![DBX](banner.png)
-
 # DBX
 
 Lightweight API Proxy for Edge & Embedded Systems.
