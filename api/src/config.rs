@@ -1,4 +1,3 @@
-use crate::constants::{ config::ConfigDefaults, database::DatabaseUrls };
 use serde::{ Deserialize, Serialize };
 use std::str::FromStr;
 
@@ -50,62 +49,4 @@ pub struct Config {
     pub port: u16,
     /// Connection pool size
     pub pool_size: u32,
-}
-
-impl Config {
-    /// Create a new configuration with default values
-    pub fn new(database_type: DatabaseType) -> Self {
-        let default_url = match database_type {
-            DatabaseType::Redis => DatabaseUrls::redis_url(),
-            // DatabaseType::Postgres => DatabaseUrls::postgres_url(),
-            // DatabaseType::MongoDB => DatabaseUrls::mongodb_url(),
-            // DatabaseType::MySQL => DatabaseUrls::mysql_url(),
-        };
-
-        Self {
-            database_type,
-            database_url: default_url,
-            host: ConfigDefaults::HOST.to_string(),
-            port: ConfigDefaults::PORT,
-            pool_size: ConfigDefaults::POOL_SIZE,
-        }
-    }
-
-    /// Create a new configuration from environment variables
-    pub fn from_env() -> Self {
-        let database_type = std::env
-            ::var("DATABASE_TYPE")
-            .unwrap_or_else(|_| ConfigDefaults::DATABASE_TYPE.to_string())
-            .parse()
-            .unwrap_or(DatabaseType::Redis);
-
-        let default_url = match database_type {
-            DatabaseType::Redis => DatabaseUrls::redis_url(),
-            // DatabaseType::Postgres => DatabaseUrls::postgres_url(),
-            // DatabaseType::MongoDB => DatabaseUrls::mongodb_url(),
-            // DatabaseType::MySQL => DatabaseUrls::mysql_url(),
-        };
-
-        Self {
-            database_type,
-            database_url: std::env::var("DATABASE_URL").unwrap_or_else(|_| default_url),
-            host: std::env::var("HOST").unwrap_or_else(|_| ConfigDefaults::HOST.to_string()),
-            port: std::env
-                ::var("PORT")
-                .unwrap_or_else(|_| ConfigDefaults::PORT.to_string())
-                .parse()
-                .unwrap_or(ConfigDefaults::PORT),
-            pool_size: std::env
-                ::var("POOL_SIZE")
-                .unwrap_or_else(|_| ConfigDefaults::POOL_SIZE.to_string())
-                .parse()
-                .unwrap_or(ConfigDefaults::POOL_SIZE),
-        }
-    }
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self::new(DatabaseType::Redis)
-    }
 }

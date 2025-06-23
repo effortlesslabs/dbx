@@ -1,125 +1,205 @@
-use axum::body::to_bytes;
-use axum::{ body::Body, http::{ Request, StatusCode }, response::Response, Router };
-use dbx_crates::adapter::redis::Redis;
-use serde_json::Value;
-use std::sync::Arc;
-use tower::util::ServiceExt;
-use tokio::net::TcpStream;
-use tokio_tungstenite::{ connect_async, WebSocketStream, MaybeTlsStream };
-use futures_util::{ SinkExt, StreamExt };
+use std::time::Duration;
+use serde_json::json;
+use reqwest::Client;
 
-use dbx_api::{
-    config::{ Config, DatabaseType },
-    constants::database::DatabaseUrls,
-    server::Server,
-};
+// Constants
+pub const BASE_URL: &str = "http://localhost:3000/redis";
+pub const WS_BASE_URL: &str = "ws://localhost:3000/redis_ws/string/ws";
+pub const WS_ADMIN_URL: &str = "ws://localhost:3000/redis_ws/admin/ws";
 
-/// Test helper to create a test server
-pub async fn create_test_server() -> (Router, Arc<Redis>) {
-    let config = Config {
-        database_type: DatabaseType::Redis,
-        database_url: DatabaseUrls::redis_test_url(),
-        host: "127.0.0.1".to_string(),
-        port: 3001,
-        pool_size: 5,
-    };
-
-    let server = Server::new(config).await.expect("Failed to create test server");
-
-    // Create Redis client directly for testing
-    let redis = Arc::new(
-        Redis::from_url(&DatabaseUrls::redis_test_url()).expect("Failed to create Redis client")
-    );
-    let router = server.create_router();
-
-    (router, redis)
+// Time delays
+pub fn short_delay() -> Duration {
+    Duration::from_millis(200)
 }
 
-/// Test helper to make HTTP requests
-pub async fn make_request(
-    router: Router,
-    method: &str,
-    path: &str,
-    body: Option<Value>
-) -> Response<Body> {
-    let request_builder = Request::builder()
-        .method(method)
-        .uri(path)
-        .header("content-type", "application/json");
-
-    let request = if let Some(body) = body {
-        request_builder.body(Body::from(body.to_string())).unwrap()
-    } else {
-        request_builder.body(Body::empty()).unwrap()
-    };
-
-    router.oneshot(request).await.unwrap()
+pub fn ttl_delay() -> Duration {
+    Duration::from_secs(2)
 }
 
-/// Test helper to extract JSON response
-pub async fn extract_json<T: serde::de::DeserializeOwned>(response: Response<Body>) -> T {
-    let body = to_bytes(response.into_body(), usize::MAX).await.unwrap();
-    serde_json::from_slice(&body).unwrap()
+pub fn websocket_timeout() -> Duration {
+    Duration::from_secs(15)
 }
 
-/// Test helper to create WebSocket connection
-pub async fn create_websocket_connection() -> WebSocketStream<MaybeTlsStream<TcpStream>> {
-    let url = "ws://127.0.0.1:3001/redis_ws";
-    let (ws_stream, _) = connect_async(url).await.expect("Failed to connect to WebSocket");
-    ws_stream
-}
-
-/// Test helper to send WebSocket message and get response
-pub async fn send_websocket_message(
-    ws_stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
-    message: Value
-) -> Value {
-    ws_stream
-        .send(tokio_tungstenite::tungstenite::Message::Text(message.to_string())).await
-        .expect("Failed to send WebSocket message");
-
-    let response = ws_stream.next().await.expect("Failed to receive WebSocket response");
-    let response_text = response.unwrap().into_text().unwrap();
-    serde_json::from_str(&response_text).unwrap()
-}
-
-/// Test helper to clean up test keys
-pub async fn cleanup_test_keys(redis: &Redis, keys: &[&str]) {
-    for key in keys {
-        let _ = redis.string().del(key);
+// Test data generators
+pub fn generate_test_key(prefix: &str, index: Option<usize>) -> String {
+    match index {
+        Some(i) => format!("{}_{}", prefix, i),
+        None => prefix.to_string(),
     }
 }
 
-/// Test helper to generate unique test keys
-pub fn generate_test_key(prefix: &str) -> String {
-    use std::time::{ SystemTime, UNIX_EPOCH };
-    let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis();
-    format!("test_{}_{}", prefix, timestamp)
+pub fn generate_test_value(prefix: &str, index: Option<usize>) -> String {
+    match index {
+        Some(i) => format!("{}_{}", prefix, i),
+        None => prefix.to_string(),
+    }
 }
 
-/// Test helper to wait for async operations
-pub async fn wait_for_async() {
-    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+pub fn generate_large_value(size: usize) -> String {
+    "x".repeat(size)
 }
 
-/// Assert response is successful
-pub fn assert_success_response<T>(response: &dbx_api::models::ApiResponse<T>) {
-    assert!(response.success, "Expected successful response, got error: {:?}", response.error);
+pub fn generate_special_chars_value() -> String {
+    "!@#$%^&*()_+-=[]{}|;':\",./<>?".to_string()
 }
 
-/// Assert response is an error
-pub fn assert_error_response<T>(response: &dbx_api::models::ApiResponse<T>) {
-    assert!(!response.success, "Expected error response, got success");
-    assert!(response.error.is_some(), "Expected error message");
+// HTTP client utilities
+pub fn create_http_client() -> Client {
+    Client::new()
 }
 
-/// Assert HTTP status code
-pub fn assert_status_code(response: &Response<Body>, expected: StatusCode) {
-    assert_eq!(
-        response.status(),
-        expected,
-        "Expected status code {}, got {}",
-        expected,
-        response.status()
-    );
+pub async fn set_string(
+    client: &Client,
+    base_url: &str,
+    key: &str,
+    value: &str
+) -> Result<(), Box<dyn std::error::Error>> {
+    let res = client
+        .post(&format!("{}/redis/string/{}", base_url, key))
+        .json(&json!({"value": value}))
+        .send().await?;
+
+    if res.status() == 200 {
+        Ok(())
+    } else {
+        Err(format!("Failed to set string: {}", res.status()).into())
+    }
+}
+
+pub async fn get_string(
+    client: &Client,
+    base_url: &str,
+    key: &str
+) -> Result<Option<String>, Box<dyn std::error::Error>> {
+    let res = client.get(&format!("{}/redis/string/{}", base_url, key)).send().await?;
+
+    if res.status() == 200 {
+        let body: Option<String> = res.json().await?;
+        Ok(body)
+    } else {
+        Err(format!("Failed to get string: {}", res.status()).into())
+    }
+}
+
+pub async fn delete_string(
+    client: &Client,
+    base_url: &str,
+    key: &str
+) -> Result<bool, Box<dyn std::error::Error>> {
+    let res = client.delete(&format!("{}/redis/string/{}", base_url, key)).send().await?;
+
+    if res.status() == 200 {
+        let deleted: bool = res.json().await?;
+        Ok(deleted)
+    } else {
+        Err(format!("Failed to delete string: {}", res.status()).into())
+    }
+}
+
+// Common assertions
+pub fn assert_status_ok(status: u16) {
+    assert_eq!(status, 200, "Expected status 200, got {}", status);
+}
+
+pub fn assert_status_not_found(status: u16) {
+    assert_eq!(status, 404, "Expected status 404, got {}", status);
+}
+
+pub fn assert_status_method_not_allowed(status: u16) {
+    assert_eq!(status, 405, "Expected status 405, got {}", status);
+}
+
+pub fn assert_redis_info_structure(info: &serde_json::Value) {
+    let required_fields = vec![
+        "redis_version",
+        "connected_clients",
+        "used_memory_human",
+        "uptime_in_seconds",
+        "total_commands_processed",
+        "total_connections_received",
+        "keyspace_hits",
+        "keyspace_misses",
+        "expired_keys",
+        "evicted_keys"
+    ];
+
+    for field in required_fields {
+        assert!(info.get(field).is_some(), "Field {} is missing", field);
+    }
+}
+
+// Batch operations
+pub async fn batch_set_strings(
+    client: &Client,
+    base_url: &str,
+    operations: Vec<(&str, &str)>
+) -> Result<(), Box<dyn std::error::Error>> {
+    let batch_ops: Vec<serde_json::Value> = operations
+        .iter()
+        .map(|(key, value)| json!({"key": key, "value": value}))
+        .collect();
+
+    let res = client
+        .post(&format!("{}/redis/string/batch/set", base_url))
+        .json(&json!({"operations": batch_ops}))
+        .send().await?;
+
+    assert_status_ok(res.status().as_u16());
+    Ok(())
+}
+
+pub async fn batch_get_strings(
+    client: &Client,
+    base_url: &str,
+    keys: &[String]
+) -> Result<Vec<Option<String>>, Box<dyn std::error::Error>> {
+    let res = client
+        .post(&format!("{}/redis/string/batch/get", base_url))
+        .json(&json!({"keys": keys}))
+        .send().await?;
+
+    assert_status_ok(res.status().as_u16());
+    let values: Vec<Option<String>> = res.json().await?;
+    Ok(values)
+}
+
+// Cleanup utilities
+pub async fn cleanup_test_keys(client: &Client, base_url: &str, keys: &[&str]) {
+    for key in keys {
+        let _ = delete_string(client, base_url, key).await;
+    }
+}
+
+// Test setup and teardown
+pub struct TestContext {
+    pub client: Client,
+    pub base_url: String,
+    pub test_keys: Vec<String>,
+}
+
+impl TestContext {
+    pub fn new(base_url: String) -> Self {
+        Self {
+            client: create_http_client(),
+            base_url,
+            test_keys: Vec::new(),
+        }
+    }
+
+    pub fn add_test_key(&mut self, key: String) {
+        self.test_keys.push(key);
+    }
+
+    pub async fn cleanup(&self) {
+        for key in &self.test_keys {
+            let _ = delete_string(&self.client, &self.base_url, key).await;
+        }
+    }
+}
+
+impl Drop for TestContext {
+    fn drop(&mut self) {
+        // Note: This won't work in async context, but it's a fallback
+        // In practice, call cleanup() explicitly in tests
+    }
 }

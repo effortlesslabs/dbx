@@ -1,19 +1,9 @@
-// Redis HTTP API test modules
-pub mod health;
-pub mod strings;
-pub mod sets;
-pub mod hashes;
-pub mod keys;
-pub mod batch;
-pub mod scripts;
-pub mod errors;
+pub mod string;
 
-// Re-export test modules
-pub use health::*;
-pub use strings::*;
-pub use sets::*;
-pub use hashes::*;
-pub use keys::*;
-pub use batch::*;
-pub use scripts::*;
-pub use errors::*;
+use crate::common::TestContext;
+use crate::get_test_base_url;
+
+pub async fn create_test_context() -> TestContext {
+    let base_url = get_test_base_url().await;
+    TestContext::new(base_url)
+}
