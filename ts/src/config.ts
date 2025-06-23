@@ -11,8 +11,6 @@ export interface DbxConfig {
   hostUrl: string;
   /** WebSocket URL for real-time connections */
   wsHostUrl: string;
-  /** Redis connection URL */
-  redisUrl: string;
 }
 
 /**
@@ -21,7 +19,6 @@ export interface DbxConfig {
 const DEFAULT_CONFIG: DbxConfig = {
   hostUrl: "http://127.0.0.1:3000",
   wsHostUrl: "ws://127.0.0.1:3000/redis_ws",
-  redisUrl: "redis://127.0.0.1:6379",
 };
 
 /**
@@ -31,7 +28,6 @@ export function getConfig(): DbxConfig {
   return {
     hostUrl: process.env["HOST_URL"] || DEFAULT_CONFIG.hostUrl,
     wsHostUrl: process.env["WS_HOST_URL"] || DEFAULT_CONFIG.wsHostUrl,
-    redisUrl: process.env["REDIS_URL"] || DEFAULT_CONFIG.redisUrl,
   };
 }
 
@@ -41,4 +37,18 @@ export function getConfig(): DbxConfig {
 export function getConfigWithOverrides(overrides: Partial<DbxConfig>): DbxConfig {
   const config = getConfig();
   return { ...config, ...overrides };
+}
+
+// SDK configuration file
+
+export const API_BASE_URL = process.env["DBX_API_URL"] || "http://127.0.0.1:3000";
+
+/**
+ * Convert config.ts DbxConfig to SDK DbxConfig (types/common)
+ */
+export function toSdkConfig(config: DbxConfig): import("./types/common").DbxConfig {
+  return {
+    baseUrl: config.hostUrl,
+    // Optionally add timeout/headers if needed
+  };
 }

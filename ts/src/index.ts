@@ -1,20 +1,24 @@
-import { DbxClient } from "./client";
-import { getConfig } from "./config";
-export { DbxClient } from "./client";
-export { getConfig, getConfigWithOverrides, type DbxConfig } from "./config";
+/**
+ * DBX TypeScript SDK - Main entry point
+ * Provides modular access to Redis operations via REST API and WebSocket
+ */
+
+// Main client - primary export
+export { DbxClient as DBxClient } from "./client";
+
+// Individual clients
+export {
+  AdminClient,
+  StringClient,
+  SetClient,
+  HashClient,
+  CommonClient,
+  WebSocketClient,
+  BaseClient,
+} from "./clients";
+
+// Types
 export * from "./types";
 
-// Convenience function to create a new DBX client
-export function createDbxClient(
-  baseUrl?: string,
-  options?: {
-    timeout?: number;
-    headers?: Record<string, string>;
-  }
-) {
-  const config = getConfig();
-  return new DbxClient({
-    baseUrl: baseUrl || config.hostUrl,
-    ...options,
-  });
-}
+// Configuration
+export { DbxConfig } from "./config";
