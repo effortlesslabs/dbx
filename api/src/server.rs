@@ -68,12 +68,19 @@ impl Server {
             let redis_string_routes = crate::routes::redis::string::create_redis_string_routes(
                 pool.clone()
             );
+            let redis_admin_routes = crate::routes::redis::admin::create_redis_admin_routes(
+                pool.clone()
+            );
             let redis_ws_string_routes =
                 crate::routes::redis_ws::string::create_redis_ws_string_routes(pool.clone());
+            let redis_ws_admin_routes =
+                crate::routes::redis_ws::admin::create_redis_ws_admin_routes(pool.clone());
 
             router = router
                 .nest("/redis", redis_string_routes)
-                .nest("/redis_ws", redis_ws_string_routes);
+                .nest("/redis", redis_admin_routes)
+                .nest("/redis_ws", redis_ws_string_routes)
+                .nest("/redis_ws", redis_ws_admin_routes);
         }
 
         router

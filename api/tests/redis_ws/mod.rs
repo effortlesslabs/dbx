@@ -1,9 +1,10 @@
 pub mod string;
+pub mod admin;
 
 use crate::common::TestContext;
-use crate::get_test_ws_base_url;
+use crate::get_test_base_url;
 
 pub async fn create_test_context() -> TestContext {
-    let base_url = get_test_ws_base_url().await;
+    let base_url = get_test_base_url().await;
     TestContext::new(base_url)
 }

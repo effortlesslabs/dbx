@@ -1,4 +1,5 @@
 pub mod string;
+pub mod admin;
 
 use crate::common::TestContext;
 use crate::get_test_base_url;
