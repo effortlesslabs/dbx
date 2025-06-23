@@ -11,6 +11,7 @@ pub mod primitives;
 use redis::{Connection, RedisError, RedisResult, Script};
 
 use client::RedisClient;
+use primitives::admin::AdminOperations;
 use primitives::hash::RedisHash;
 use primitives::set::RedisSet;
 use primitives::string::RedisString;
@@ -117,6 +118,11 @@ impl Redis {
     /// Get access to hash operations
     pub fn hash(&self) -> RedisHash {
         RedisHash::new(self.client.connection().clone())
+    }
+
+    /// Get access to admin operations
+    pub fn admin(&self) -> AdminOperations {
+        AdminOperations::new(self.client.connection().clone())
     }
 
     /// Execute a Lua script directly

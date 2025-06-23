@@ -8,8 +8,9 @@
 //! - Sorted Set: Ordered collections of strings with associated scores
 //!
 //! Each implementation supports individual commands, pipelined operations,
-//! transactions, and Lua scripts.
+//! transactions, Lua scripts, and administrative commands.
 
+pub mod admin;
 pub mod hash;
 pub mod set;
 pub mod string;

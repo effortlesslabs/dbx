@@ -4,11 +4,11 @@ services:
   # Redis service
   redis:
     image: redis:7-alpine
-    container_name: dbx-redis
+    container_name: dbx-redis-test
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
-      - redis_data:/data
+      - redis_data_test:/data
     command: redis-server --appendonly yes
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -17,16 +17,16 @@ services:
       retries: 3
       start_period: 30s
     networks:
-      - dbx-network
+      - dbx-network-test
 
   # DBX API service
   dbx-api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: dbx-api
+    container_name: dbx-api-test
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       # Database configuration
       - DATABASE_URL=redis://redis:6379
@@ -47,26 +47,26 @@ services:
       retries: 3
       start_period: 40s
     networks:
-      - dbx-network
+      - dbx-network-test
     restart: unless-stopped
 
   # Redis Commander for web-based Redis management
   redis-commander:
     image: rediscommander/redis-commander:latest
-    container_name: dbx-redis-commander
+    container_name: dbx-redis-commander-test
     ports:
-      - "8081:8081"
+      - "8082:8081"
     environment:
       - REDIS_HOSTS=local:redis:6379
     depends_on:
       - redis
     networks:
-      - dbx-network
+      - dbx-network-test
 
 volumes:
-  redis_data:
+  redis_data_test:
     driver: local
 
 networks:
-  dbx-network:
+  dbx-network-test:
     driver: bridge

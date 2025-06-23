@@ -1,4 +1,6 @@
-use axum::{ Router, routing::get };
+use axum::{ Router, routing::get, response::Html };
+use axum::http::StatusCode;
+use std::fs;
 use tracing::info;
 use std::sync::Arc;
 
@@ -54,32 +56,40 @@ impl Server {
     /// Create the application router
     pub fn create_router(&self) -> Router {
         let mut router = Router::new()
-            .route(
-                "/",
-                get(|| async { "Hello, World!" })
-            )
-            .route(
-                "/redis_ws",
-                get(|| async { "RedisWs API" })
-            );
+            .route("/", get(serve_landing_page))
+            .route("/redis_ws", get(serve_landing_page));
 
         // Add Redis admin routes if Redis pool is available
         if let Some(pool) = &self.redis_pool {
             let redis_string_routes = crate::routes::redis::string::create_redis_string_routes(
                 pool.clone()
             );
+            let redis_hash_routes = crate::routes::redis::hash::create_redis_hash_routes(
+                pool.clone()
+            );
+            let redis_set_routes = crate::routes::redis::set::create_redis_set_routes(pool.clone());
             let redis_admin_routes = crate::routes::redis::admin::create_redis_admin_routes(
                 pool.clone()
             );
             let redis_ws_string_routes =
                 crate::routes::redis_ws::string::create_redis_ws_string_routes(pool.clone());
+            let redis_ws_hash_routes = crate::routes::redis_ws::hash::create_redis_ws_hash_routes(
+                pool.clone()
+            );
+            let redis_ws_set_routes = crate::routes::redis_ws::set::create_redis_ws_set_routes(
+                pool.clone()
+            );
             let redis_ws_admin_routes =
                 crate::routes::redis_ws::admin::create_redis_ws_admin_routes(pool.clone());
 
             router = router
                 .nest("/redis", redis_string_routes)
+                .nest("/redis", redis_hash_routes)
+                .nest("/redis", redis_set_routes)
                 .nest("/redis", redis_admin_routes)
                 .nest("/redis_ws", redis_ws_string_routes)
+                .nest("/redis_ws", redis_ws_hash_routes)
+                .nest("/redis_ws", redis_ws_set_routes)
                 .nest("/redis_ws", redis_ws_admin_routes);
         }
 
@@ -111,6 +121,49 @@ impl Clone for Server {
         Self {
             config: self.config.clone(),
             redis_pool: self.redis_pool.clone(),
+        }
+    }
+}
+
+/// Serve the landing page HTML
+async fn serve_landing_page() -> Result<Html<String>, StatusCode> {
+    match fs::read_to_string("static/index.html") {
+        Ok(content) => Ok(Html(content)),
+        Err(_) => {
+            // Fallback to a simple HTML if file not found
+            let fallback_html =
+                r#"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DBX - Redis API Gateway</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen flex items-center justify-center">
+        <div class="text-center">
+            <h1 class="text-4xl font-bold text-blue-600 mb-4">DBX API</h1>
+            <p class="text-xl text-gray-600 mb-8">Redis API Gateway</p>
+            <div class="space-y-4">
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <h2 class="font-semibold text-gray-900">Available Endpoints:</h2>
+                    <ul class="text-left mt-2 space-y-1 text-sm text-gray-600">
+                        <li>• <code>/redis/admin/ping</code> - Health check</li>
+                        <li>• <code>/redis/admin/health</code> - Server status</li>
+                        <li>• <code>/redis/string/:key</code> - String operations</li>
+                        <li>• <code>ws://localhost:3000/redis_ws/string/ws</code> - WebSocket API</li>
+                    </ul>
+                </div>
+                <p class="text-sm text-gray-500">For full documentation, check the static/index.html file</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+            "#;
+            Ok(Html(fallback_html.to_string()))
         }
     }
 }

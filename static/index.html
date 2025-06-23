@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DBX - Redis API Gateway</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+      }
+      .gradient-text {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+    </style>
+  </head>
+  <body class="bg-black text-white min-h-screen flex items-center justify-center p-4">
+    <!-- Background Pattern -->
+    <div
+      class="fixed inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(102,126,234,0.05),transparent_50%)]"
+    ></div>
+
+    <!-- Main Content -->
+    <div class="relative z-10 max-w-2xl w-full">
+      <!-- Header -->
+      <div class="text-center mb-8">
+        <div
+          class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl mb-4"
+        >
+          <i class="fas fa-database text-2xl"></i>
+        </div>
+        <h1 class="text-4xl md:text-5xl font-bold mb-2 gradient-text">DBX</h1>
+        <p class="text-lg text-gray-400">Redis API Gateway</p>
+      </div>
+
+      <!-- API Card -->
+      <div class="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
+        <div class="space-y-4">
+          <!-- HTTP API -->
+          <div class="bg-gray-800/30 rounded-lg p-4 border border-gray-700">
+            <div class="flex items-center mb-3">
+              <div class="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center mr-3">
+                <i class="fas fa-globe text-green-400 text-sm"></i>
+              </div>
+              <h3 class="text-sm font-medium">HTTP REST API</h3>
+            </div>
+            <div class="space-y-2">
+              <div class="bg-black/40 rounded-md p-2">
+                <code class="text-green-400 text-xs font-mono">GET /redis/admin/ping</code>
+              </div>
+              <div class="bg-black/40 rounded-md p-2">
+                <code class="text-green-400 text-xs font-mono">GET /redis/admin/health</code>
+              </div>
+              <div class="bg-black/40 rounded-md p-2">
+                <code class="text-green-400 text-xs font-mono">GET/POST /redis/string/:key</code>
+              </div>
+              <div class="bg-black/40 rounded-md p-2">
+                <code class="text-green-400 text-xs font-mono"
+                  >GET/POST /redis/hash/:key/:field</code
+                >
+              </div>
+              <div class="bg-black/40 rounded-md p-2">
+                <code class="text-green-400 text-xs font-mono">GET /redis/hash/:key</code>
+              </div>
+              <div class="bg-black/40 rounded-md p-2">
+                <code class="text-green-400 text-xs font-mono">POST /redis/set/:key</code>
+              </div>
+              <div class="bg-black/40 rounded-md p-2">
+                <code class="text-green-400 text-xs font-mono">GET /redis/set/:key/members</code>
+              </div>
+            </div>
+          </div>
+
+          <!-- WebSocket API -->
+          <div class="bg-gray-800/30 rounded-lg p-4 border border-gray-700">
+            <div class="flex items-center mb-3">
+              <div class="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center mr-3">
+                <i class="fas fa-broadcast-tower text-blue-400 text-sm"></i>
+              </div>
+              <h3 class="text-sm font-medium">WebSocket API</h3>
+            </div>
+            <div class="space-y-2">
+              <div class="bg-black/40 rounded-md p-2">
+                <code class="text-blue-400 text-xs font-mono"
+                  >ws://localhost:3000/redis_ws/string/ws</code
+                >
+              </div>
+              <div class="bg-black/40 rounded-md p-2">
+                <code class="text-blue-400 text-xs font-mono"
+                  >ws://localhost:3000/redis_ws/hash/ws</code
+                >
+              </div>
+              <div class="bg-black/40 rounded-md p-2">
+                <code class="text-blue-400 text-xs font-mono"
+                  >ws://localhost:3000/redis_ws/set/ws</code
+                >
+              </div>
+              <div class="bg-black/40 rounded-md p-2">
+                <code class="text-blue-400 text-xs font-mono"
+                  >ws://localhost:3000/redis_ws/admin/ws</code
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-6 pt-4 border-t border-gray-800">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center space-x-4 text-xs text-gray-500">
+              <span class="flex items-center">
+                <i class="fas fa-code mr-1"></i>
+                Rust
+              </span>
+              <span class="flex items-center">
+                <i class="fas fa-bolt mr-1"></i>
+                Fast
+              </span>
+              <span class="flex items-center">
+                <i class="fas fa-clock mr-1"></i>
+                Real-time
+              </span>
+            </div>
+            <a
+              href="https://github.com/effortlesslabs/dbx"
+              class="inline-flex items-center bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-purple-700 hover:to-blue-700 transition-all duration-200"
+            >
+              <i class="fab fa-github mr-2"></i>
+              GitHub
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

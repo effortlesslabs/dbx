@@ -12,6 +12,7 @@ use super::primitives::set::RedisSet;
 use super::primitives::string::RedisString;
 
 /// A simple Redis client wrapper that manages a single connection
+#[derive(Clone)]
 pub struct RedisClient {
     client: Arc<Client>,
     connection: Arc<Mutex<Connection>>,
@@ -124,6 +125,16 @@ impl RedisPool {
     #[cfg(feature = "async")]
     pub async fn get_async_connection(&self) -> RedisResult<redis::aio::Connection> {
         self.client.get_async_connection().await
+    }
+}
+
+#[cfg(feature = "connection-pool")]
+impl Clone for RedisPool {
+    fn clone(&self) -> Self {
+        Self {
+            client: self.client.clone(),
+            pool_size: self.pool_size,
+        }
     }
 }
 

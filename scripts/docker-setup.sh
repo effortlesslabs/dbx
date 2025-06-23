@@ -33,7 +33,7 @@ sleep 10
 
 # Check service health
 echo "🏥 Checking service health..."
-if curl -f http://localhost:3000/health > /dev/null 2>&1; then
+if curl -f http://localhost:3000/redis/admin/ping > /dev/null 2>&1; then
     echo "✅ DBX API is healthy"
 else
     echo "❌ DBX API health check failed"

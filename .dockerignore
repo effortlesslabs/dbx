@@ -5,43 +5,66 @@
 # Documentation
 README.md
 ROADMAP.md
+docs/
 *.md
 
-# Rust
-target/
-
-# IDE
+# Development files
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
-# OS
-.DS_Store
-Thumbs.db
+# Rust build artifacts
+target/
+**/target/
+
+# Cargo
+Cargo.lock
+
+# Environment files
+.env
+.env.local
+.env.*.local
 
 # Logs
 *.log
+logs/
 
-# Environment files (except example)
-.env
-.env.local
-.env.production
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Node.js (if any)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# TypeScript
+ts/
+*.tsbuildinfo
+
+# Test files
+tests/
+**/tests/
 
 # Docker
-Dockerfile
-docker-compose.yml
+Dockerfile*
+docker-compose*
 .dockerignore
 
-# Tests
-tests/
-
-# Examples (keep only the source)
-examples/
+# Scripts
+scripts/
 
 # Temporary files
-*.tmp
-*.temp
+tmp/
+temp/
 
-# TypeScript client
-ts/ 
+# Examples (keep only the source)
+examples/ 
