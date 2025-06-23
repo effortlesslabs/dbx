@@ -40,8 +40,8 @@ WORKDIR /app
 # Copy the binary from the builder stage
 COPY --from=builder /usr/src/dbx/target/release/dbx-api /app/dbx-api
 
-# Copy the example environment file
-COPY env.example /app/.env.example
+# Copy the static files
+COPY static/ ./static/
 
 # Change ownership to the non-root user
 RUN chown -R dbx:dbx /app
@@ -55,6 +55,19 @@ EXPOSE 3000
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:3000/redis/admin/ping || exit 1
+
+# Default environment variables
+ENV DATABASE_TYPE=redis
+ENV HOST=0.0.0.0
+ENV PORT=3000
+ENV POOL_SIZE=10
+ENV LOG_LEVEL=INFO
+
+# Add labels for better image metadata
+LABEL maintainer="DBX Team"
+LABEL description="High-performance Redis API Gateway with HTTP and WebSocket interfaces"
+LABEL version="1.0.0"
+LABEL org.opencontainers.image.source="https://github.com/your-org/dbx"
 
 # Run the binary
 CMD ["./dbx-api"] 

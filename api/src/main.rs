@@ -13,8 +13,8 @@ async fn main() -> anyhow::Result<()> {
         database_type: DatabaseType::Redis,
         database_url: std::env
             ::var("DATABASE_URL")
-            .unwrap_or_else(|_| "redis://default:redispw@localhost:55000".to_string()),
-        host: std::env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_string()),
+            .unwrap_or_else(|_| "redis://default:redispw@host.docker.internal:55000".to_string()),
+        host: std::env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string()),
         port: std::env
             ::var("PORT")
             .unwrap_or_else(|_| "3000".to_string())
@@ -28,8 +28,8 @@ async fn main() -> anyhow::Result<()> {
     };
 
     // Create and run server
-    let server = Server::new(config).await?;
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    let server = Server::new(config.clone()).await?;
+    let addr = format!("{}:{}", config.host, config.port).parse::<SocketAddr>()?;
 
     server.run(addr).await?;
 

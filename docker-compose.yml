@@ -1,35 +1,20 @@
 version: "3.8"
 
 services:
-  # Redis service
-  redis:
-    image: redis:7-alpine
-    container_name: dbx-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    command: redis-server --appendonly yes
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    networks:
-      - dbx-network
-
-  # DBX API service
+  # DBX API service with external Redis
   dbx-api:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    # Use published image (replace with your Docker Hub username)
+    image: fnlog0/dbx:latest
+    # Or build from local Dockerfile
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
     container_name: dbx-api
     ports:
       - "3000:3000"
     environment:
-      # Database configuration
-      - DATABASE_URL=redis://redis:6379
+      # Database configuration - pass your Redis URL here
+      - DATABASE_URL=${REDIS_URL:-redis://localhost:6379}
       - DATABASE_TYPE=redis
 
       # Server configuration
@@ -37,35 +22,15 @@ services:
       - PORT=3000
       - POOL_SIZE=10
       - LOG_LEVEL=INFO
-    depends_on:
-      redis:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/redis/admin/ping"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    networks:
-      - dbx-network
     restart: unless-stopped
-
-  # Redis Commander for web-based Redis management
-  redis-commander:
-    image: rediscommander/redis-commander:latest
-    container_name: dbx-redis-commander
-    ports:
-      - "8081:8081"
-    environment:
-      - REDIS_HOSTS=local:redis:6379
-    depends_on:
-      - redis
     networks:
       - dbx-network
-
-volumes:
-  redis_data:
-    driver: local
 
 networks:
   dbx-network:
