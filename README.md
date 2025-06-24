@@ -27,14 +27,65 @@ DBX is a minimal and portable HTTP/WebSocket proxy that exposes Redis, Qdrant, a
 
 ## Quick Start
 
+### Basic Usage
+
 ```bash
-# Run with Docker
-docker run -d --name dbx -p 3000:3000 \
-  -e DATABASE_URL=redis://localhost:6379 \
-  fnlog0/dbx:latest
+# Start the server
+cargo run --bin api
 
 # Or use the convenience script
 ./scripts/run.sh --redis-url redis://localhost:6379
+```
+
+### TypeScript SDK Usage
+
+```typescript
+import { DbxClient } from "@effortlesslabs/dbx";
+
+const client = new DbxClient({
+  baseUrl: "http://localhost:8080",
+});
+
+// Basic string operations
+await client.string.set("my-key", "my-value");
+const value = await client.string.get("my-key");
+
+// Batch operations
+await client.string.batchGet(["key1", "key2", "key3"]);
+```
+
+### Pattern-based Batch Operations
+
+The SDK now supports pattern-based batch operations using Redis wildcards:
+
+```typescript
+// Set up some test data
+await client.string.set("tokenBalance:0x123:ethereum:100", "100.5");
+await client.string.set("tokenBalance:0x123:ethereum:200", "200.0");
+await client.string.set("tokenBalancePending:0x123:ethereum:50", "50.25");
+await client.string.set("tokenBalancePending:0x123:ethereum:75", "75.75");
+
+// Get all token balances for a specific address and network
+const results = await client.string.batchGetPatternsFlat([
+  "tokenBalance:0x123:ethereum:*",
+  "tokenBalancePending:0x123:ethereum:*",
+]);
+
+// Results will be:
+// {
+//   'tokenBalance:0x123:ethereum:100': '100.5',
+//   'tokenBalance:0x123:ethereum:200': '200.0',
+//   'tokenBalancePending:0x123:ethereum:50': '50.25',
+//   'tokenBalancePending:0x123:ethereum:75': '75.75'
+// }
+
+// Or get grouped results by pattern
+const groupedResults = await client.string.batchGetPatternsGrouped([
+  "tokenBalance:0x123:ethereum:*",
+  "tokenBalancePending:0x123:ethereum:*",
+]);
+
+// Results will be grouped by pattern for easier processing
 ```
 
 ## Features
@@ -45,6 +96,12 @@ docker run -d --name dbx -p 3000:3000 \
 - **📱 TypeScript SDK**: Full client library with type safety
 - **⚡ High Performance**: Built in Rust for maximum efficiency
 - **🔧 Pluggable**: Easy to extend with new database backends
+- **Redis Operations**: Full support for Redis string, hash, set, and admin operations
+- **REST API**: HTTP endpoints for all Redis operations
+- **WebSocket Support**: Real-time operations via WebSocket connections
+- **Batch Operations**: Efficient batch processing for multiple keys
+- **Pattern-based Operations**: Support for wildcard patterns in batch operations
+- **Docker Support**: Easy deployment with Docker and Docker Compose
 
 ## TypeScript SDK
 

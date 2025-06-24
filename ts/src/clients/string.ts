@@ -12,6 +12,8 @@ import {
   SetManyRequest,
   StringOperation,
   StringInfo,
+  BatchGetPatternsRequest,
+  BatchGetPatternsResponse,
 } from "../types";
 
 /**
@@ -221,5 +223,40 @@ export class StringClient extends BaseClient {
       method: "POST",
       data: JSON.stringify({ operations }),
     });
+  }
+
+  /**
+   * Batch get strings by patterns (supports wildcards like *)
+   */
+  async batchGetPatterns(
+    patterns: string[],
+    grouped: boolean = false
+  ): Promise<BatchGetPatternsResponse> {
+    const payload: BatchGetPatternsRequest = { patterns, grouped };
+    return this.makeRequest<BatchGetPatternsResponse>(
+      `${this.baseUrl}/redis/string/batch/patterns`,
+      {
+        method: "POST",
+        data: JSON.stringify(payload),
+      }
+    );
+  }
+
+  /**
+   * Batch get strings by patterns, returning flat results
+   */
+  async batchGetPatternsFlat(patterns: string[]): Promise<Record<string, string | null>> {
+    const response = await this.batchGetPatterns(patterns, false);
+    return response.results as Record<string, string | null>;
+  }
+
+  /**
+   * Batch get strings by patterns, returning grouped results
+   */
+  async batchGetPatternsGrouped(
+    patterns: string[]
+  ): Promise<Array<{ pattern: string; results: Record<string, string | null> }>> {
+    const response = await this.batchGetPatterns(patterns, true);
+    return response.results as Array<{ pattern: string; results: Record<string, string | null> }>;
   }
 }

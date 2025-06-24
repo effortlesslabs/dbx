@@ -184,4 +184,53 @@ describe("DBX SDK - HTTP", () => {
       });
     });
   });
+
+  describe("StringClient - Pattern-based operations", () => {
+    it("should support pattern-based batch operations", async () => {
+      // Set up test data
+      await client.string.set("tokenBalance:0x123:ethereum:100", "100.5");
+      await client.string.set("tokenBalance:0x123:ethereum:200", "200.0");
+      await client.string.set("tokenBalancePending:0x123:ethereum:50", "50.25");
+      await client.string.set("tokenBalancePending:0x123:ethereum:75", "75.75");
+      await client.string.set("otherKey:0x456:ethereum:300", "300.0");
+
+      // Test flat pattern matching
+      const flatResults = await client.string.batchGetPatternsFlat([
+        "tokenBalance:0x123:ethereum:*",
+        "tokenBalancePending:0x123:ethereum:*",
+      ]);
+
+      expect(flatResults).toEqual({
+        "tokenBalance:0x123:ethereum:100": "100.5",
+        "tokenBalance:0x123:ethereum:200": "200.0",
+        "tokenBalancePending:0x123:ethereum:50": "50.25",
+        "tokenBalancePending:0x123:ethereum:75": "75.75",
+      });
+
+      // Test grouped pattern matching
+      const groupedResults = await client.string.batchGetPatternsGrouped([
+        "tokenBalance:0x123:ethereum:*",
+        "tokenBalancePending:0x123:ethereum:*",
+      ]);
+
+      expect(groupedResults).toHaveLength(2);
+      expect(groupedResults[0].pattern).toBe("tokenBalance:0x123:ethereum:*");
+      expect(groupedResults[0].results).toEqual({
+        "tokenBalance:0x123:ethereum:100": "100.5",
+        "tokenBalance:0x123:ethereum:200": "200.0",
+      });
+      expect(groupedResults[1].pattern).toBe("tokenBalancePending:0x123:ethereum:*");
+      expect(groupedResults[1].results).toEqual({
+        "tokenBalancePending:0x123:ethereum:50": "50.25",
+        "tokenBalancePending:0x123:ethereum:75": "75.75",
+      });
+
+      // Cleanup
+      await client.string.delete("tokenBalance:0x123:ethereum:100");
+      await client.string.delete("tokenBalance:0x123:ethereum:200");
+      await client.string.delete("tokenBalancePending:0x123:ethereum:50");
+      await client.string.delete("tokenBalancePending:0x123:ethereum:75");
+      await client.string.delete("otherKey:0x456:ethereum:300");
+    });
+  });
 });

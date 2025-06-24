@@ -14,6 +14,8 @@ use crate::routes::common::string::{
     get_string_info,
     get_multiple_strings,
     set_multiple_strings,
+    get_strings_by_patterns,
+    get_strings_by_patterns_grouped,
     StringOperation,
     StringInfo,
     set_string_with_ttl,
@@ -34,6 +36,12 @@ struct BatchGetRequest {
 #[derive(Debug, Deserialize)]
 struct BatchSetRequest {
     operations: Vec<StringOperation>,
+}
+
+#[derive(Debug, Deserialize)]
+struct BatchGetPatternsRequest {
+    patterns: Vec<String>,
+    grouped: Option<bool>,
 }
 
 async fn get_string_handler(
@@ -108,6 +116,59 @@ async fn batch_set_strings_handler(
     Ok(StatusCode::OK)
 }
 
+async fn batch_get_patterns_handler(
+    State(pool): State<Arc<RedisPool>>,
+    Json(payload): Json<BatchGetPatternsRequest>
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let conn = pool.get_connection().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let conn_arc = Arc::new(std::sync::Mutex::new(conn));
+
+    if payload.grouped.unwrap_or(false) {
+        let results = get_strings_by_patterns_grouped(conn_arc, &payload.patterns).map_err(
+            |_| StatusCode::INTERNAL_SERVER_ERROR
+        )?;
+
+        let grouped_results: Vec<serde_json::Value> = results
+            .into_iter()
+            .map(|(pattern, key_values)| {
+                let key_value_map: std::collections::HashMap<String, Option<String>> = key_values
+                    .into_iter()
+                    .collect();
+                serde_json::json!({
+                    "pattern": pattern,
+                    "results": key_value_map
+                })
+            })
+            .collect();
+
+        Ok(
+            Json(
+                serde_json::json!({
+            "grouped": true,
+            "results": grouped_results
+        })
+            )
+        )
+    } else {
+        let results = get_strings_by_patterns(conn_arc, &payload.patterns).map_err(
+            |_| StatusCode::INTERNAL_SERVER_ERROR
+        )?;
+
+        let key_value_map: std::collections::HashMap<String, Option<String>> = results
+            .into_iter()
+            .collect();
+
+        Ok(
+            Json(
+                serde_json::json!({
+            "grouped": false,
+            "results": key_value_map
+        })
+            )
+        )
+    }
+}
+
 async fn method_not_allowed() -> impl IntoResponse {
     (StatusCode::METHOD_NOT_ALLOWED, "Method Not Allowed")
 }
@@ -121,5 +182,6 @@ pub fn create_redis_string_routes(pool: Arc<RedisPool>) -> Router {
         .route("/string/:key/info", get(get_string_info_handler))
         .route("/string/batch/get", post(batch_get_strings_handler))
         .route("/string/batch/set", post(batch_set_strings_handler))
+        .route("/string/batch/patterns", post(batch_get_patterns_handler))
         .with_state(pool)
 }

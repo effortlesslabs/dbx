@@ -173,3 +173,72 @@ pub fn set_multiple_strings(
     }
     Ok(())
 }
+
+/// Get multiple strings by patterns, expanding each pattern to matching keys
+pub fn get_strings_by_patterns(
+    conn: Arc<Mutex<Connection>>,
+    patterns: &[String]
+) -> redis::RedisResult<Vec<(String, Option<String>)>> {
+    let redis_str = redis_string(conn);
+    let mut results = Vec::new();
+
+    for pattern in patterns {
+        // Get all keys matching the pattern
+        let matching_keys = redis_str.keys(pattern)?;
+
+        if matching_keys.is_empty() {
+            // If no keys match, add the pattern with None value
+            results.push((pattern.clone(), None));
+        } else {
+            // Get values for all matching keys
+            let key_refs: Vec<&str> = matching_keys
+                .iter()
+                .map(|k| k.as_str())
+                .collect();
+            let values = redis_str.get_many(key_refs)?;
+
+            // Combine keys with their values
+            for (key, value) in matching_keys.into_iter().zip(values.into_iter()) {
+                results.push((key, value));
+            }
+        }
+    }
+
+    Ok(results)
+}
+
+/// Get multiple strings by patterns, returning results grouped by pattern
+pub fn get_strings_by_patterns_grouped(
+    conn: Arc<Mutex<Connection>>,
+    patterns: &[String]
+) -> redis::RedisResult<Vec<(String, Vec<(String, Option<String>)>)>> {
+    let redis_str = redis_string(conn);
+    let mut results = Vec::new();
+
+    for pattern in patterns {
+        // Get all keys matching the pattern
+        let matching_keys = redis_str.keys(pattern)?;
+
+        if matching_keys.is_empty() {
+            // If no keys match, add the pattern with empty results
+            results.push((pattern.clone(), Vec::new()));
+        } else {
+            // Get values for all matching keys
+            let key_refs: Vec<&str> = matching_keys
+                .iter()
+                .map(|k| k.as_str())
+                .collect();
+            let values = redis_str.get_many(key_refs)?;
+
+            // Combine keys with their values
+            let pattern_results: Vec<(String, Option<String>)> = matching_keys
+                .into_iter()
+                .zip(values.into_iter())
+                .collect();
+
+            results.push((pattern.clone(), pattern_results));
+        }
+    }
+
+    Ok(results)
+}

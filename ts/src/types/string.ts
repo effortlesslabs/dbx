@@ -47,7 +47,7 @@ export interface SetManyRequest {
  */
 export interface StringOperation {
   key: string;
-  value: string;
+  value?: string;
   ttl?: number;
 }
 
@@ -57,4 +57,19 @@ export interface StringOperation {
 export interface StringInfo {
   ttl: number;
   type: string;
+}
+
+export interface BatchGetPatternsRequest {
+  patterns: string[];
+  grouped?: boolean;
+}
+
+export interface BatchGetPatternsResponse {
+  grouped: boolean;
+  results:
+    | Record<string, string | null>
+    | Array<{
+        pattern: string;
+        results: Record<string, string | null>;
+      }>;
 }
