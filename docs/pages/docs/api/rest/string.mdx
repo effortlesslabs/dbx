@@ -1,0 +1,299 @@
+# String Operations
+
+DBX provides a complete set of string operations through its REST API. These operations allow you to store, retrieve, and manage string values with optional TTL (Time To Live) support.
+
+## Overview
+
+String operations are the most basic data type in DBX, supporting simple key-value storage with additional features like expiration and existence checks.
+
+## Endpoints
+
+### GET /api/string/{key}
+
+Retrieve a string value by key.
+
+**Parameters:**
+
+- `key` (path) - The key to retrieve
+
+**Response:**
+
+```json
+{
+  "value": "Hello, World!",
+  "ttl": 3600
+}
+```
+
+**Example:**
+
+```bash
+curl http://localhost:8080/api/string/my-key
+```
+
+**Error Responses:**
+
+- `404 Not Found` - Key doesn't exist
+- `400 Bad Request` - Invalid key format
+
+### POST /api/string/{key}
+
+Create or update a string value.
+
+**Parameters:**
+
+- `key` (path) - The key to store
+- `value` (body) - The string value to store
+- `ttl` (optional, body) - Time to live in seconds
+
+**Request Body:**
+
+```json
+{
+  "value": "Hello, World!",
+  "ttl": 3600
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "key": "my-key"
+}
+```
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:8080/api/string/my-key \
+     -H "Content-Type: application/json" \
+     -d '{"value": "Hello, World!", "ttl": 3600}'
+```
+
+### DELETE /api/string/{key}
+
+Delete a string value by key.
+
+**Parameters:**
+
+- `key` (path) - The key to delete
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "deleted": true
+}
+```
+
+**Example:**
+
+```bash
+curl -X DELETE http://localhost:8080/api/string/my-key
+```
+
+### GET /api/string/{key}/exists
+
+Check if a key exists.
+
+**Parameters:**
+
+- `key` (path) - The key to check
+
+**Response:**
+
+```json
+{
+  "exists": true
+}
+```
+
+**Example:**
+
+```bash
+curl http://localhost:8080/api/string/my-key/exists
+```
+
+### GET /api/string/{key}/ttl
+
+Get the remaining TTL for a key.
+
+**Parameters:**
+
+- `key` (path) - The key to check
+
+**Response:**
+
+```json
+{
+  "ttl": 1800
+}
+```
+
+**Example:**
+
+```bash
+curl http://localhost:8080/api/string/my-key/ttl
+```
+
+### POST /api/string/{key}/expire
+
+Set or update the TTL for a key.
+
+**Parameters:**
+
+- `key` (path) - The key to update
+- `ttl` (body) - New TTL in seconds
+
+**Request Body:**
+
+```json
+{
+  "ttl": 7200
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "ttl": 7200
+}
+```
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:8080/api/string/my-key/expire \
+     -H "Content-Type: application/json" \
+     -d '{"ttl": 7200}'
+```
+
+## Batch Operations
+
+### POST /api/string/batch
+
+Perform multiple string operations in a single request.
+
+**Request Body:**
+
+```json
+{
+  "operations": [
+    {
+      "type": "set",
+      "key": "key1",
+      "value": "value1",
+      "ttl": 3600
+    },
+    {
+      "type": "get",
+      "key": "key2"
+    },
+    {
+      "type": "delete",
+      "key": "key3"
+    }
+  ]
+}
+```
+
+**Response:**
+
+```json
+{
+  "results": [
+    {
+      "type": "set",
+      "success": true,
+      "key": "key1"
+    },
+    {
+      "type": "get",
+      "success": true,
+      "value": "value2"
+    },
+    {
+      "type": "delete",
+      "success": true,
+      "deleted": true
+    }
+  ]
+}
+```
+
+## Use Cases
+
+### 1. Simple Caching
+
+```bash
+# Store a cached value
+curl -X POST http://localhost:8080/api/string/cache:user:123 \
+     -H "Content-Type: application/json" \
+     -d '{"value": "{\"name\":\"John\",\"email\":\"john@example.com\"}", "ttl": 300}'
+
+# Retrieve cached value
+curl http://localhost:8080/api/string/cache:user:123
+```
+
+### 2. Session Storage
+
+```bash
+# Store session data
+curl -X POST http://localhost:8080/api/string/session:abc123 \
+     -H "Content-Type: application/json" \
+     -d '{"value": "{\"user_id\":123,\"permissions\":[\"read\",\"write\"]}", "ttl": 3600}'
+
+# Check session exists
+curl http://localhost:8080/api/string/session:abc123/exists
+```
+
+### 3. Rate Limiting
+
+```bash
+# Track API calls
+curl -X POST http://localhost:8080/api/string/rate:ip:192.168.1.1 \
+     -H "Content-Type: application/json" \
+     -d '{"value": "10", "ttl": 60}'
+
+# Check remaining calls
+curl http://localhost:8080/api/string/rate:ip:192.168.1.1
+```
+
+## Error Handling
+
+All endpoints return consistent error responses:
+
+```json
+{
+  "error": "not_found",
+  "message": "Key 'my-key' not found",
+  "status": 404
+}
+```
+
+Common error types:
+
+- `not_found` - Key doesn't exist
+- `invalid_key` - Key format is invalid
+- `invalid_value` - Value format is invalid
+- `invalid_ttl` - TTL value is invalid
+- `server_error` - Internal server error
+
+## Performance Considerations
+
+1. **Key Naming** - Use descriptive, hierarchical keys (e.g., `user:123:profile`)
+2. **TTL Management** - Set appropriate TTL values to prevent memory bloat
+3. **Batch Operations** - Use batch endpoints for multiple operations
+4. **Connection Pooling** - Reuse HTTP connections for better performance
+
+## Rate Limits
+
+String operations are subject to the same rate limiting as other API endpoints:
+
+- Default: 100 requests per minute per IP
+- Configurable via environment variables

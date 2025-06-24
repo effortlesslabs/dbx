@@ -1,0 +1,227 @@
+# Getting Started
+
+Welcome to DBX! This guide will help you get up and running with DBX in minutes.
+
+## Prerequisites
+
+- **Redis Server**: A running Redis instance (version 6.0 or higher)
+- **Docker**: For containerized deployment (optional)
+- **Node.js**: For TypeScript SDK (version 16 or higher)
+
+## Quick Start with Docker
+
+The fastest way to get started is using Docker:
+
+```bash
+# Run DBX with Redis
+docker run -d --name dbx -p 3000:3000 \
+  -e DATABASE_URL=redis://localhost:6379 \
+  fnlog0/dbx:latest
+
+# Or use the convenience script
+./scripts/run.sh --redis-url redis://localhost:6379
+```
+
+## Installation Options
+
+### Docker (Recommended)
+
+```bash
+# Pull the latest image
+docker pull fnlog0/dbx:latest
+
+# Run with custom configuration
+docker run -d --name dbx -p 8080:3000 \
+  -e DATABASE_URL=redis://user:pass@redis.com:6379 \
+  -e PORT=3000 \
+  -e LOG_LEVEL=DEBUG \
+  fnlog0/dbx:latest
+```
+
+### Binary Installation
+
+```bash
+# Download the latest release
+curl -L https://github.com/effortlesslabs/dbx/releases/latest/download/dbx-x86_64-unknown-linux-gnu.tar.gz | tar xz
+
+# Make executable
+chmod +x dbx
+
+# Run
+./dbx --redis-url redis://localhost:6379
+```
+
+### From Source
+
+```bash
+# Clone the repository
+git clone https://github.com/effortlesslabs/dbx.git
+cd dbx
+
+# Build from source
+cargo build --release
+
+# Run
+cargo run -- --redis-url redis://localhost:6379
+```
+
+## TypeScript SDK Setup
+
+Install the TypeScript SDK:
+
+```bash
+npm install dbx-sdk
+# or
+yarn add dbx-sdk
+# or
+pnpm add dbx-sdk
+```
+
+## Your First API Call
+
+### Using the TypeScript SDK
+
+```typescript
+import { DbxClient } from "dbx-sdk";
+
+// Create client
+const client = new DbxClient({
+  baseUrl: "http://localhost:3000",
+  timeout: 5000,
+});
+
+// String operations
+await client.string.set("my-key", "hello world", 3600); // with TTL
+const value = await client.string.get("my-key");
+console.log(value); // "hello world"
+
+// Hash operations
+await client.hash.setField("user:1", "name", "John");
+const name = await client.hash.getField("user:1", "name");
+
+// Set operations
+await client.set.addMember("tags", "redis");
+const members = await client.set.getMembers("tags");
+
+// Admin operations
+const health = await client.admin.health();
+```
+
+### Using cURL
+
+```bash
+# String operations
+curl -X POST "http://localhost:3000/api/string/my-key" \
+  -H "Content-Type: application/json" \
+  -d '{"value": "hello world", "ttl": 3600}'
+
+curl "http://localhost:3000/api/string/my-key"
+# Response: "hello world"
+
+# Hash operations
+curl -X POST "http://localhost:3000/api/hash/user:1/field/name" \
+  -H "Content-Type: application/json" \
+  -d '{"value": "John"}'
+
+curl "http://localhost:3000/api/hash/user:1/field/name"
+# Response: "John"
+
+# Health check
+curl "http://localhost:3000/api/admin/health"
+# Response: {"status": "ok"}
+```
+
+### Using WebSocket
+
+```typescript
+import { DbxWebSocketClient } from "dbx-sdk";
+
+const wsClient = new DbxWebSocketClient({
+  url: "ws://localhost:3000/ws",
+});
+
+// Connect
+await wsClient.connect();
+
+// String operations
+await wsClient.string.set("my-key", "hello world");
+const value = await wsClient.string.get("my-key");
+
+// Listen for real-time updates
+wsClient.on("string:set", (data) => {
+  console.log("String set:", data);
+});
+```
+
+## Configuration
+
+### Environment Variables
+
+| Variable       | Default                  | Description                              |
+| -------------- | ------------------------ | ---------------------------------------- |
+| `DATABASE_URL` | `redis://localhost:6379` | Database connection URL                  |
+| `PORT`         | `3000`                   | Server port                              |
+| `HOST`         | `0.0.0.0`                | Server host                              |
+| `LOG_LEVEL`    | `INFO`                   | Logging level (DEBUG, INFO, WARN, ERROR) |
+| `POOL_SIZE`    | `10`                     | Connection pool size                     |
+| `TIMEOUT`      | `5000`                   | Request timeout in milliseconds          |
+
+### Configuration File
+
+Create a `config.toml` file:
+
+```toml
+[server]
+port = 3000
+host = "0.0.0.0"
+
+[database]
+url = "redis://localhost:6379"
+pool_size = 10
+timeout = 5000
+
+[logging]
+level = "INFO"
+```
+
+## Next Steps
+
+- **API Reference**: Explore the complete [REST API](/api/rest) and [WebSocket API](/api/websocket)
+- **SDK Documentation**: Learn more about the [TypeScript SDK](/sdk/typescript)
+- **Deployment**: Deploy to production with our [deployment guides](/deployment/docker)
+- **Examples**: Check out [use cases and examples](/guides/use-cases)
+
+## Troubleshooting
+
+### Common Issues
+
+**Connection refused**
+
+```bash
+# Check if Redis is running
+redis-cli ping
+# Should return: PONG
+```
+
+**Port already in use**
+
+```bash
+# Check what's using port 3000
+lsof -i :3000
+
+# Use a different port
+docker run -p 3001:3000 fnlog0/dbx:latest
+```
+
+**Authentication failed**
+
+```bash
+# Check Redis connection string
+# Format: redis://[username:password@]host:port[/database]
+```
+
+### Getting Help
+
+- **GitHub Issues**: [Report bugs and request features](https://github.com/effortlesslabs/dbx/issues)
+- **Discussions**: [Join the community](https://github.com/effortlesslabs/dbx/discussions)
+- **Documentation**: Browse the complete [documentation](/)

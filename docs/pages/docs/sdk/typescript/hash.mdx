@@ -1,0 +1,132 @@
+# TypeScript SDK - Hash Client
+
+The DBX TypeScript SDK provides a hash client for working with Redis hash data structures. This client offers type-safe methods for all hash operations with full TypeScript support.
+
+## Installation
+
+```bash
+npm install @effortlesslabs/dbx
+```
+
+## Basic Usage
+
+### REST Client
+
+```typescript
+import { DBXClient } from "@effortlesslabs/dbx";
+const client = new DBXClient({ baseUrl: "http://localhost:8080", token: "your-jwt-token" });
+const hashClient = client.hash;
+```
+
+### WebSocket Client
+
+```typescript
+import { DBXWebSocketClient } from "@effortlesslabs/dbx";
+const client = new DBXWebSocketClient({ url: "ws://localhost:8080/ws", token: "your-jwt-token" });
+await client.connect();
+const hashClient = client.hash;
+```
+
+## Hash Operations
+
+### HSET - Set Hash Field
+
+```typescript
+await hashClient.hset("user:123", "name", "John Doe");
+```
+
+### HMSET - Set Multiple Fields
+
+```typescript
+await hashClient.hmset("user:123", { name: "John Doe", email: "john@example.com" });
+```
+
+### HGET - Get Field
+
+```typescript
+const name = await hashClient.hget("user:123", "name");
+```
+
+### HMGET - Get Multiple Fields
+
+```typescript
+const values = await hashClient.hmget("user:123", ["name", "email"]);
+```
+
+### HGETALL - Get All Fields
+
+```typescript
+const allFields = await hashClient.hgetall("user:123");
+```
+
+### HDEL - Delete Fields
+
+```typescript
+const deleted = await hashClient.hdel("user:123", ["email"]);
+```
+
+### HEXISTS - Check Field Exists
+
+```typescript
+const exists = await hashClient.hexists("user:123", "name");
+```
+
+### HKEYS - Get Field Names
+
+```typescript
+const keys = await hashClient.hkeys("user:123");
+```
+
+### HVALS - Get Values
+
+```typescript
+const values = await hashClient.hvals("user:123");
+```
+
+### HLEN - Get Hash Length
+
+```typescript
+const length = await hashClient.hlen("user:123");
+```
+
+### HINCRBY - Increment Field
+
+```typescript
+const newValue = await hashClient.hincrby("user:123", "visits", 1);
+```
+
+### HINCRBYFLOAT - Increment Field by Float
+
+```typescript
+const score = await hashClient.hincrbyfloat("user:123", "score", 0.5);
+```
+
+### HSETNX - Set Field if Not Exists
+
+```typescript
+const created = await hashClient.hsetnx("user:123", "created_at", "2024-01-15T10:30:00Z");
+```
+
+### HSTRLEN - Get Field String Length
+
+```typescript
+const length = await hashClient.hstrlen("user:123", "name");
+```
+
+### HRANDFIELD - Get Random Field
+
+```typescript
+const randomField = await hashClient.hrandfield("user:123", 1, true);
+```
+
+## Error Handling
+
+All methods throw `DBXError` on failure. See [String Client](./string) for error handling examples.
+
+## Best Practices
+
+- Use descriptive field names
+- Use HMSET/HMGET for batch operations
+- Validate field values
+- Set TTL on hash keys for temporary data
+- Use hash partitioning for large datasets

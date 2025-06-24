@@ -1,0 +1,101 @@
+# Introduction
+
+DBX is a minimal, blazing-fast API proxy designed for edge and embedded systems. It provides a unified API layer to expose Redis, Qdrant, and MDBX databases through a clean, RESTful interface and WebSocket connections.
+
+## What is DBX?
+
+DBX acts as a lightweight proxy that sits between your applications and your databases, providing:
+
+- **Unified API**: Single interface for multiple database types
+- **Edge-Optimized**: Designed for low-latency, high-throughput edge deployments
+- **Embedded-Friendly**: Minimal resource footprint perfect for embedded systems
+- **Protocol Support**: Both REST API and WebSocket connections
+- **Type Safety**: Full TypeScript SDK with comprehensive type definitions
+
+## Key Features
+
+### 🚀 Performance
+
+- **Ultra-low latency**: Optimized for edge computing environments
+- **High throughput**: Efficient connection pooling and request handling
+- **Minimal overhead**: Lightweight proxy with minimal resource usage
+
+### 🔧 Database Support
+
+- **Redis**: Full Redis protocol support with all data types
+- **Qdrant**: Vector database operations for AI/ML workloads
+- **MDBX**: Embedded key-value store for local persistence
+
+### 🌐 Connectivity
+
+- **REST API**: Standard HTTP endpoints for all operations
+- **WebSocket**: Real-time bidirectional communication
+- **TypeScript SDK**: Full-featured client library with type safety
+
+### 🛡️ Security
+
+- **Authentication**: JWT-based authentication system
+- **Rate Limiting**: Built-in request throttling
+- **CORS Support**: Configurable cross-origin resource sharing
+
+## Architecture
+
+```
+┌─────────────────┐    ┌─────────────┐    ┌─────────────┐
+│   Your App      │    │     DBX     │    │  Database   │
+│                 │◄──►│   Proxy     │◄──►│  (Redis/    │
+│  (Client SDK)   │    │             │    │  Qdrant/    │
+└─────────────────┘    └─────────────┘    │  MDBX)      │
+                                          └─────────────┘
+```
+
+## Use Cases
+
+### Edge Computing
+
+Deploy DBX on edge nodes to provide local database access with cloud synchronization capabilities.
+
+### IoT Applications
+
+Use DBX in embedded systems to provide a standardized API for various database backends.
+
+### Microservices
+
+Integrate DBX as a database proxy layer in microservice architectures for consistent data access patterns.
+
+### Real-time Applications
+
+Leverage WebSocket connections for real-time data synchronization and event streaming.
+
+## Quick Start
+
+Get started with DBX in minutes:
+
+```bash
+# Install DBX
+cargo install dbx
+
+# Start the server
+dbx --config config.toml
+
+# Use the TypeScript SDK
+npm install @effortlesslabs/dbx
+```
+
+## Next Steps
+
+- [Quick Start Guide](/docs/getting-started) - Get up and running in minutes
+- [Installation](/docs/installation) - Detailed installation instructions
+- [Configuration](/docs/configuration) - Learn about configuration options
+- [API Reference](/docs/api/rest/authentication) - Explore the REST API
+- [TypeScript SDK](/docs/sdk/typescript/installation) - Use the official SDK
+
+## Community
+
+- **GitHub**: [effortlesslabs/dbx](https://github.com/effortlesslabs/dbx)
+- **Twitter**: [@effortlesslabs](https://x.com/effortlesslabs)
+- **Discussions**: [GitHub Discussions](https://github.com/effortlesslabs/dbx/discussions)
+
+## License
+
+DBX is open source and available under the MIT License.

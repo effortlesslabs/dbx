@@ -1,0 +1,474 @@
+# Set Operations
+
+DBX provides comprehensive set operations through its REST API. Set operations allow you to store and manage collections of unique values, similar to Redis sets.
+
+## Overview
+
+Set operations support storing collections of unique values under a single key, making them ideal for storing tags, user groups, unique identifiers, or any collection where duplicates are not allowed.
+
+## Endpoints
+
+### GET /api/set/{key}
+
+Retrieve all members from a set.
+
+**Parameters:**
+
+- `key` (path) - The set key to retrieve
+
+**Response:**
+
+```json
+{
+  "members": ["user1", "user2", "user3", "user4"],
+  "cardinality": 4,
+  "ttl": 3600
+}
+```
+
+**Example:**
+
+```bash
+curl http://localhost:8080/api/set/online-users
+```
+
+### POST /api/set/{key}
+
+Create or update a set with multiple members.
+
+**Parameters:**
+
+- `key` (path) - The set key to store
+- `members` (body) - Array of unique values
+- `ttl` (optional, body) - Time to live in seconds
+
+**Request Body:**
+
+```json
+{
+  "members": ["user1", "user2", "user3", "user4"],
+  "ttl": 3600
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "key": "online-users",
+  "members_count": 4
+}
+```
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:8080/api/set/online-users \
+     -H "Content-Type: application/json" \
+     -d '{
+       "members": ["user1", "user2", "user3", "user4"],
+       "ttl": 3600
+     }'
+```
+
+### DELETE /api/set/{key}
+
+Delete an entire set and all its members.
+
+**Parameters:**
+
+- `key` (path) - The set key to delete
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "deleted": true
+}
+```
+
+**Example:**
+
+```bash
+curl -X DELETE http://localhost:8080/api/set/online-users
+```
+
+### POST /api/set/{key}/member/{member}
+
+Add a single member to a set.
+
+**Parameters:**
+
+- `key` (path) - The set key
+- `member` (path) - The member to add
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "member": "user5",
+  "added": true
+}
+```
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:8080/api/set/online-users/member/user5
+```
+
+### DELETE /api/set/{key}/member/{member}
+
+Remove a single member from a set.
+
+**Parameters:**
+
+- `key` (path) - The set key
+- `member` (path) - The member to remove
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "member": "user1",
+  "removed": true
+}
+```
+
+**Example:**
+
+```bash
+curl -X DELETE http://localhost:8080/api/set/online-users/member/user1
+```
+
+### GET /api/set/{key}/member/{member}/exists
+
+Check if a member exists in a set.
+
+**Parameters:**
+
+- `key` (path) - The set key
+- `member` (path) - The member to check
+
+**Response:**
+
+```json
+{
+  "exists": true
+}
+```
+
+**Example:**
+
+```bash
+curl http://localhost:8080/api/set/online-users/member/user1/exists
+```
+
+### GET /api/set/{key}/cardinality
+
+Get the number of members in a set.
+
+**Parameters:**
+
+- `key` (path) - The set key
+
+**Response:**
+
+```json
+{
+  "cardinality": 4
+}
+```
+
+**Example:**
+
+```bash
+curl http://localhost:8080/api/set/online-users/cardinality
+```
+
+### POST /api/set/{key}/pop
+
+Remove and return a random member from the set.
+
+**Parameters:**
+
+- `key` (path) - The set key
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "member": "user3"
+}
+```
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:8080/api/set/online-users/pop
+```
+
+## Set Operations
+
+### POST /api/set/union
+
+Compute the union of multiple sets.
+
+**Request Body:**
+
+```json
+{
+  "keys": ["set1", "set2", "set3"]
+}
+```
+
+**Response:**
+
+```json
+{
+  "union": ["member1", "member2", "member3", "member4"],
+  "cardinality": 4
+}
+```
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:8080/api/set/union \
+     -H "Content-Type: application/json" \
+     -d '{"keys": ["set1", "set2", "set3"]}'
+```
+
+### POST /api/set/intersection
+
+Compute the intersection of multiple sets.
+
+**Request Body:**
+
+```json
+{
+  "keys": ["set1", "set2", "set3"]
+}
+```
+
+**Response:**
+
+```json
+{
+  "intersection": ["member1", "member2"],
+  "cardinality": 2
+}
+```
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:8080/api/set/intersection \
+     -H "Content-Type: application/json" \
+     -d '{"keys": ["set1", "set2", "set3"]}'
+```
+
+### POST /api/set/difference
+
+Compute the difference between sets (members in first set but not in others).
+
+**Request Body:**
+
+```json
+{
+  "keys": ["set1", "set2", "set3"]
+}
+```
+
+**Response:**
+
+```json
+{
+  "difference": ["member3"],
+  "cardinality": 1
+}
+```
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:8080/api/set/difference \
+     -H "Content-Type: application/json" \
+     -d '{"keys": ["set1", "set2", "set3"]}'
+```
+
+## Batch Operations
+
+### POST /api/set/batch
+
+Perform multiple set operations in a single request.
+
+**Request Body:**
+
+```json
+{
+  "operations": [
+    {
+      "type": "add",
+      "key": "set1",
+      "members": ["member1", "member2"]
+    },
+    {
+      "type": "get",
+      "key": "set2"
+    },
+    {
+      "type": "addMember",
+      "key": "set1",
+      "member": "member3"
+    }
+  ]
+}
+```
+
+**Response:**
+
+```json
+{
+  "results": [
+    {
+      "type": "add",
+      "success": true,
+      "key": "set1",
+      "members_count": 2
+    },
+    {
+      "type": "get",
+      "success": true,
+      "members": ["member4", "member5"],
+      "cardinality": 2
+    },
+    {
+      "type": "addMember",
+      "success": true,
+      "member": "member3",
+      "added": true
+    }
+  ]
+}
+```
+
+## Use Cases
+
+### 1. Online Users Tracking
+
+```bash
+# Add user to online set
+curl -X POST http://localhost:8080/api/set/online-users/member/user123
+
+# Check if user is online
+curl http://localhost:8080/api/set/online-users/member/user123/exists
+
+# Get online user count
+curl http://localhost:8080/api/set/online-users/cardinality
+
+# Remove user when they go offline
+curl -X DELETE http://localhost:8080/api/set/online-users/member/user123
+```
+
+### 2. Tag Management
+
+```bash
+# Store post tags
+curl -X POST http://localhost:8080/api/set/post:123:tags \
+     -H "Content-Type: application/json" \
+     -d '{
+       "members": ["javascript", "nodejs", "api"],
+       "ttl": 86400
+     }'
+
+# Add new tag
+curl -X POST http://localhost:8080/api/set/post:123:tags/member/redis
+
+# Check if post has specific tag
+curl http://localhost:8080/api/set/post:123:tags/member/javascript/exists
+```
+
+### 3. Unique Collections
+
+```bash
+# Store unique IP addresses
+curl -X POST http://localhost:8080/api/set/unique-visitors \
+     -H "Content-Type: application/json" \
+     -d '{
+       "members": ["192.168.1.100", "192.168.1.101", "10.0.0.50"],
+       "ttl": 3600
+     }'
+
+# Add new visitor
+curl -X POST http://localhost:8080/api/set/unique-visitors/member/192.168.1.102
+
+# Get unique visitor count
+curl http://localhost:8080/api/set/unique-visitors/cardinality
+```
+
+### 4. User Groups and Permissions
+
+```bash
+# Store admin users
+curl -X POST http://localhost:8080/api/set/admins \
+     -H "Content-Type: application/json" \
+     -d '{
+       "members": ["user1", "user2", "user3"]
+     }'
+
+# Check if user is admin
+curl http://localhost:8080/api/set/admins/member/user1/exists
+
+# Add new admin
+curl -X POST http://localhost:8080/api/set/admins/member/user4
+```
+
+## Error Handling
+
+All endpoints return consistent error responses:
+
+```json
+{
+  "error": "not_found",
+  "message": "Set key 'online-users' not found",
+  "status": 404
+}
+```
+
+Common error types:
+
+- `not_found` - Set key doesn't exist
+- `member_not_found` - Member doesn't exist in set
+- `invalid_key` - Key format is invalid
+- `invalid_member` - Member format is invalid
+- `duplicate_member` - Member already exists in set
+- `server_error` - Internal server error
+
+## Performance Considerations
+
+1. **Set Size** - Large sets may impact performance for operations like `GET`
+2. **Member Uniqueness** - DBX automatically handles duplicates
+3. **Batch Operations** - Use batch endpoints for multiple operations
+4. **TTL Management** - Set appropriate TTL values for set expiration
+
+## Data Types
+
+Set members support various data types:
+
+- **Strings** - Most common, stored as-is
+- **Numbers** - Stored as strings, can be parsed by client
+- **UUIDs** - Stored as strings
+- **JSON** - Stored as stringified JSON (not recommended for sets)
+
+## Rate Limits
+
+Set operations are subject to the same rate limiting as other API endpoints:
+
+- Default: 100 requests per minute per IP
+- Configurable via environment variables

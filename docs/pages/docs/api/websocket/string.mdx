@@ -1,0 +1,469 @@
+# WebSocket String Operations
+
+DBX provides real-time string operations through WebSocket connections, allowing for efficient bidirectional communication with your Redis database.
+
+## Connection Setup
+
+Before using string operations, establish a WebSocket connection:
+
+```typescript
+import { DBXWebSocketClient } from "@effortlesslabs/dbx";
+
+const client = new DBXWebSocketClient({
+  url: "ws://localhost:8080/ws",
+  token: "your-jwt-token",
+});
+
+await client.connect();
+```
+
+## String Operations
+
+### GET - Retrieve a String Value
+
+Retrieve a string value by key.
+
+**Request:**
+
+```json
+{
+  "id": "req-1",
+  "method": "GET",
+  "params": {
+    "key": "user:123:name"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-1",
+  "result": {
+    "value": "John Doe"
+  }
+}
+```
+
+**Error Response:**
+
+```json
+{
+  "id": "req-1",
+  "error": {
+    "code": "KEY_NOT_FOUND",
+    "message": "Key 'user:123:name' not found"
+  }
+}
+```
+
+### SET - Set a String Value
+
+Set a string value with optional expiration.
+
+**Request:**
+
+```json
+{
+  "id": "req-2",
+  "method": "SET",
+  "params": {
+    "key": "user:123:name",
+    "value": "John Doe",
+    "expire": 3600
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-2",
+  "result": {
+    "success": true
+  }
+}
+```
+
+### SETNX - Set if Not Exists
+
+Set a string value only if the key doesn't already exist.
+
+**Request:**
+
+```json
+{
+  "id": "req-3",
+  "method": "SETNX",
+  "params": {
+    "key": "user:123:name",
+    "value": "John Doe"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-3",
+  "result": {
+    "success": true,
+    "created": true
+  }
+}
+```
+
+### MSET - Set Multiple Values
+
+Set multiple string values atomically.
+
+**Request:**
+
+```json
+{
+  "id": "req-4",
+  "method": "MSET",
+  "params": {
+    "pairs": {
+      "user:123:name": "John Doe",
+      "user:123:email": "john@example.com",
+      "user:123:age": "30"
+    }
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-4",
+  "result": {
+    "success": true
+  }
+}
+```
+
+### MGET - Get Multiple Values
+
+Retrieve multiple string values by keys.
+
+**Request:**
+
+```json
+{
+  "id": "req-5",
+  "method": "MGET",
+  "params": {
+    "keys": ["user:123:name", "user:123:email", "user:123:age"]
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-5",
+  "result": {
+    "values": ["John Doe", "john@example.com", "30"]
+  }
+}
+```
+
+### INCR - Increment Counter
+
+Increment a numeric string value by 1.
+
+**Request:**
+
+```json
+{
+  "id": "req-6",
+  "method": "INCR",
+  "params": {
+    "key": "counter:visits"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-6",
+  "result": {
+    "value": 42
+  }
+}
+```
+
+### INCRBY - Increment by Amount
+
+Increment a numeric string value by a specified amount.
+
+**Request:**
+
+```json
+{
+  "id": "req-7",
+  "method": "INCRBY",
+  "params": {
+    "key": "counter:visits",
+    "amount": 5
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-7",
+  "result": {
+    "value": 47
+  }
+}
+```
+
+### DECR - Decrement Counter
+
+Decrement a numeric string value by 1.
+
+**Request:**
+
+```json
+{
+  "id": "req-8",
+  "method": "DECR",
+  "params": {
+    "key": "counter:visits"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-8",
+  "result": {
+    "value": 46
+  }
+}
+```
+
+### DECRBY - Decrement by Amount
+
+Decrement a numeric string value by a specified amount.
+
+**Request:**
+
+```json
+{
+  "id": "req-9",
+  "method": "DECRBY",
+  "params": {
+    "key": "counter:visits",
+    "amount": 3
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-9",
+  "result": {
+    "value": 43
+  }
+}
+```
+
+### APPEND - Append to String
+
+Append a value to an existing string.
+
+**Request:**
+
+```json
+{
+  "id": "req-10",
+  "method": "APPEND",
+  "params": {
+    "key": "user:123:notes",
+    "value": " - Updated on 2024-01-15"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-10",
+  "result": {
+    "length": 45
+  }
+}
+```
+
+### STRLEN - Get String Length
+
+Get the length of a string value.
+
+**Request:**
+
+```json
+{
+  "id": "req-11",
+  "method": "STRLEN",
+  "params": {
+    "key": "user:123:name"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-11",
+  "result": {
+    "length": 8
+  }
+}
+```
+
+### GETRANGE - Get String Range
+
+Get a substring from a string value.
+
+**Request:**
+
+```json
+{
+  "id": "req-12",
+  "method": "GETRANGE",
+  "params": {
+    "key": "user:123:name",
+    "start": 0,
+    "end": 3
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-12",
+  "result": {
+    "value": "John"
+  }
+}
+```
+
+### SETRANGE - Set String Range
+
+Set a substring within a string value.
+
+**Request:**
+
+```json
+{
+  "id": "req-13",
+  "method": "SETRANGE",
+  "params": {
+    "key": "user:123:name",
+    "offset": 5,
+    "value": "Smith"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-13",
+  "result": {
+    "length": 10
+  }
+}
+```
+
+## Error Handling
+
+All WebSocket string operations return standardized error responses:
+
+```json
+{
+  "id": "request-id",
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human readable error message"
+  }
+}
+```
+
+Common error codes:
+
+- `KEY_NOT_FOUND`: The specified key doesn't exist
+- `INVALID_VALUE`: The value is not valid for the operation
+- `TYPE_MISMATCH`: The key exists but is not a string type
+- `AUTHENTICATION_FAILED`: Invalid or missing authentication token
+- `RATE_LIMITED`: Request rate limit exceeded
+
+## TypeScript SDK Usage
+
+```typescript
+import { DBXWebSocketClient } from "@effortlesslabs/dbx";
+
+const client = new DBXWebSocketClient({
+  url: "ws://localhost:8080/ws",
+  token: "your-jwt-token",
+});
+
+await client.connect();
+
+// Set a value
+await client.string.set("user:123:name", "John Doe", { expire: 3600 });
+
+// Get a value
+const name = await client.string.get("user:123:name");
+
+// Increment a counter
+const newValue = await client.string.incr("counter:visits");
+
+// Set multiple values
+await client.string.mset({
+  "user:123:name": "John Doe",
+  "user:123:email": "john@example.com",
+});
+
+// Get multiple values
+const values = await client.string.mget(["user:123:name", "user:123:email"]);
+
+await client.disconnect();
+```
+
+## Best Practices
+
+1. **Connection Management**: Reuse WebSocket connections when possible
+2. **Error Handling**: Always handle potential errors in your application
+3. **Rate Limiting**: Respect rate limits and implement backoff strategies
+4. **Key Naming**: Use consistent key naming conventions (e.g., `type:id:field`)
+5. **Expiration**: Set appropriate TTL values for temporary data
+6. **Batch Operations**: Use MSET/MGET for multiple operations when possible
+
+## Performance Considerations
+
+- WebSocket connections provide lower latency than REST API calls
+- Batch operations (MSET/MGET) are more efficient than individual calls
+- Connection pooling can improve performance in high-throughput scenarios
+- Consider using pipelining for multiple sequential operations

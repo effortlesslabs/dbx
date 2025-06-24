@@ -1,0 +1,24 @@
+{
+  "name": "docs",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vocs dev",
+    "build": "vocs build",
+    "preview": "vocs preview"
+  },
+  "dependencies": {
+    "react": "latest",
+    "react-dom": "latest",
+    "vocs": "latest"
+  },
+  "devDependencies": {
+    "@tailwindcss/typography": "^0.5.16",
+    "@types/react": "latest",
+    "tailwindcss": "^4.1.10",
+    "typescript": "latest",
+    "unplugin-icons": "^22.1.0",
+    "vite-plugin-mkcert": "^1.17.8"
+  }
+}

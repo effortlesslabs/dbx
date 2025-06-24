@@ -1,0 +1,583 @@
+# Error Handling
+
+DBX provides consistent error handling across all API endpoints with standardized error responses and HTTP status codes. Understanding error handling is crucial for building robust applications.
+
+## Overview
+
+All DBX API endpoints return consistent error responses with appropriate HTTP status codes, error types, and descriptive messages. This ensures predictable error handling across your application.
+
+## Error Response Format
+
+All error responses follow this standard format:
+
+```json
+{
+  "error": "error_type",
+  "message": "Human-readable error description",
+  "status": 400,
+  "timestamp": "2024-01-15T10:30:00Z",
+  "request_id": "req_1234567890"
+}
+```
+
+## HTTP Status Codes
+
+DBX uses standard HTTP status codes to indicate the nature of errors:
+
+| Status Code | Description           | Common Use Cases                       |
+| ----------- | --------------------- | -------------------------------------- |
+| `200`       | Success               | Successful operations                  |
+| `201`       | Created               | Resource created successfully          |
+| `400`       | Bad Request           | Invalid input, malformed request       |
+| `401`       | Unauthorized          | Authentication required                |
+| `403`       | Forbidden             | Insufficient permissions               |
+| `404`       | Not Found             | Resource doesn't exist                 |
+| `409`       | Conflict              | Resource conflict (e.g., duplicate)    |
+| `422`       | Unprocessable Entity  | Valid request but business logic error |
+| `429`       | Too Many Requests     | Rate limit exceeded                    |
+| `500`       | Internal Server Error | Server-side error                      |
+| `503`       | Service Unavailable   | Service temporarily unavailable        |
+
+## Common Error Types
+
+### Authentication Errors
+
+#### `unauthorized`
+
+**Status:** `401`
+
+Authentication is required but not provided or invalid.
+
+```json
+{
+  "error": "unauthorized",
+  "message": "Authentication required",
+  "status": 401
+}
+```
+
+**Causes:**
+
+- Missing API key
+- Invalid API key
+- Expired JWT token
+- Invalid Basic Auth credentials
+
+**Solutions:**
+
+```bash
+# Add API key to request
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+     http://localhost:8080/api/string/my-key
+
+# Check API key validity
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+     http://localhost:8080/api/admin/ping
+```
+
+#### `forbidden`
+
+**Status:** `403`
+
+Authentication provided but insufficient permissions.
+
+```json
+{
+  "error": "forbidden",
+  "message": "Insufficient permissions for this operation",
+  "status": 403
+}
+```
+
+**Causes:**
+
+- API key doesn't have required permissions
+- Admin endpoint access without admin privileges
+
+### Validation Errors
+
+#### `invalid_key`
+
+**Status:** `400`
+
+The provided key format is invalid.
+
+```json
+{
+  "error": "invalid_key",
+  "message": "Key 'invalid@key' contains invalid characters",
+  "status": 400
+}
+```
+
+**Valid Key Patterns:**
+
+- Alphanumeric characters: `a-z`, `A-Z`, `0-9`
+- Hyphens: `-`
+- Underscores: `_`
+- Colons: `:` (for hierarchical keys)
+- Dots: `.`
+
+**Examples:**
+
+```bash
+# Valid keys
+user:123
+cache:session:abc123
+config.app.debug
+
+# Invalid keys
+user@123
+cache/session/abc123
+config app debug
+```
+
+#### `invalid_value`
+
+**Status:** `400`
+
+The provided value format is invalid.
+
+```json
+{
+  "error": "invalid_value",
+  "message": "Value must be a string",
+  "status": 400
+}
+```
+
+**Causes:**
+
+- Non-string values for string operations
+- Invalid JSON format
+- Empty values where not allowed
+
+#### `invalid_ttl`
+
+**Status:** `400`
+
+The provided TTL (Time To Live) value is invalid.
+
+```json
+{
+  "error": "invalid_ttl",
+  "message": "TTL must be a positive integer",
+  "status": 400
+}
+```
+
+**Valid TTL Values:**
+
+- Positive integers (1 to 2147483647)
+- Maximum: 68 years (2147483647 seconds)
+
+### Resource Errors
+
+#### `not_found`
+
+**Status:** `404`
+
+The requested resource doesn't exist.
+
+```json
+{
+  "error": "not_found",
+  "message": "Key 'user:123' not found",
+  "status": 404
+}
+```
+
+**Causes:**
+
+- Key doesn't exist
+- Key has expired
+- Key was deleted
+
+**Solutions:**
+
+```bash
+# Check if key exists before operations
+curl http://localhost:8080/api/string/user:123/exists
+
+# Handle gracefully in your application
+if response.status === 404:
+    # Key doesn't exist, create it or handle accordingly
+    pass
+```
+
+#### `field_not_found`
+
+**Status:** `404`
+
+The requested field doesn't exist in the hash.
+
+```json
+{
+  "error": "field_not_found",
+  "message": "Field 'age' not found in hash 'user:123'",
+  "status": 404
+}
+```
+
+#### `member_not_found`
+
+**Status:** `404`
+
+The requested member doesn't exist in the set.
+
+```json
+{
+  "error": "member_not_found",
+  "message": "Member 'user456' not found in set 'online-users'",
+  "status": 404
+}
+```
+
+### Conflict Errors
+
+#### `duplicate_member`
+
+**Status:** `409`
+
+Attempting to add a member that already exists in a set.
+
+```json
+{
+  "error": "duplicate_member",
+  "message": "Member 'user123' already exists in set 'online-users'",
+  "status": 409
+}
+```
+
+**Solutions:**
+
+```bash
+# Check if member exists before adding
+curl http://localhost:8080/api/set/online-users/member/user123/exists
+
+# Handle gracefully - sets automatically handle duplicates
+curl -X POST http://localhost:8080/api/set/online-users/member/user123
+```
+
+### Rate Limiting Errors
+
+#### `rate_limit_exceeded`
+
+**Status:** `429`
+
+Too many requests in the configured time window.
+
+```json
+{
+  "error": "rate_limit_exceeded",
+  "message": "Rate limit exceeded. Try again in 30 seconds.",
+  "status": 429,
+  "retry_after": 30
+}
+```
+
+**Solutions:**
+
+```bash
+# Implement exponential backoff
+sleep_time = min(2 ** retry_count, 60)
+time.sleep(sleep_time)
+
+# Use batch operations to reduce request count
+curl -X POST http://localhost:8080/api/string/batch \
+     -H "Content-Type: application/json" \
+     -d '{"operations": [...]}'
+```
+
+### Server Errors
+
+#### `server_error`
+
+**Status:** `500`
+
+Internal server error.
+
+```json
+{
+  "error": "server_error",
+  "message": "Internal server error occurred",
+  "status": 500,
+  "request_id": "req_1234567890"
+}
+```
+
+**Causes:**
+
+- Database connection issues
+- Memory exhaustion
+- Unexpected application errors
+
+**Solutions:**
+
+```bash
+# Check server health
+curl http://localhost:8080/api/admin/health
+
+# Retry with exponential backoff
+# Contact support with request_id if persistent
+```
+
+#### `service_unavailable`
+
+**Status:** `503`
+
+Service temporarily unavailable.
+
+```json
+{
+  "error": "service_unavailable",
+  "message": "Service temporarily unavailable",
+  "status": 503,
+  "retry_after": 60
+}
+```
+
+**Causes:**
+
+- Database maintenance
+- High load
+- Service restart
+
+## Error Handling Best Practices
+
+### 1. Always Check Status Codes
+
+```javascript
+const response = await fetch("/api/string/my-key");
+if (!response.ok) {
+  const error = await response.json();
+  console.error(`Error ${error.status}: ${error.message}`);
+  // Handle error appropriately
+}
+```
+
+### 2. Implement Retry Logic
+
+```javascript
+async function apiCallWithRetry(url, options, maxRetries = 3) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const response = await fetch(url, options);
+      if (response.ok) return response;
+
+      const error = await response.json();
+
+      // Don't retry on client errors
+      if (error.status >= 400 && error.status < 500) {
+        throw new Error(error.message);
+      }
+
+      // Retry on server errors
+      if (error.status >= 500) {
+        await new Promise((resolve) => setTimeout(resolve, Math.pow(2, i) * 1000));
+        continue;
+      }
+    } catch (err) {
+      if (i === maxRetries - 1) throw err;
+    }
+  }
+}
+```
+
+### 3. Handle Rate Limiting
+
+```javascript
+async function handleRateLimit(response) {
+  if (response.status === 429) {
+    const error = await response.json();
+    const retryAfter = error.retry_after || 60;
+
+    console.log(`Rate limited. Retrying in ${retryAfter} seconds.`);
+    await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000));
+
+    return true; // Indicate retry should be attempted
+  }
+  return false;
+}
+```
+
+### 4. Log Errors Appropriately
+
+```javascript
+function logError(error, context) {
+  console.error({
+    error: error.error,
+    message: error.message,
+    status: error.status,
+    request_id: error.request_id,
+    context: context,
+    timestamp: new Date().toISOString(),
+  });
+}
+```
+
+### 5. Provide User-Friendly Messages
+
+```javascript
+const errorMessages = {
+  not_found: "The requested resource was not found.",
+  unauthorized: "Please log in to access this resource.",
+  rate_limit_exceeded: "Too many requests. Please try again later.",
+  server_error: "A server error occurred. Please try again.",
+  default: "An unexpected error occurred.",
+};
+
+function getUserFriendlyMessage(error) {
+  return errorMessages[error.error] || errorMessages.default;
+}
+```
+
+## Debugging Errors
+
+### 1. Check Request ID
+
+All error responses include a `request_id` for tracking:
+
+```bash
+# Include request ID in support requests
+curl -v http://localhost:8080/api/string/invalid-key
+# Look for request_id in error response
+```
+
+### 2. Enable Debug Logging
+
+```bash
+export DBX_LOG_LEVEL=debug
+export DBX_LOG_FORMAT=json
+```
+
+### 3. Check Server Logs
+
+```bash
+# View server logs
+docker logs dbx-container
+
+# Filter for specific request
+docker logs dbx-container | grep "req_1234567890"
+```
+
+### 4. Use Health Check Endpoints
+
+```bash
+# Check overall health
+curl http://localhost:8080/api/admin/health
+
+# Check specific component
+curl http://localhost:8080/api/admin/info
+```
+
+## Error Recovery Strategies
+
+### 1. Graceful Degradation
+
+```javascript
+async function getCachedData(key) {
+  try {
+    const response = await fetch(`/api/string/${key}`);
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch (error) {
+    console.warn("Cache unavailable, using fallback");
+  }
+
+  // Fallback to local storage or default values
+  return getFallbackData(key);
+}
+```
+
+### 2. Circuit Breaker Pattern
+
+```javascript
+class CircuitBreaker {
+  constructor(failureThreshold = 5, timeout = 60000) {
+    this.failureThreshold = failureThreshold;
+    this.timeout = timeout;
+    this.failures = 0;
+    this.lastFailureTime = null;
+    this.state = "CLOSED";
+  }
+
+  async call(fn) {
+    if (this.state === "OPEN") {
+      if (Date.now() - this.lastFailureTime > this.timeout) {
+        this.state = "HALF_OPEN";
+      } else {
+        throw new Error("Circuit breaker is OPEN");
+      }
+    }
+
+    try {
+      const result = await fn();
+      this.onSuccess();
+      return result;
+    } catch (error) {
+      this.onFailure();
+      throw error;
+    }
+  }
+
+  onSuccess() {
+    this.failures = 0;
+    this.state = "CLOSED";
+  }
+
+  onFailure() {
+    this.failures++;
+    this.lastFailureTime = Date.now();
+
+    if (this.failures >= this.failureThreshold) {
+      this.state = "OPEN";
+    }
+  }
+}
+```
+
+## Testing Error Scenarios
+
+### 1. Test Invalid Inputs
+
+```bash
+# Test invalid key
+curl http://localhost:8080/api/string/invalid@key
+
+# Test invalid TTL
+curl -X POST http://localhost:8080/api/string/test \
+     -H "Content-Type: application/json" \
+     -d '{"value": "test", "ttl": -1}'
+```
+
+### 2. Test Authentication
+
+```bash
+# Test without authentication
+curl http://localhost:8080/api/admin/stats
+
+# Test with invalid API key
+curl -H "Authorization: Bearer invalid-key" \
+     http://localhost:8080/api/admin/stats
+```
+
+### 3. Test Rate Limiting
+
+```bash
+# Make many requests quickly
+for i in {1..150}; do
+  curl http://localhost:8080/api/admin/ping &
+done
+wait
+```
+
+## Environment Variables for Error Handling
+
+| Variable                | Description                              | Default        |
+| ----------------------- | ---------------------------------------- | -------------- |
+| `DBX_LOG_LEVEL`         | Logging level (debug, info, warn, error) | `info`         |
+| `DBX_LOG_FORMAT`        | Log format (json, text)                  | `text`         |
+| `DBX_ERROR_DETAILS`     | Include error details in responses       | `true`         |
+| `DBX_REQUEST_ID_HEADER` | Custom request ID header                 | `X-Request-ID` |

@@ -1,0 +1,422 @@
+# Admin Operations
+
+DBX provides administrative operations through its REST API for monitoring, health checks, and system management. These endpoints are essential for production deployments and operational monitoring.
+
+## Overview
+
+Admin operations provide insights into the DBX system status, performance metrics, and operational data. These endpoints are designed for monitoring, debugging, and system administration tasks.
+
+## Endpoints
+
+### GET /api/admin/ping
+
+Simple health check endpoint to verify the API is responding.
+
+**Response:**
+
+```json
+{
+  "pong": "pong",
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+**Example:**
+
+```bash
+curl http://localhost:8080/api/admin/ping
+```
+
+### GET /api/admin/health
+
+Comprehensive health check including database connectivity and system status.
+
+**Response:**
+
+```json
+{
+  "status": "healthy",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "uptime": 3600,
+  "database": {
+    "status": "connected",
+    "type": "redis",
+    "latency": 2.5
+  },
+  "memory": {
+    "used": 1048576,
+    "available": 1073741824,
+    "total": 2147483648
+  }
+}
+```
+
+**Example:**
+
+```bash
+curl http://localhost:8080/api/admin/health
+```
+
+### GET /api/admin/info
+
+Get detailed system information and configuration.
+
+**Response:**
+
+```json
+{
+  "version": "1.0.0",
+  "build_date": "2024-01-15T10:30:00Z",
+  "config": {
+    "port": 8080,
+    "host": "0.0.0.0",
+    "database_url": "redis://localhost:6379",
+    "max_connections": 100,
+    "rate_limit_requests": 100,
+    "rate_limit_window": 60
+  },
+  "features": {
+    "websocket": true,
+    "authentication": true,
+    "cors": true
+  }
+}
+```
+
+**Example:**
+
+```bash
+curl http://localhost:8080/api/admin/info
+```
+
+### GET /api/admin/clients
+
+Get information about connected clients and their activity.
+
+**Response:**
+
+```json
+{
+  "clients": [
+    {
+      "id": "client-1",
+      "ip": "192.168.1.100",
+      "user_agent": "curl/7.68.0",
+      "connected_at": "2024-01-15T10:25:00Z",
+      "last_activity": "2024-01-15T10:30:00Z",
+      "requests_count": 150
+    },
+    {
+      "id": "client-2",
+      "ip": "192.168.1.101",
+      "user_agent": "Mozilla/5.0...",
+      "connected_at": "2024-01-15T10:20:00Z",
+      "last_activity": "2024-01-15T10:29:00Z",
+      "requests_count": 75
+    }
+  ],
+  "total_clients": 2
+}
+```
+
+**Example:**
+
+```bash
+curl http://localhost:8080/api/admin/clients
+```
+
+### GET /api/admin/memory/{key}
+
+Get memory usage information for a specific key.
+
+**Parameters:**
+
+- `key` (path) - The key to check memory usage for
+
+**Response:**
+
+```json
+{
+  "key": "user:123",
+  "type": "string",
+  "size": 1024,
+  "ttl": 3600,
+  "created_at": "2024-01-15T10:00:00Z",
+  "last_accessed": "2024-01-15T10:30:00Z"
+}
+```
+
+**Example:**
+
+```bash
+curl http://localhost:8080/api/admin/memory/user:123
+```
+
+### GET /api/admin/stats
+
+Get comprehensive system statistics and metrics.
+
+**Response:**
+
+```json
+{
+  "requests": {
+    "total": 15000,
+    "per_second": 25.5,
+    "by_method": {
+      "GET": 8000,
+      "POST": 5000,
+      "DELETE": 2000
+    },
+    "by_endpoint": {
+      "/api/string": 6000,
+      "/api/hash": 4000,
+      "/api/set": 3000,
+      "/api/admin": 2000
+    }
+  },
+  "errors": {
+    "total": 150,
+    "rate": 0.01,
+    "by_type": {
+      "not_found": 100,
+      "invalid_key": 30,
+      "server_error": 20
+    }
+  },
+  "performance": {
+    "average_response_time": 15.5,
+    "p95_response_time": 45.2,
+    "p99_response_time": 120.8
+  },
+  "database": {
+    "operations": 15000,
+    "average_latency": 2.5,
+    "connection_pool": {
+      "active": 10,
+      "idle": 5,
+      "max": 100
+    }
+  }
+}
+```
+
+**Example:**
+
+```bash
+curl http://localhost:8080/api/admin/stats
+```
+
+### POST /api/admin/flush
+
+Clear all data from the database (use with caution).
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Database flushed successfully",
+  "keys_removed": 1500
+}
+```
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:8080/api/admin/flush
+```
+
+### POST /api/admin/reload
+
+Reload configuration without restarting the service.
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Configuration reloaded successfully",
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:8080/api/admin/reload
+```
+
+## Monitoring Integration
+
+### Health Check for Load Balancers
+
+Use the `/api/admin/health` endpoint for load balancer health checks:
+
+```bash
+# Nginx configuration example
+location /health {
+    proxy_pass http://localhost:8080/api/admin/health;
+    access_log off;
+}
+```
+
+### Prometheus Metrics
+
+DBX exposes metrics in Prometheus format at `/api/admin/metrics`:
+
+```bash
+curl http://localhost:8080/api/admin/metrics
+```
+
+Example metrics output:
+
+```
+# HELP dbx_requests_total Total number of requests
+# TYPE dbx_requests_total counter
+dbx_requests_total{method="GET",endpoint="/api/string"} 8000
+
+# HELP dbx_response_time_seconds Response time in seconds
+# TYPE dbx_response_time_seconds histogram
+dbx_response_time_seconds_bucket{le="0.1"} 12000
+dbx_response_time_seconds_bucket{le="0.5"} 14500
+dbx_response_time_seconds_bucket{le="1.0"} 15000
+```
+
+### Grafana Dashboard
+
+Use the following queries for Grafana dashboards:
+
+**Request Rate:**
+
+```
+rate(dbx_requests_total[5m])
+```
+
+**Error Rate:**
+
+```
+rate(dbx_errors_total[5m])
+```
+
+**Response Time:**
+
+```
+histogram_quantile(0.95, rate(dbx_response_time_seconds_bucket[5m]))
+```
+
+## Use Cases
+
+### 1. Production Monitoring
+
+```bash
+# Health check script
+#!/bin/bash
+response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/api/admin/health)
+if [ $response -eq 200 ]; then
+    echo "DBX is healthy"
+    exit 0
+else
+    echo "DBX health check failed"
+    exit 1
+fi
+```
+
+### 2. Performance Monitoring
+
+```bash
+# Monitor response times
+curl -s http://localhost:8080/api/admin/stats | jq '.performance.average_response_time'
+
+# Monitor error rates
+curl -s http://localhost:8080/api/admin/stats | jq '.errors.rate'
+```
+
+### 3. Capacity Planning
+
+```bash
+# Check memory usage
+curl -s http://localhost:8080/api/admin/health | jq '.memory.used'
+
+# Check database connections
+curl -s http://localhost:8080/api/admin/stats | jq '.database.connection_pool'
+```
+
+### 4. Debugging
+
+```bash
+# Check specific key memory usage
+curl http://localhost:8080/api/admin/memory/user:123
+
+# Get client activity
+curl http://localhost:8080/api/admin/clients
+```
+
+## Security Considerations
+
+### Authentication
+
+Admin endpoints should be protected with authentication:
+
+```bash
+# Use API key for admin operations
+curl -H "Authorization: Bearer ADMIN_API_KEY" \
+     http://localhost:8080/api/admin/stats
+```
+
+### Network Security
+
+Restrict admin endpoint access:
+
+```bash
+# Only allow local access to admin endpoints
+export DBX_ADMIN_HOST=127.0.0.1
+export DBX_ADMIN_PORT=8081
+```
+
+### Rate Limiting
+
+Admin endpoints have separate rate limits:
+
+```bash
+export DBX_ADMIN_RATE_LIMIT_REQUESTS=1000
+export DBX_ADMIN_RATE_LIMIT_WINDOW=60
+```
+
+## Error Handling
+
+Admin endpoints return consistent error responses:
+
+```json
+{
+  "error": "unauthorized",
+  "message": "Admin access required",
+  "status": 403
+}
+```
+
+Common error types:
+
+- `unauthorized` - Authentication required
+- `forbidden` - Insufficient permissions
+- `not_found` - Endpoint not found
+- `server_error` - Internal server error
+
+## Environment Variables
+
+| Variable                        | Description               | Default   |
+| ------------------------------- | ------------------------- | --------- |
+| `DBX_ADMIN_ENABLED`             | Enable admin endpoints    | `true`    |
+| `DBX_ADMIN_HOST`                | Admin endpoint host       | `0.0.0.0` |
+| `DBX_ADMIN_PORT`                | Admin endpoint port       | `8080`    |
+| `DBX_ADMIN_RATE_LIMIT_REQUESTS` | Admin rate limit requests | `1000`    |
+| `DBX_ADMIN_RATE_LIMIT_WINDOW`   | Admin rate limit window   | `60`      |
+| `DBX_METRICS_ENABLED`           | Enable Prometheus metrics | `true`    |
+
+## Best Practices
+
+1. **Monitor Regularly** - Set up automated health checks
+2. **Secure Access** - Use authentication for admin endpoints
+3. **Log Monitoring** - Monitor admin endpoint access logs
+4. **Capacity Planning** - Use stats for capacity planning
+5. **Alerting** - Set up alerts for health check failures

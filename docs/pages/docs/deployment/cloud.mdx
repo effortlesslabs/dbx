@@ -1,0 +1,313 @@
+# Cloud Deployment
+
+This guide covers deploying DBX on various cloud platforms including AWS, Google Cloud, and Azure.
+
+## AWS Deployment
+
+### Using AWS ECS
+
+Create a task definition:
+
+```json
+{
+  "family": "dbx",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::account:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "dbx",
+      "image": "effortlesslabs/dbx:latest",
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "DBX_DATABASE_URL",
+          "value": "redis://your-redis-endpoint:6379"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/dbx",
+          "awslogs-region": "us-west-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}
+```
+
+### Using AWS Lambda
+
+```yaml
+AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+  DBXFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: dbx-proxy
+      Runtime: provided.al2
+      Handler: bootstrap
+      Code:
+        S3Bucket: your-bucket
+        S3Key: dbx-lambda.zip
+      MemorySize: 512
+      Timeout: 30
+      Environment:
+        Variables:
+          DBX_DATABASE_URL: "redis://your-redis-endpoint:6379"
+```
+
+## Google Cloud Platform
+
+### Using Google Cloud Run
+
+```bash
+# Build and push image
+gcloud builds submit --tag gcr.io/PROJECT_ID/dbx
+
+# Deploy to Cloud Run
+gcloud run deploy dbx \
+  --image gcr.io/PROJECT_ID/dbx \
+  --platform managed \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --set-env-vars DBX_DATABASE_URL="redis://your-redis-endpoint:6379"
+```
+
+### Using Google Kubernetes Engine
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dbx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: dbx
+  template:
+    metadata:
+      labels:
+        app: dbx
+    spec:
+      containers:
+        - name: dbx
+          image: gcr.io/PROJECT_ID/dbx:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DBX_DATABASE_URL
+              value: "redis://your-redis-endpoint:6379"
+```
+
+## Azure Deployment
+
+### Using Azure Container Instances
+
+```bash
+az container create \
+  --resource-group myResourceGroup \
+  --name dbx \
+  --image effortlesslabs/dbx:latest \
+  --dns-name-label dbx-unique \
+  --ports 8080 \
+  --environment-variables DBX_DATABASE_URL="redis://your-redis-endpoint:6379"
+```
+
+### Using Azure Kubernetes Service
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dbx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: dbx
+  template:
+    metadata:
+      labels:
+        app: dbx
+    spec:
+      containers:
+        - name: dbx
+          image: effortlesslabs/dbx:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DBX_DATABASE_URL
+              value: "redis://your-redis-endpoint:6379"
+```
+
+## Database Setup
+
+### Redis on Cloud
+
+#### AWS ElastiCache
+
+```bash
+aws elasticache create-cache-cluster \
+  --cache-cluster-id dbx-redis \
+  --engine redis \
+  --cache-node-type cache.t3.micro \
+  --num-cache-nodes 1
+```
+
+#### Google Cloud Memorystore
+
+```bash
+gcloud redis instances create dbx-redis \
+  --size=1 \
+  --region=us-central1 \
+  --redis-version=redis_6_x
+```
+
+#### Azure Cache for Redis
+
+```bash
+az redis create \
+  --name dbx-redis \
+  --resource-group myResourceGroup \
+  --location eastus \
+  --sku Basic \
+  --vm-size c0
+```
+
+## Load Balancing
+
+### AWS Application Load Balancer
+
+```yaml
+Resources:
+  ALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Scheme: internet-facing
+      Type: application
+      Subnets: !Ref PublicSubnets
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref VPC
+      Port: 8080
+      Protocol: HTTP
+      HealthCheckPath: /health
+      HealthCheckIntervalSeconds: 30
+```
+
+### Google Cloud Load Balancer
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: dbx-service
+  annotations:
+    cloud.google.com/load-balancer-type: "External"
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8080
+  selector:
+    app: dbx
+```
+
+## Monitoring and Logging
+
+### AWS CloudWatch
+
+```json
+{
+  "logConfiguration": {
+    "logDriver": "awslogs",
+    "options": {
+      "awslogs-group": "/aws/ecs/dbx",
+      "awslogs-region": "us-west-2",
+      "awslogs-stream-prefix": "ecs"
+    }
+  }
+}
+```
+
+### Google Cloud Logging
+
+```yaml
+env:
+  - name: DBX_LOG_LEVEL
+    value: "info"
+  - name: GOOGLE_CLOUD_PROJECT
+    value: "your-project-id"
+```
+
+### Azure Monitor
+
+```yaml
+env:
+  - name: DBX_LOG_LEVEL
+    value: "info"
+  - name: APPLICATIONINSIGHTS_CONNECTION_STRING
+    value: "your-connection-string"
+```
+
+## Security
+
+### Network Security
+
+- Use VPC for network isolation
+- Configure security groups/firewall rules
+- Enable SSL/TLS encryption
+- Use private subnets for database access
+
+### Authentication
+
+- Implement JWT token validation
+- Use IAM roles for service authentication
+- Enable API Gateway for additional security
+
+### Secrets Management
+
+- Use AWS Secrets Manager
+- Use Google Secret Manager
+- Use Azure Key Vault
+
+## Cost Optimization
+
+### Resource Sizing
+
+- Start with minimal resources
+- Use auto-scaling based on metrics
+- Monitor and adjust resource allocation
+
+### Reserved Instances
+
+- Use reserved instances for predictable workloads
+- Consider spot instances for non-critical workloads
+
+### Storage Optimization
+
+- Use appropriate storage classes
+- Implement data lifecycle policies
+- Monitor storage usage
+
+## Best Practices
+
+1. **High Availability**: Deploy across multiple availability zones
+2. **Auto-scaling**: Implement horizontal pod autoscaling
+3. **Monitoring**: Set up comprehensive monitoring and alerting
+4. **Backup**: Implement regular backup strategies
+5. **Security**: Follow security best practices for cloud deployments
+6. **Cost Management**: Monitor and optimize costs regularly

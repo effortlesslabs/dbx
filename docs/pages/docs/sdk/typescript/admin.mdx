@@ -1,0 +1,122 @@
+# TypeScript SDK - Admin Client
+
+The DBX TypeScript SDK provides an admin client for performing administrative operations on the database. This client offers type-safe methods for all admin operations with full TypeScript support.
+
+## Installation
+
+```bash
+npm install @effortlesslabs/dbx
+```
+
+## Basic Usage
+
+### REST Client
+
+```typescript
+import { DBXClient } from "@effortlesslabs/dbx";
+const client = new DBXClient({ baseUrl: "http://localhost:8080", token: "your-admin-jwt-token" });
+const adminClient = client.admin;
+```
+
+### WebSocket Client
+
+```typescript
+import { DBXWebSocketClient } from "@effortlesslabs/dbx";
+const client = new DBXWebSocketClient({
+  url: "ws://localhost:8080/ws",
+  token: "your-admin-jwt-token",
+});
+await client.connect();
+const adminClient = client.admin;
+```
+
+## Admin Operations
+
+### INFO - Get Server Info
+
+```typescript
+const info = await adminClient.info("all");
+```
+
+### PING - Test Connection
+
+```typescript
+const pong = await adminClient.ping("Hello DBX");
+```
+
+### FLUSHDB/FLUSHALL - Clear Database
+
+```typescript
+await adminClient.flushdb();
+await adminClient.flushall();
+```
+
+### KEYS/SCAN - Find Keys
+
+```typescript
+const keys = await adminClient.keys("user:*");
+const scanResult = await adminClient.scan(0, { count: 10, match: "user:*" });
+```
+
+### DEL - Delete Keys
+
+```typescript
+const deleted = await adminClient.del(["key1", "key2"]);
+```
+
+### EXISTS - Check Keys Exist
+
+```typescript
+const exists = await adminClient.exists(["key1", "key2"]);
+```
+
+### TYPE - Get Key Type
+
+```typescript
+const type = await adminClient.type("user:123");
+```
+
+### TTL/EXPIRE/PERSIST - Key Expiration
+
+```typescript
+const ttl = await adminClient.ttl("session:123");
+await adminClient.expire("session:123", 3600);
+await adminClient.persist("session:123");
+```
+
+### RENAME/RENAMENX - Rename Key
+
+```typescript
+await adminClient.rename("old:key", "new:key");
+await adminClient.renamenx("old:key", "new:key");
+```
+
+### DBSIZE - Get Database Size
+
+```typescript
+const size = await adminClient.dbsize();
+```
+
+### SLOWLOG - Get Slow Query Log
+
+```typescript
+const slowlog = await adminClient.slowlog(10);
+```
+
+### CONFIG GET/SET - Configuration
+
+```typescript
+const config = await adminClient.configGet("maxmemory");
+await adminClient.configSet("maxmemory", "1gb");
+```
+
+## Error Handling
+
+All methods throw `DBXError` on failure. See [String Client](./string) for error handling examples.
+
+## Best Practices
+
+- Use admin operations with proper authentication
+- Use SCAN instead of KEYS for large datasets
+- Backup data before destructive operations
+- Log all admin operations for audit

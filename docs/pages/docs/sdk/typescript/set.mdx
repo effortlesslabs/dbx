@@ -1,0 +1,122 @@
+# TypeScript SDK - Set Client
+
+The DBX TypeScript SDK provides a set client for working with Redis set data structures. This client offers type-safe methods for all set operations with full TypeScript support.
+
+## Installation
+
+```bash
+npm install @effortlesslabs/dbx
+```
+
+## Basic Usage
+
+### REST Client
+
+```typescript
+import { DBXClient } from "@effortlesslabs/dbx";
+const client = new DBXClient({ baseUrl: "http://localhost:8080", token: "your-jwt-token" });
+const setClient = client.set;
+```
+
+### WebSocket Client
+
+```typescript
+import { DBXWebSocketClient } from "@effortlesslabs/dbx";
+const client = new DBXWebSocketClient({ url: "ws://localhost:8080/ws", token: "your-jwt-token" });
+await client.connect();
+const setClient = client.set;
+```
+
+## Set Operations
+
+### SADD - Add Members
+
+```typescript
+await setClient.sadd("users:online", ["user:123", "user:456"]);
+```
+
+### SREM - Remove Members
+
+```typescript
+await setClient.srem("users:online", ["user:123"]);
+```
+
+### SMEMBERS - Get All Members
+
+```typescript
+const members = await setClient.smembers("users:online");
+```
+
+### SISMEMBER - Check Member Exists
+
+```typescript
+const exists = await setClient.sismember("users:online", "user:123");
+```
+
+### SCARD - Get Set Size
+
+```typescript
+const size = await setClient.scard("users:online");
+```
+
+### SPOP - Remove Random Member
+
+```typescript
+const popped = await setClient.spop("users:online", 1);
+```
+
+### SRANDMEMBER - Get Random Member
+
+```typescript
+const randomMember = await setClient.srandmember("users:online", 1);
+```
+
+### SMOVE - Move Member
+
+```typescript
+const moved = await setClient.smove("users:online", "users:away", "user:123");
+```
+
+### SINTER - Set Intersection
+
+```typescript
+const intersection = await setClient.sinter(["users:online", "users:premium"]);
+```
+
+### SUNION - Set Union
+
+```typescript
+const union = await setClient.sunion(["users:online", "users:away"]);
+```
+
+### SDIFF - Set Difference
+
+```typescript
+const difference = await setClient.sdiff(["users:online", "users:premium"]);
+```
+
+### SINTERSTORE/SUNIONSTORE/SDIFFSTORE - Store Results
+
+```typescript
+const cardinality = await setClient.sinterstore("result", ["set1", "set2"]);
+```
+
+### SSCAN - Scan Members
+
+```typescript
+const { cursor, members } = await setClient.sscan("users:online", 0, {
+  count: 10,
+  match: "user:*",
+});
+```
+
+## Error Handling
+
+All methods throw `DBXError` on failure. See [String Client](./string) for error handling examples.
+
+## Best Practices
+
+- Use descriptive set names
+- Use batch operations for efficiency
+- Set TTL on set keys for temporary data
+- Use set partitioning for large datasets

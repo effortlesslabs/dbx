@@ -1,0 +1,465 @@
+# Configuration
+
+This guide covers all configuration options for DBX, including environment variables, configuration files, and command-line options.
+
+## Configuration Methods
+
+DBX supports multiple configuration methods, listed in order of precedence:
+
+1. **Command-line arguments** (highest priority)
+2. **Environment variables**
+3. **Configuration file**
+4. **Default values** (lowest priority)
+
+## Environment Variables
+
+### Server Configuration
+
+| Variable  | Default   | Description              |
+| --------- | --------- | ------------------------ |
+| `PORT`    | `3000`    | Server port number       |
+| `HOST`    | `0.0.0.0` | Server host address      |
+| `WORKERS` | `auto`    | Number of worker threads |
+
+### Database Configuration
+
+| Variable       | Default                  | Description                |
+| -------------- | ------------------------ | -------------------------- |
+| `DATABASE_URL` | `redis://localhost:6379` | Database connection URL    |
+| `POOL_SIZE`    | `10`                     | Connection pool size       |
+| `TIMEOUT`      | `5000`                   | Connection timeout (ms)    |
+| `MAX_RETRIES`  | `3`                      | Maximum connection retries |
+
+### Logging Configuration
+
+| Variable     | Default | Description                              |
+| ------------ | ------- | ---------------------------------------- |
+| `LOG_LEVEL`  | `INFO`  | Logging level (DEBUG, INFO, WARN, ERROR) |
+| `LOG_FORMAT` | `text`  | Log format (text, json)                  |
+| `LOG_FILE`   | `-`     | Log file path (use `-` for stdout)       |
+
+### Security Configuration
+
+| Variable      | Default | Description                |
+| ------------- | ------- | -------------------------- |
+| `CORS_ORIGIN` | `*`     | CORS allowed origins       |
+| `RATE_LIMIT`  | `1000`  | Requests per minute        |
+| `ENABLE_AUTH` | `false` | Enable authentication      |
+| `API_KEY`     | `-`     | API key for authentication |
+
+### Performance Configuration
+
+| Variable      | Default | Description                 |
+| ------------- | ------- | --------------------------- |
+| `BUFFER_SIZE` | `8192`  | Buffer size for operations  |
+| `COMPRESSION` | `true`  | Enable response compression |
+| `CACHE_TTL`   | `300`   | Cache TTL in seconds        |
+
+## Configuration File
+
+Create a `config.toml` file for more complex configurations:
+
+```toml
+[server]
+port = 3000
+host = "0.0.0.0"
+workers = "auto"
+enable_metrics = true
+
+[database]
+url = "redis://localhost:6379"
+pool_size = 10
+timeout = 5000
+max_retries = 3
+keep_alive = true
+
+[logging]
+level = "INFO"
+format = "json"
+file = "/var/log/dbx.log"
+rotation = "daily"
+max_size = "100MB"
+
+[security]
+cors_origin = ["http://localhost:3000", "https://myapp.com"]
+rate_limit = 1000
+enable_auth = false
+api_key = "your-secret-key"
+allowed_ips = ["127.0.0.1", "192.168.1.0/24"]
+
+[performance]
+buffer_size = 8192
+compression = true
+cache_ttl = 300
+connection_timeout = 30
+idle_timeout = 60
+
+[monitoring]
+health_check_interval = 30
+metrics_port = 9090
+enable_tracing = false
+```
+
+## Command Line Options
+
+### Basic Options
+
+```bash
+# Basic server options
+dbx --port 8080 --host 127.0.0.1
+
+# Database connection
+dbx --redis-url redis://user:pass@redis.com:6379
+
+# Logging
+dbx --log-level DEBUG --log-format json
+```
+
+### Advanced Options
+
+```bash
+# Full configuration example
+dbx \
+  --redis-url redis://user:pass@redis.com:6379 \
+  --port 3000 \
+  --host 0.0.0.0 \
+  --log-level INFO \
+  --log-format json \
+  --pool-size 20 \
+  --timeout 10000 \
+  --rate-limit 2000 \
+  --cors-origin "https://myapp.com" \
+  --config config.toml
+```
+
+### Available Flags
+
+| Flag            | Type   | Default                  | Description             |
+| --------------- | ------ | ------------------------ | ----------------------- |
+| `--redis-url`   | string | `redis://localhost:6379` | Redis connection URL    |
+| `--port`        | int    | `3000`                   | Server port             |
+| `--host`        | string | `0.0.0.0`                | Server host             |
+| `--log-level`   | string | `INFO`                   | Logging level           |
+| `--log-format`  | string | `text`                   | Log format              |
+| `--pool-size`   | int    | `10`                     | Connection pool size    |
+| `--timeout`     | int    | `5000`                   | Timeout in milliseconds |
+| `--rate-limit`  | int    | `1000`                   | Rate limit per minute   |
+| `--cors-origin` | string | `*`                      | CORS origin             |
+| `--config`      | string | `-`                      | Configuration file path |
+
+## Database Connection URLs
+
+### Redis Connection Formats
+
+```bash
+# Basic connection
+redis://localhost:6379
+
+# With authentication
+redis://username:password@localhost:6379
+
+# With database selection
+redis://localhost:6379/1
+
+# With SSL/TLS
+rediss://localhost:6379
+
+# With connection parameters
+redis://localhost:6379?pool_size=20&timeout=5000
+```
+
+### Connection Parameters
+
+| Parameter     | Default | Description             |
+| ------------- | ------- | ----------------------- |
+| `pool_size`   | `10`    | Connection pool size    |
+| `timeout`     | `5000`  | Connection timeout (ms) |
+| `max_retries` | `3`     | Maximum retry attempts  |
+| `keep_alive`  | `true`  | Enable keep-alive       |
+
+## Security Configuration
+
+### CORS Configuration
+
+```toml
+[security]
+# Allow all origins (development)
+cors_origin = "*"
+
+# Allow specific origins (production)
+cors_origin = [
+  "https://myapp.com",
+  "https://api.myapp.com",
+  "http://localhost:3000"
+]
+```
+
+### Rate Limiting
+
+```toml
+[security]
+# Global rate limit
+rate_limit = 1000
+
+# Per-IP rate limit
+rate_limit_per_ip = 100
+
+# Rate limit window (seconds)
+rate_limit_window = 60
+```
+
+### Authentication
+
+```toml
+[security]
+enable_auth = true
+api_key = "your-secret-api-key"
+
+# Multiple API keys
+api_keys = [
+  "key1",
+  "key2",
+  "key3"
+]
+```
+
+## Performance Tuning
+
+### Connection Pooling
+
+```toml
+[database]
+# Adjust based on your workload
+pool_size = 20
+
+# Connection pool settings
+pool_min_size = 5
+pool_max_size = 50
+pool_idle_timeout = 300
+```
+
+### Caching
+
+```toml
+[performance]
+# Enable response caching
+cache_enabled = true
+cache_ttl = 300
+
+# Cache size limit
+cache_max_size = "100MB"
+
+# Cache eviction policy
+cache_eviction_policy = "lru"
+```
+
+### Compression
+
+```toml
+[performance]
+# Enable response compression
+compression = true
+
+# Compression level (1-9)
+compression_level = 6
+
+# Minimum size for compression
+compression_min_size = 1024
+```
+
+## Monitoring Configuration
+
+### Health Checks
+
+```toml
+[monitoring]
+# Health check interval (seconds)
+health_check_interval = 30
+
+# Health check timeout (seconds)
+health_check_timeout = 5
+
+# Custom health check endpoints
+health_check_endpoints = [
+  "/api/admin/health",
+  "/api/admin/ping"
+]
+```
+
+### Metrics
+
+```toml
+[monitoring]
+# Enable metrics endpoint
+enable_metrics = true
+
+# Metrics port
+metrics_port = 9090
+
+# Metrics path
+metrics_path = "/metrics"
+
+# Custom metrics
+custom_metrics = [
+  "request_duration",
+  "connection_count",
+  "error_rate"
+]
+```
+
+## Logging Configuration
+
+### Log Levels
+
+- `DEBUG`: Detailed debug information
+- `INFO`: General information messages
+- `WARN`: Warning messages
+- `ERROR`: Error messages
+
+### Log Formats
+
+```toml
+[logging]
+# Text format (human-readable)
+format = "text"
+
+# JSON format (machine-readable)
+format = "json"
+
+# Log file configuration
+file = "/var/log/dbx.log"
+rotation = "daily"
+max_size = "100MB"
+max_files = 30
+```
+
+## Environment-Specific Configurations
+
+### Development
+
+```toml
+[server]
+port = 3000
+host = "127.0.0.1"
+
+[logging]
+level = "DEBUG"
+format = "text"
+
+[security]
+cors_origin = "*"
+rate_limit = 10000
+```
+
+### Production
+
+```toml
+[server]
+port = 3000
+host = "0.0.0.0"
+workers = 4
+
+[logging]
+level = "INFO"
+format = "json"
+file = "/var/log/dbx.log"
+
+[security]
+cors_origin = ["https://myapp.com"]
+rate_limit = 1000
+enable_auth = true
+```
+
+### Docker
+
+```toml
+[server]
+port = 3000
+host = "0.0.0.0"
+
+[database]
+url = "redis://redis:6379"
+pool_size = 20
+
+[logging]
+level = "INFO"
+format = "json"
+```
+
+## Configuration Validation
+
+DBX validates configuration on startup:
+
+```bash
+# Validate configuration file
+dbx --config config.toml --validate
+
+# Check configuration without starting
+dbx --config config.toml --dry-run
+```
+
+## Best Practices
+
+### Security
+
+1. **Use HTTPS in production**
+2. **Set specific CORS origins**
+3. **Enable authentication for production**
+4. **Use strong API keys**
+5. **Limit rate limits appropriately**
+
+### Performance
+
+1. **Adjust pool size based on workload**
+2. **Enable compression for large responses**
+3. **Use appropriate timeouts**
+4. **Monitor connection usage**
+5. **Enable metrics for monitoring**
+
+### Monitoring
+
+1. **Set up health checks**
+2. **Configure proper logging**
+3. **Enable metrics collection**
+4. **Set up alerting**
+5. **Monitor error rates**
+
+## Troubleshooting
+
+### Common Configuration Issues
+
+**Invalid Redis URL**
+
+```bash
+# Check URL format
+redis://[username:password@]host:port[/database]
+
+# Test connection
+redis-cli -u redis://localhost:6379 ping
+```
+
+**Port Already in Use**
+
+```bash
+# Check port usage
+lsof -i :3000
+
+# Use different port
+dbx --port 3001
+```
+
+**Permission Denied**
+
+```bash
+# Check file permissions
+ls -la config.toml
+
+# Fix permissions
+chmod 644 config.toml
+```
+
+### Getting Help
+
+- **Configuration Examples**: Check the [examples directory](https://github.com/effortlesslabs/dbx/examples)
+- **GitHub Issues**: [Report configuration problems](https://github.com/effortlesslabs/dbx/issues)
+- **Documentation**: [Complete configuration reference](/)

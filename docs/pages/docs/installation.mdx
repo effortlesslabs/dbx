@@ -1,0 +1,313 @@
+# Installation
+
+This guide covers all the different ways to install and run DBX.
+
+## System Requirements
+
+### Minimum Requirements
+
+- **CPU**: 1 core
+- **Memory**: 64MB RAM
+- **Storage**: 10MB disk space
+- **Network**: HTTP/HTTPS access for API calls
+
+### Recommended Requirements
+
+- **CPU**: 2+ cores
+- **Memory**: 256MB+ RAM
+- **Storage**: 100MB+ disk space
+- **Network**: Low-latency connection to database
+
+### Supported Platforms
+
+- **Linux**: x86_64, ARM64, RISC-V
+- **macOS**: x86_64, ARM64 (Apple Silicon)
+- **Windows**: x86_64 (via WSL2 recommended)
+- **Docker**: All platforms
+
+## Installation Methods
+
+### 1. Docker (Recommended)
+
+Docker is the easiest way to get started with DBX.
+
+#### Quick Start
+
+```bash
+# Run with default settings
+docker run -d --name dbx -p 3000:3000 \
+  -e DATABASE_URL=redis://localhost:6379 \
+  fnlog0/dbx:latest
+```
+
+#### Advanced Docker Setup
+
+```bash
+# Pull specific version
+docker pull fnlog0/dbx:v1.0.0
+
+# Run with custom configuration
+docker run -d --name dbx \
+  -p 8080:3000 \
+  -e DATABASE_URL=redis://user:pass@redis.com:6379 \
+  -e PORT=3000 \
+  -e LOG_LEVEL=DEBUG \
+  -e POOL_SIZE=20 \
+  -e TIMEOUT=10000 \
+  fnlog0/dbx:latest
+
+# Run with custom config file
+docker run -d --name dbx \
+  -p 3000:3000 \
+  -v $(pwd)/config.toml:/app/config.toml \
+  fnlog0/dbx:latest
+```
+
+#### Docker Compose
+
+Create a `docker-compose.yml` file:
+
+```yaml
+version: "3.8"
+
+services:
+  dbx:
+    image: fnlog0/dbx:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=redis://redis:6379
+      - LOG_LEVEL=INFO
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+```
+
+Run with:
+
+```bash
+docker-compose up -d
+```
+
+### 2. Binary Installation
+
+Download pre-compiled binaries for your platform.
+
+#### Linux
+
+```bash
+# Download latest release
+curl -L https://github.com/effortlesslabs/dbx/releases/latest/download/dbx-x86_64-unknown-linux-gnu.tar.gz | tar xz
+
+# Make executable
+chmod +x dbx
+
+# Move to PATH
+sudo mv dbx /usr/local/bin/
+
+# Run
+dbx --redis-url redis://localhost:6379
+```
+
+#### macOS
+
+```bash
+# Using Homebrew (when available)
+brew install effortlesslabs/dbx/dbx
+
+# Manual installation
+curl -L https://github.com/effortlesslabs/dbx/releases/latest/download/dbx-x86_64-apple-darwin.tar.gz | tar xz
+chmod +x dbx
+sudo mv dbx /usr/local/bin/
+```
+
+#### Windows
+
+```bash
+# Download Windows binary
+curl -L https://github.com/effortlesslabs/dbx/releases/latest/download/dbx-x86_64-pc-windows-gnu.zip -o dbx.zip
+
+# Extract and run
+tar -xf dbx.zip
+./dbx.exe --redis-url redis://localhost:6379
+```
+
+### 3. From Source
+
+Build DBX from source for custom modifications or unsupported platforms.
+
+#### Prerequisites
+
+- **Rust**: 1.70 or higher
+- **Cargo**: Latest version
+- **Git**: For cloning the repository
+
+#### Build Steps
+
+```bash
+# Clone repository
+git clone https://github.com/effortlesslabs/dbx.git
+cd dbx
+
+# Build in release mode
+cargo build --release
+
+# Run the binary
+./target/release/dbx --redis-url redis://localhost:6379
+```
+
+#### Cross-Compilation
+
+```bash
+# Install target
+rustup target add x86_64-unknown-linux-gnu
+
+# Build for specific target
+cargo build --release --target x86_64-unknown-linux-gnu
+
+# Binary will be in target/x86_64-unknown-linux-gnu/release/dbx
+```
+
+### 4. Package Managers
+
+#### Using Cargo
+
+```bash
+# Install from crates.io (when available)
+cargo install dbx
+
+# Run
+dbx --redis-url redis://localhost:6379
+```
+
+## Configuration
+
+### Environment Variables
+
+| Variable       | Default                  | Description             |
+| -------------- | ------------------------ | ----------------------- |
+| `DATABASE_URL` | `redis://localhost:6379` | Database connection URL |
+| `PORT`         | `3000`                   | Server port             |
+| `HOST`         | `0.0.0.0`                | Server host             |
+| `LOG_LEVEL`    | `INFO`                   | Logging level           |
+| `POOL_SIZE`    | `10`                     | Connection pool size    |
+| `TIMEOUT`      | `5000`                   | Request timeout (ms)    |
+| `CORS_ORIGIN`  | `*`                      | CORS allowed origins    |
+| `RATE_LIMIT`   | `1000`                   | Requests per minute     |
+
+### Configuration File
+
+Create a `config.toml` file:
+
+```toml
+[server]
+port = 3000
+host = "0.0.0.0"
+cors_origin = "*"
+
+[database]
+url = "redis://localhost:6379"
+pool_size = 10
+timeout = 5000
+
+[logging]
+level = "INFO"
+format = "json"
+
+[security]
+rate_limit = 1000
+enable_auth = false
+```
+
+### Command Line Options
+
+```bash
+# Basic options
+dbx --redis-url redis://localhost:6379 --port 8080
+
+# Advanced options
+dbx \
+  --redis-url redis://user:pass@redis.com:6379 \
+  --port 3000 \
+  --host 127.0.0.1 \
+  --log-level DEBUG \
+  --pool-size 20 \
+  --timeout 10000 \
+  --config config.toml
+```
+
+## Verification
+
+After installation, verify that DBX is running correctly:
+
+```bash
+# Health check
+curl http://localhost:3000/api/admin/health
+# Expected: {"status": "ok"}
+
+# Ping test
+curl http://localhost:3000/api/admin/ping
+# Expected: {"pong": true}
+
+# Server info
+curl http://localhost:3000/api/admin/info
+# Expected: Server information JSON
+```
+
+## Next Steps
+
+- **Getting Started**: Follow the [quick start guide](/getting-started)
+- **Configuration**: Learn about [advanced configuration](/configuration)
+- **Deployment**: Deploy to production with our [deployment guides](/deployment/docker)
+- **API Reference**: Explore the complete [API documentation](/api/rest)
+
+## Troubleshooting
+
+### Common Installation Issues
+
+**Permission Denied**
+
+```bash
+# Make binary executable
+chmod +x dbx
+
+# Or run with sudo (not recommended)
+sudo ./dbx
+```
+
+**Port Already in Use**
+
+```bash
+# Check what's using the port
+lsof -i :3000
+
+# Use a different port
+dbx --port 3001
+```
+
+**Database Connection Failed**
+
+```bash
+# Test Redis connection
+redis-cli -h localhost -p 6379 ping
+
+# Check connection string format
+# redis://[username:password@]host:port[/database]
+```
+
+### Getting Help
+
+- **GitHub Issues**: [Report installation problems](https://github.com/effortlesslabs/dbx/issues)
+- **Discussions**: [Community support](https://github.com/effortlesslabs/dbx/discussions)
+- **Documentation**: [Complete documentation](/)

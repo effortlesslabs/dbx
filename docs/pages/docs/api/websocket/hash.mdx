@@ -1,0 +1,563 @@
+# WebSocket Hash Operations
+
+DBX provides real-time hash operations through WebSocket connections, allowing you to work with Redis hash data structures efficiently.
+
+## Connection Setup
+
+Before using hash operations, establish a WebSocket connection:
+
+```typescript
+import { DBXWebSocketClient } from "@effortlesslabs/dbx";
+
+const client = new DBXWebSocketClient({
+  url: "ws://localhost:8080/ws",
+  token: "your-jwt-token",
+});
+
+await client.connect();
+```
+
+## Hash Operations
+
+### HSET - Set Hash Field
+
+Set a field in a hash to a value.
+
+**Request:**
+
+```json
+{
+  "id": "req-1",
+  "method": "HSET",
+  "params": {
+    "key": "user:123",
+    "field": "name",
+    "value": "John Doe"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-1",
+  "result": {
+    "success": true,
+    "created": true
+  }
+}
+```
+
+### HMSET - Set Multiple Hash Fields
+
+Set multiple fields in a hash atomically.
+
+**Request:**
+
+```json
+{
+  "id": "req-2",
+  "method": "HMSET",
+  "params": {
+    "key": "user:123",
+    "fields": {
+      "name": "John Doe",
+      "email": "john@example.com",
+      "age": "30",
+      "city": "New York"
+    }
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-2",
+  "result": {
+    "success": true
+  }
+}
+```
+
+### HGET - Get Hash Field
+
+Get the value of a field in a hash.
+
+**Request:**
+
+```json
+{
+  "id": "req-3",
+  "method": "HGET",
+  "params": {
+    "key": "user:123",
+    "field": "name"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-3",
+  "result": {
+    "value": "John Doe"
+  }
+}
+```
+
+**Error Response:**
+
+```json
+{
+  "id": "req-3",
+  "error": {
+    "code": "FIELD_NOT_FOUND",
+    "message": "Field 'name' not found in hash 'user:123'"
+  }
+}
+```
+
+### HMGET - Get Multiple Hash Fields
+
+Get multiple field values from a hash.
+
+**Request:**
+
+```json
+{
+  "id": "req-4",
+  "method": "HMGET",
+  "params": {
+    "key": "user:123",
+    "fields": ["name", "email", "age"]
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-4",
+  "result": {
+    "values": ["John Doe", "john@example.com", "30"]
+  }
+}
+```
+
+### HGETALL - Get All Hash Fields
+
+Get all fields and values from a hash.
+
+**Request:**
+
+```json
+{
+  "id": "req-5",
+  "method": "HGETALL",
+  "params": {
+    "key": "user:123"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-5",
+  "result": {
+    "fields": {
+      "name": "John Doe",
+      "email": "john@example.com",
+      "age": "30",
+      "city": "New York"
+    }
+  }
+}
+```
+
+### HDEL - Delete Hash Fields
+
+Delete one or more fields from a hash.
+
+**Request:**
+
+```json
+{
+  "id": "req-6",
+  "method": "HDEL",
+  "params": {
+    "key": "user:123",
+    "fields": ["age", "city"]
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-6",
+  "result": {
+    "deleted": 2
+  }
+}
+```
+
+### HEXISTS - Check Field Exists
+
+Check if a field exists in a hash.
+
+**Request:**
+
+```json
+{
+  "id": "req-7",
+  "method": "HEXISTS",
+  "params": {
+    "key": "user:123",
+    "field": "name"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-7",
+  "result": {
+    "exists": true
+  }
+}
+```
+
+### HKEYS - Get Hash Field Names
+
+Get all field names in a hash.
+
+**Request:**
+
+```json
+{
+  "id": "req-8",
+  "method": "HKEYS",
+  "params": {
+    "key": "user:123"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-8",
+  "result": {
+    "keys": ["name", "email", "age", "city"]
+  }
+}
+```
+
+### HVALS - Get Hash Values
+
+Get all values in a hash.
+
+**Request:**
+
+```json
+{
+  "id": "req-9",
+  "method": "HVALS",
+  "params": {
+    "key": "user:123"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-9",
+  "result": {
+    "values": ["John Doe", "john@example.com", "30", "New York"]
+  }
+}
+```
+
+### HLEN - Get Hash Length
+
+Get the number of fields in a hash.
+
+**Request:**
+
+```json
+{
+  "id": "req-10",
+  "method": "HLEN",
+  "params": {
+    "key": "user:123"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-10",
+  "result": {
+    "length": 4
+  }
+}
+```
+
+### HINCRBY - Increment Hash Field
+
+Increment a numeric field in a hash by a specified amount.
+
+**Request:**
+
+```json
+{
+  "id": "req-11",
+  "method": "HINCRBY",
+  "params": {
+    "key": "user:123",
+    "field": "visits",
+    "amount": 1
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-11",
+  "result": {
+    "value": 42
+  }
+}
+```
+
+### HINCRBYFLOAT - Increment Hash Field by Float
+
+Increment a numeric field in a hash by a floating-point amount.
+
+**Request:**
+
+```json
+{
+  "id": "req-12",
+  "method": "HINCRBYFLOAT",
+  "params": {
+    "key": "user:123",
+    "field": "score",
+    "amount": 0.5
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-12",
+  "result": {
+    "value": 95.5
+  }
+}
+```
+
+### HSETNX - Set Hash Field if Not Exists
+
+Set a field in a hash only if it doesn't already exist.
+
+**Request:**
+
+```json
+{
+  "id": "req-13",
+  "method": "HSETNX",
+  "params": {
+    "key": "user:123",
+    "field": "created_at",
+    "value": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-13",
+  "result": {
+    "success": true,
+    "created": true
+  }
+}
+```
+
+### HSTRLEN - Get Hash Field String Length
+
+Get the length of a string field in a hash.
+
+**Request:**
+
+```json
+{
+  "id": "req-14",
+  "method": "HSTRLEN",
+  "params": {
+    "key": "user:123",
+    "field": "name"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-14",
+  "result": {
+    "length": 8
+  }
+}
+```
+
+### HRANDFIELD - Get Random Hash Field
+
+Get a random field from a hash.
+
+**Request:**
+
+```json
+{
+  "id": "req-15",
+  "method": "HRANDFIELD",
+  "params": {
+    "key": "user:123",
+    "count": 2,
+    "with_values": true
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-15",
+  "result": {
+    "fields": [
+      { "field": "name", "value": "John Doe" },
+      { "field": "email", "value": "john@example.com" }
+    ]
+  }
+}
+```
+
+## Error Handling
+
+All WebSocket hash operations return standardized error responses:
+
+```json
+{
+  "id": "request-id",
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human readable error message"
+  }
+}
+```
+
+Common error codes:
+
+- `KEY_NOT_FOUND`: The specified hash key doesn't exist
+- `FIELD_NOT_FOUND`: The specified field doesn't exist in the hash
+- `TYPE_MISMATCH`: The key exists but is not a hash type
+- `INVALID_VALUE`: The value is not valid for the operation
+- `AUTHENTICATION_FAILED`: Invalid or missing authentication token
+- `RATE_LIMITED`: Request rate limit exceeded
+
+## TypeScript SDK Usage
+
+```typescript
+import { DBXWebSocketClient } from "@effortlesslabs/dbx";
+
+const client = new DBXWebSocketClient({
+  url: "ws://localhost:8080/ws",
+  token: "your-jwt-token",
+});
+
+await client.connect();
+
+// Set a single field
+await client.hash.hset("user:123", "name", "John Doe");
+
+// Set multiple fields
+await client.hash.hmset("user:123", {
+  name: "John Doe",
+  email: "john@example.com",
+  age: "30",
+});
+
+// Get a field
+const name = await client.hash.hget("user:123", "name");
+
+// Get multiple fields
+const values = await client.hash.hmget("user:123", ["name", "email"]);
+
+// Get all fields
+const allFields = await client.hash.hgetall("user:123");
+
+// Delete fields
+const deleted = await client.hash.hdel("user:123", ["age", "city"]);
+
+// Check if field exists
+const exists = await client.hash.hexists("user:123", "name");
+
+// Get all field names
+const keys = await client.hash.hkeys("user:123");
+
+// Get all values
+const values = await client.hash.hvals("user:123");
+
+// Get hash length
+const length = await client.hash.hlen("user:123");
+
+// Increment a field
+const newValue = await client.hash.hincrby("user:123", "visits", 1);
+
+// Increment by float
+const score = await client.hash.hincrbyfloat("user:123", "score", 0.5);
+
+await client.disconnect();
+```
+
+## Best Practices
+
+1. **Field Naming**: Use descriptive field names that clearly indicate the data they contain
+2. **Data Types**: Be consistent with data types across your application
+3. **Batch Operations**: Use HMSET/HMGET for multiple operations when possible
+4. **Memory Usage**: Be mindful of hash size as all fields are loaded into memory
+5. **Key Expiration**: Set appropriate TTL on hash keys for temporary data
+6. **Field Validation**: Validate field values before storing them
+
+## Performance Considerations
+
+- Hash operations are generally faster than string operations for structured data
+- HMSET/HMGET are more efficient than multiple individual HSET/HGET calls
+- HGETALL can be expensive for large hashes - consider using HKEYS or HMGET for specific fields
+- Hash operations are atomic, making them suitable for concurrent access patterns
+- Consider using hash partitioning for very large datasets

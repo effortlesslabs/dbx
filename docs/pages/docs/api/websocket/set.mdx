@@ -1,0 +1,571 @@
+# WebSocket Set Operations
+
+DBX provides real-time set operations through WebSocket connections, allowing you to work with Redis set data structures efficiently.
+
+## Connection Setup
+
+Before using set operations, establish a WebSocket connection:
+
+```typescript
+import { DBXWebSocketClient } from "@effortlesslabs/dbx";
+
+const client = new DBXWebSocketClient({
+  url: "ws://localhost:8080/ws",
+  token: "your-jwt-token",
+});
+
+await client.connect();
+```
+
+## Set Operations
+
+### SADD - Add Members to Set
+
+Add one or more members to a set.
+
+**Request:**
+
+```json
+{
+  "id": "req-1",
+  "method": "SADD",
+  "params": {
+    "key": "users:online",
+    "members": ["user:123", "user:456", "user:789"]
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-1",
+  "result": {
+    "added": 3
+  }
+}
+```
+
+### SREM - Remove Members from Set
+
+Remove one or more members from a set.
+
+**Request:**
+
+```json
+{
+  "id": "req-2",
+  "method": "SREM",
+  "params": {
+    "key": "users:online",
+    "members": ["user:123", "user:456"]
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-2",
+  "result": {
+    "removed": 2
+  }
+}
+```
+
+### SMEMBERS - Get All Set Members
+
+Get all members of a set.
+
+**Request:**
+
+```json
+{
+  "id": "req-3",
+  "method": "SMEMBERS",
+  "params": {
+    "key": "users:online"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-3",
+  "result": {
+    "members": ["user:123", "user:456", "user:789"]
+  }
+}
+```
+
+### SISMEMBER - Check Member Exists
+
+Check if a member exists in a set.
+
+**Request:**
+
+```json
+{
+  "id": "req-4",
+  "method": "SISMEMBER",
+  "params": {
+    "key": "users:online",
+    "member": "user:123"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-4",
+  "result": {
+    "exists": true
+  }
+}
+```
+
+### SCARD - Get Set Cardinality
+
+Get the number of members in a set.
+
+**Request:**
+
+```json
+{
+  "id": "req-5",
+  "method": "SCARD",
+  "params": {
+    "key": "users:online"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-5",
+  "result": {
+    "cardinality": 3
+  }
+}
+```
+
+### SPOP - Remove and Return Random Member
+
+Remove and return a random member from a set.
+
+**Request:**
+
+```json
+{
+  "id": "req-6",
+  "method": "SPOP",
+  "params": {
+    "key": "users:online",
+    "count": 1
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-6",
+  "result": {
+    "members": ["user:456"]
+  }
+}
+```
+
+### SRANDMEMBER - Get Random Member
+
+Get one or more random members from a set without removing them.
+
+**Request:**
+
+```json
+{
+  "id": "req-7",
+  "method": "SRANDMEMBER",
+  "params": {
+    "key": "users:online",
+    "count": 2
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-7",
+  "result": {
+    "members": ["user:123", "user:789"]
+  }
+}
+```
+
+### SMOVE - Move Member Between Sets
+
+Move a member from one set to another.
+
+**Request:**
+
+```json
+{
+  "id": "req-8",
+  "method": "SMOVE",
+  "params": {
+    "source": "users:online",
+    "destination": "users:away",
+    "member": "user:123"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-8",
+  "result": {
+    "moved": true
+  }
+}
+```
+
+### SINTER - Set Intersection
+
+Get the intersection of multiple sets.
+
+**Request:**
+
+```json
+{
+  "id": "req-9",
+  "method": "SINTER",
+  "params": {
+    "keys": ["users:online", "users:premium", "users:active"]
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-9",
+  "result": {
+    "members": ["user:123", "user:789"]
+  }
+}
+```
+
+### SINTERSTORE - Store Set Intersection
+
+Store the intersection of multiple sets in a new set.
+
+**Request:**
+
+```json
+{
+  "id": "req-10",
+  "method": "SINTERSTORE",
+  "params": {
+    "destination": "users:online_premium",
+    "keys": ["users:online", "users:premium"]
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-10",
+  "result": {
+    "cardinality": 2
+  }
+}
+```
+
+### SUNION - Set Union
+
+Get the union of multiple sets.
+
+**Request:**
+
+```json
+{
+  "id": "req-11",
+  "method": "SUNION",
+  "params": {
+    "keys": ["users:online", "users:away"]
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-11",
+  "result": {
+    "members": ["user:123", "user:456", "user:789", "user:101"]
+  }
+}
+```
+
+### SUNIONSTORE - Store Set Union
+
+Store the union of multiple sets in a new set.
+
+**Request:**
+
+```json
+{
+  "id": "req-12",
+  "method": "SUNIONSTORE",
+  "params": {
+    "destination": "users:all",
+    "keys": ["users:online", "users:away", "users:offline"]
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-12",
+  "result": {
+    "cardinality": 5
+  }
+}
+```
+
+### SDIFF - Set Difference
+
+Get the difference between sets (members in first set but not in others).
+
+**Request:**
+
+```json
+{
+  "id": "req-13",
+  "method": "SDIFF",
+  "params": {
+    "keys": ["users:online", "users:premium"]
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-13",
+  "result": {
+    "members": ["user:456"]
+  }
+}
+```
+
+### SDIFFSTORE - Store Set Difference
+
+Store the difference between sets in a new set.
+
+**Request:**
+
+```json
+{
+  "id": "req-14",
+  "method": "SDIFFSTORE",
+  "params": {
+    "destination": "users:online_non_premium",
+    "keys": ["users:online", "users:premium"]
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-14",
+  "result": {
+    "cardinality": 1
+  }
+}
+```
+
+### SSCAN - Scan Set Members
+
+Iterate over set members using cursor-based pagination.
+
+**Request:**
+
+```json
+{
+  "id": "req-15",
+  "method": "SSCAN",
+  "params": {
+    "key": "users:online",
+    "cursor": 0,
+    "count": 10,
+    "match": "user:*"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "req-15",
+  "result": {
+    "cursor": 0,
+    "members": ["user:123", "user:456", "user:789"]
+  }
+}
+```
+
+## Error Handling
+
+All WebSocket set operations return standardized error responses:
+
+```json
+{
+  "id": "request-id",
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human readable error message"
+  }
+}
+```
+
+Common error codes:
+
+- `KEY_NOT_FOUND`: The specified set key doesn't exist
+- `TYPE_MISMATCH`: The key exists but is not a set type
+- `INVALID_VALUE`: The value is not valid for the operation
+- `AUTHENTICATION_FAILED`: Invalid or missing authentication token
+- `RATE_LIMITED`: Request rate limit exceeded
+
+## TypeScript SDK Usage
+
+```typescript
+import { DBXWebSocketClient } from "@effortlesslabs/dbx";
+
+const client = new DBXWebSocketClient({
+  url: "ws://localhost:8080/ws",
+  token: "your-jwt-token",
+});
+
+await client.connect();
+
+// Add members to set
+const added = await client.set.sadd("users:online", ["user:123", "user:456"]);
+
+// Remove members from set
+const removed = await client.set.srem("users:online", ["user:123"]);
+
+// Get all members
+const members = await client.set.smembers("users:online");
+
+// Check if member exists
+const exists = await client.set.sismember("users:online", "user:123");
+
+// Get set size
+const size = await client.set.scard("users:online");
+
+// Get random member
+const randomMember = await client.set.srandmember("users:online", 1);
+
+// Remove random member
+const popped = await client.set.spop("users:online", 1);
+
+// Move member between sets
+const moved = await client.set.smove("users:online", "users:away", "user:123");
+
+// Set intersection
+const intersection = await client.set.sinter(["users:online", "users:premium"]);
+
+// Set union
+const union = await client.set.sunion(["users:online", "users:away"]);
+
+// Set difference
+const difference = await client.set.sdiff(["users:online", "users:premium"]);
+
+// Store operations
+const cardinality = await client.set.sinterstore("result", ["set1", "set2"]);
+
+await client.disconnect();
+```
+
+## Best Practices
+
+1. **Set Naming**: Use descriptive set names that clearly indicate their purpose
+2. **Member Uniqueness**: Remember that sets only store unique members
+3. **Batch Operations**: Use SADD/SREM with multiple members for efficiency
+4. **Memory Usage**: Be mindful of set size as all members are loaded into memory
+5. **Key Expiration**: Set appropriate TTL on set keys for temporary data
+6. **Set Operations**: Use intersection, union, and difference operations for complex queries
+
+## Performance Considerations
+
+- Set operations are generally very fast for membership testing
+- SMEMBERS can be expensive for large sets - consider using SSCAN for iteration
+- Set operations (SINTER, SUNION, SDIFF) are O(N) where N is the size of the smallest set
+- SPOP and SRANDMEMBER are O(1) operations
+- Consider using set partitioning for very large datasets
+- Set operations are atomic, making them suitable for concurrent access patterns
+
+## Common Use Cases
+
+### User Sessions
+
+```typescript
+// Track online users
+await client.set.sadd("users:online", [userId]);
+
+// Check if user is online
+const isOnline = await client.set.sismember("users:online", userId);
+
+// Get online user count
+const onlineCount = await client.set.scard("users:online");
+```
+
+### Tags and Categories
+
+```typescript
+// Add tags to a post
+await client.set.sadd("post:123:tags", ["javascript", "redis", "tutorial"]);
+
+// Get all tags for a post
+const tags = await client.set.smembers("post:123:tags");
+
+// Find posts with specific tags
+const taggedPosts = await client.set.sinter(["tag:javascript:posts", "tag:redis:posts"]);
+```
+
+### Unique Collections
+
+```typescript
+// Track unique visitors
+await client.set.sadd("site:visitors", [visitorId]);
+
+// Get unique visitor count
+const uniqueVisitors = await client.set.scard("site:visitors");
+
+// Check if visitor has been before
+const isReturning = await client.set.sismember("site:visitors", visitorId);
+```

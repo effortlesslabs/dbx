@@ -1,0 +1,475 @@
+# TypeScript SDK - String Client
+
+The DBX TypeScript SDK provides a comprehensive string client for working with Redis string operations. This client offers type-safe methods for all string operations with full TypeScript support.
+
+## Installation
+
+First, install the DBX TypeScript SDK:
+
+```bash
+npm install @effortlesslabs/dbx
+```
+
+## Basic Usage
+
+### REST Client
+
+```typescript
+import { DBXClient } from "@effortlesslabs/dbx";
+
+const client = new DBXClient({
+  baseUrl: "http://localhost:8080",
+  token: "your-jwt-token",
+});
+
+// String operations
+const stringClient = client.string;
+```
+
+### WebSocket Client
+
+```typescript
+import { DBXWebSocketClient } from "@effortlesslabs/dbx";
+
+const client = new DBXWebSocketClient({
+  url: "ws://localhost:8080/ws",
+  token: "your-jwt-token",
+});
+
+await client.connect();
+
+// String operations
+const stringClient = client.string;
+```
+
+## String Operations
+
+### GET - Retrieve a String Value
+
+Get a string value by key.
+
+```typescript
+// REST
+const value = await client.string.get("user:123:name");
+
+// WebSocket
+const value = await client.string.get("user:123:name");
+
+console.log(value); // "John Doe"
+```
+
+**TypeScript Types:**
+
+```typescript
+interface StringGetOptions {
+  key: string;
+}
+
+// Returns: string | null
+```
+
+### SET - Set a String Value
+
+Set a string value with optional expiration.
+
+```typescript
+// REST
+await client.string.set("user:123:name", "John Doe", {
+  expire: 3600, // 1 hour
+});
+
+// WebSocket
+await client.string.set("user:123:name", "John Doe", {
+  expire: 3600,
+});
+```
+
+**TypeScript Types:**
+
+```typescript
+interface StringSetOptions {
+  expire?: number; // TTL in seconds
+  nx?: boolean; // Only set if key doesn't exist
+  xx?: boolean; // Only set if key exists
+}
+
+// Returns: boolean
+```
+
+### SETNX - Set if Not Exists
+
+Set a string value only if the key doesn't already exist.
+
+```typescript
+// REST
+const created = await client.string.setnx("user:123:name", "John Doe");
+
+// WebSocket
+const created = await client.string.setnx("user:123:name", "John Doe");
+
+console.log(created); // true if created, false if already existed
+```
+
+**TypeScript Types:**
+
+```typescript
+interface StringSetNXOptions {
+  key: string;
+  value: string;
+}
+
+// Returns: boolean
+```
+
+### MSET - Set Multiple Values
+
+Set multiple string values atomically.
+
+```typescript
+// REST
+await client.string.mset({
+  "user:123:name": "John Doe",
+  "user:123:email": "john@example.com",
+  "user:123:age": "30",
+});
+
+// WebSocket
+await client.string.mset({
+  "user:123:name": "John Doe",
+  "user:123:email": "john@example.com",
+  "user:123:age": "30",
+});
+```
+
+**TypeScript Types:**
+
+```typescript
+interface StringMSetOptions {
+  pairs: Record<string, string>;
+}
+
+// Returns: boolean
+```
+
+### MGET - Get Multiple Values
+
+Retrieve multiple string values by keys.
+
+```typescript
+// REST
+const values = await client.string.mget(["user:123:name", "user:123:email", "user:123:age"]);
+
+// WebSocket
+const values = await client.string.mget(["user:123:name", "user:123:email", "user:123:age"]);
+
+console.log(values); // ["John Doe", "john@example.com", "30"]
+```
+
+**TypeScript Types:**
+
+```typescript
+interface StringMGetOptions {
+  keys: string[];
+}
+
+// Returns: (string | null)[]
+```
+
+### INCR - Increment Counter
+
+Increment a numeric string value by 1.
+
+```typescript
+// REST
+const newValue = await client.string.incr("counter:visits");
+
+// WebSocket
+const newValue = await client.string.incr("counter:visits");
+
+console.log(newValue); // 42
+```
+
+**TypeScript Types:**
+
+```typescript
+interface StringIncrOptions {
+  key: string;
+}
+
+// Returns: number
+```
+
+### INCRBY - Increment by Amount
+
+Increment a numeric string value by a specified amount.
+
+```typescript
+// REST
+const newValue = await client.string.incrby("counter:visits", 5);
+
+// WebSocket
+const newValue = await client.string.incrby("counter:visits", 5);
+
+console.log(newValue); // 47
+```
+
+**TypeScript Types:**
+
+```typescript
+interface StringIncrByOptions {
+  key: string;
+  amount: number;
+}
+
+// Returns: number
+```
+
+### DECR - Decrement Counter
+
+Decrement a numeric string value by 1.
+
+```typescript
+// REST
+const newValue = await client.string.decr("counter:visits");
+
+// WebSocket
+const newValue = await client.string.decr("counter:visits");
+
+console.log(newValue); // 46
+```
+
+**TypeScript Types:**
+
+```typescript
+interface StringDecrOptions {
+  key: string;
+}
+
+// Returns: number
+```
+
+### DECRBY - Decrement by Amount
+
+Decrement a numeric string value by a specified amount.
+
+```typescript
+// REST
+const newValue = await client.string.decrby("counter:visits", 3);
+
+// WebSocket
+const newValue = await client.string.decrby("counter:visits", 3);
+
+console.log(newValue); // 43
+```
+
+**TypeScript Types:**
+
+```typescript
+interface StringDecrByOptions {
+  key: string;
+  amount: number;
+}
+
+// Returns: number
+```
+
+### APPEND - Append to String
+
+Append a value to an existing string.
+
+```typescript
+// REST
+const newLength = await client.string.append("user:123:notes", " - Updated on 2024-01-15");
+
+// WebSocket
+const newLength = await client.string.append("user:123:notes", " - Updated on 2024-01-15");
+
+console.log(newLength); // 45
+```
+
+**TypeScript Types:**
+
+```typescript
+interface StringAppendOptions {
+  key: string;
+  value: string;
+}
+
+// Returns: number (new string length)
+```
+
+### STRLEN - Get String Length
+
+Get the length of a string value.
+
+```typescript
+// REST
+const length = await client.string.strlen("user:123:name");
+
+// WebSocket
+const length = await client.string.strlen("user:123:name");
+
+console.log(length); // 8
+```
+
+**TypeScript Types:**
+
+```typescript
+interface StringStrlenOptions {
+  key: string;
+}
+
+// Returns: number
+```
+
+### GETRANGE - Get String Range
+
+Get a substring from a string value.
+
+```typescript
+// REST
+const substring = await client.string.getrange("user:123:name", 0, 3);
+
+// WebSocket
+const substring = await client.string.getrange("user:123:name", 0, 3);
+
+console.log(substring); // "John"
+```
+
+**TypeScript Types:**
+
+```typescript
+interface StringGetRangeOptions {
+  key: string;
+  start: number;
+  end: number;
+}
+
+// Returns: string
+```
+
+### SETRANGE - Set String Range
+
+Set a substring within a string value.
+
+```typescript
+// REST
+const newLength = await client.string.setrange("user:123:name", 5, "Smith");
+
+// WebSocket
+const newLength = await client.string.setrange("user:123:name", 5, "Smith");
+
+console.log(newLength); // 10
+```
+
+**TypeScript Types:**
+
+```typescript
+interface StringSetRangeOptions {
+  key: string;
+  offset: number;
+  value: string;
+}
+
+// Returns: number (new string length)
+```
+
+## Error Handling
+
+The SDK provides comprehensive error handling with typed error responses:
+
+```typescript
+import { DBXError } from "@effortlesslabs/dbx";
+
+try {
+  const value = await client.string.get("nonexistent:key");
+} catch (error) {
+  if (error instanceof DBXError) {
+    console.log(error.code); // "KEY_NOT_FOUND"
+    console.log(error.message); // "Key 'nonexistent:key' not found"
+    console.log(error.status); // 404
+  }
+}
+```
+
+**Error Types:**
+
+```typescript
+interface DBXError {
+  code: string;
+  message: string;
+  status: number;
+  details?: any;
+}
+```
+
+## Advanced Usage
+
+### Batch Operations
+
+```typescript
+// Batch multiple operations
+const results = await Promise.all([
+  client.string.set("key1", "value1"),
+  client.string.set("key2", "value2"),
+  client.string.set("key3", "value3"),
+]);
+
+console.log(results); // [true, true, true]
+```
+
+### Conditional Operations
+
+```typescript
+// Set only if key doesn't exist
+const created = await client.string.set("unique:key", "value", { nx: true });
+
+// Set only if key exists
+const updated = await client.string.set("existing:key", "new-value", { xx: true });
+```
+
+### Expiration Management
+
+```typescript
+// Set with expiration
+await client.string.set("session:123", "user-data", { expire: 3600 });
+
+// Check if key exists and get TTL
+const exists = await client.admin.exists(["session:123"]);
+if (exists > 0) {
+  const ttl = await client.admin.ttl("session:123");
+  console.log(`Session expires in ${ttl} seconds`);
+}
+```
+
+## TypeScript Configuration
+
+For optimal TypeScript support, ensure your `tsconfig.json` includes:
+
+```json
+{
+  "compilerOptions": {
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  }
+}
+```
+
+## Best Practices
+
+1. **Type Safety**: Always use TypeScript for better development experience
+2. **Error Handling**: Implement proper error handling for all operations
+3. **Connection Management**: Reuse client instances when possible
+4. **Batch Operations**: Use MSET/MGET for multiple operations
+5. **Expiration**: Set appropriate TTL values for temporary data
+6. **Key Naming**: Use consistent key naming conventions
+
+## Performance Tips
+
+- Use batch operations (MSET/MGET) instead of individual calls
+- Implement connection pooling for high-throughput applications
+- Consider using WebSocket client for real-time applications
+- Cache frequently accessed values in your application layer
+- Use appropriate data types (strings for text, numbers for counters)

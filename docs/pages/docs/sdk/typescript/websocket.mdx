@@ -1,0 +1,100 @@
+# TypeScript SDK - WebSocket Client
+
+The DBX TypeScript SDK provides a WebSocket client for real-time bidirectional communication with the database. This client offers type-safe methods for all operations with full TypeScript support.
+
+## Installation
+
+```bash
+npm install @effortlesslabs/dbx
+```
+
+## Basic Usage
+
+```typescript
+import { DBXWebSocketClient } from "@effortlesslabs/dbx";
+
+const client = new DBXWebSocketClient({
+  url: "ws://localhost:8080/ws",
+  token: "your-jwt-token",
+});
+
+await client.connect();
+```
+
+## Connection Management
+
+### Connect
+
+```typescript
+await client.connect();
+```
+
+### Disconnect
+
+```typescript
+await client.disconnect();
+```
+
+### Connection State
+
+```typescript
+const isConnected = client.isConnected();
+```
+
+### Event Listeners
+
+```typescript
+client.on("connect", () => console.log("Connected"));
+client.on("disconnect", () => console.log("Disconnected"));
+client.on("error", (error) => console.error("Error:", error));
+```
+
+## Available Clients
+
+### String Client
+
+```typescript
+const stringClient = client.string;
+// See String Client documentation for available methods
+```
+
+### Hash Client
+
+```typescript
+const hashClient = client.hash;
+// See Hash Client documentation for available methods
+```
+
+### Set Client
+
+```typescript
+const setClient = client.set;
+// See Set Client documentation for available methods
+```
+
+### Admin Client
+
+```typescript
+const adminClient = client.admin;
+// See Admin Client documentation for available methods
+```
+
+## Error Handling
+
+```typescript
+try {
+  await client.connect();
+  const value = await client.string.get("key");
+} catch (error) {
+  if (error instanceof DBXError) {
+    console.log(error.code, error.message);
+  }
+}
+```
+
+## Best Practices
+
+- Reuse WebSocket connections when possible
+- Implement reconnection logic for production
+- Handle connection errors gracefully
+- Use event listeners for connection state changes

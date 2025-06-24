@@ -1,0 +1,433 @@
+# Hash Operations
+
+DBX provides comprehensive hash operations through its REST API. Hash operations allow you to store and manage field-value pairs within a single key, similar to Redis hashes.
+
+## Overview
+
+Hash operations support storing multiple field-value pairs under a single key, making them ideal for storing structured data like user profiles, configuration objects, or any data that can be represented as key-value pairs.
+
+## Endpoints
+
+### GET /api/hash/{key}
+
+Retrieve all fields and values from a hash.
+
+**Parameters:**
+
+- `key` (path) - The hash key to retrieve
+
+**Response:**
+
+```json
+{
+  "fields": {
+    "name": "John Doe",
+    "email": "john@example.com",
+    "age": "30",
+    "city": "New York"
+  },
+  "ttl": 3600
+}
+```
+
+**Example:**
+
+```bash
+curl http://localhost:8080/api/hash/user:123
+```
+
+### POST /api/hash/{key}
+
+Create or update a hash with multiple fields.
+
+**Parameters:**
+
+- `key` (path) - The hash key to store
+- `fields` (body) - Object containing field-value pairs
+- `ttl` (optional, body) - Time to live in seconds
+
+**Request Body:**
+
+```json
+{
+  "fields": {
+    "name": "John Doe",
+    "email": "john@example.com",
+    "age": "30",
+    "city": "New York"
+  },
+  "ttl": 3600
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "key": "user:123",
+  "fields_count": 4
+}
+```
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:8080/api/hash/user:123 \
+     -H "Content-Type: application/json" \
+     -d '{
+       "fields": {
+         "name": "John Doe",
+         "email": "john@example.com",
+         "age": "30",
+         "city": "New York"
+       },
+       "ttl": 3600
+     }'
+```
+
+### DELETE /api/hash/{key}
+
+Delete an entire hash and all its fields.
+
+**Parameters:**
+
+- `key` (path) - The hash key to delete
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "deleted": true
+}
+```
+
+**Example:**
+
+```bash
+curl -X DELETE http://localhost:8080/api/hash/user:123
+```
+
+### GET /api/hash/{key}/field/{field}
+
+Retrieve a specific field value from a hash.
+
+**Parameters:**
+
+- `key` (path) - The hash key
+- `field` (path) - The field name to retrieve
+
+**Response:**
+
+```json
+{
+  "field": "name",
+  "value": "John Doe"
+}
+```
+
+**Example:**
+
+```bash
+curl http://localhost:8080/api/hash/user:123/field/name
+```
+
+### POST /api/hash/{key}/field/{field}
+
+Set or update a specific field in a hash.
+
+**Parameters:**
+
+- `key` (path) - The hash key
+- `field` (path) - The field name to set
+- `value` (body) - The field value
+
+**Request Body:**
+
+```json
+{
+  "value": "Jane Doe"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "field": "name",
+  "value": "Jane Doe"
+}
+```
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:8080/api/hash/user:123/field/name \
+     -H "Content-Type: application/json" \
+     -d '{"value": "Jane Doe"}'
+```
+
+### DELETE /api/hash/{key}/field/{field}
+
+Delete a specific field from a hash.
+
+**Parameters:**
+
+- `key` (path) - The hash key
+- `field` (path) - The field name to delete
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "deleted": true
+}
+```
+
+**Example:**
+
+```bash
+curl -X DELETE http://localhost:8080/api/hash/user:123/field/age
+```
+
+### GET /api/hash/{key}/exists
+
+Check if a hash key exists.
+
+**Parameters:**
+
+- `key` (path) - The hash key to check
+
+**Response:**
+
+```json
+{
+  "exists": true
+}
+```
+
+**Example:**
+
+```bash
+curl http://localhost:8080/api/hash/user:123/exists
+```
+
+### GET /api/hash/{key}/keys
+
+Get all field names (keys) from a hash.
+
+**Parameters:**
+
+- `key` (path) - The hash key
+
+**Response:**
+
+```json
+{
+  "keys": ["name", "email", "age", "city"]
+}
+```
+
+**Example:**
+
+```bash
+curl http://localhost:8080/api/hash/user:123/keys
+```
+
+### GET /api/hash/{key}/values
+
+Get all field values from a hash.
+
+**Parameters:**
+
+- `key` (path) - The hash key
+
+**Response:**
+
+```json
+{
+  "values": ["John Doe", "john@example.com", "30", "New York"]
+}
+```
+
+**Example:**
+
+```bash
+curl http://localhost:8080/api/hash/user:123/values
+```
+
+## Batch Operations
+
+### POST /api/hash/batch
+
+Perform multiple hash operations in a single request.
+
+**Request Body:**
+
+```json
+{
+  "operations": [
+    {
+      "type": "set",
+      "key": "user:123",
+      "fields": {
+        "name": "John Doe",
+        "email": "john@example.com"
+      }
+    },
+    {
+      "type": "get",
+      "key": "user:456"
+    },
+    {
+      "type": "setField",
+      "key": "user:123",
+      "field": "age",
+      "value": "30"
+    }
+  ]
+}
+```
+
+**Response:**
+
+```json
+{
+  "results": [
+    {
+      "type": "set",
+      "success": true,
+      "key": "user:123",
+      "fields_count": 2
+    },
+    {
+      "type": "get",
+      "success": true,
+      "fields": {
+        "name": "Jane Doe",
+        "email": "jane@example.com"
+      }
+    },
+    {
+      "type": "setField",
+      "success": true,
+      "field": "age",
+      "value": "30"
+    }
+  ]
+}
+```
+
+## Use Cases
+
+### 1. User Profiles
+
+```bash
+# Store user profile
+curl -X POST http://localhost:8080/api/hash/user:123 \
+     -H "Content-Type: application/json" \
+     -d '{
+       "fields": {
+         "name": "John Doe",
+         "email": "john@example.com",
+         "age": "30",
+         "city": "New York",
+         "preferences": "{\"theme\":\"dark\",\"notifications\":true}"
+       },
+       "ttl": 86400
+     }'
+
+# Update specific field
+curl -X POST http://localhost:8080/api/hash/user:123/field/city \
+     -H "Content-Type: application/json" \
+     -d '{"value": "San Francisco"}'
+
+# Get user name
+curl http://localhost:8080/api/hash/user:123/field/name
+```
+
+### 2. Configuration Objects
+
+```bash
+# Store app configuration
+curl -X POST http://localhost:8080/api/hash/config:app \
+     -H "Content-Type: application/json" \
+     -d '{
+       "fields": {
+         "debug": "true",
+         "port": "8080",
+         "database_url": "redis://localhost:6379",
+         "max_connections": "100"
+       }
+     }'
+
+# Get specific config value
+curl http://localhost:8080/api/hash/config:app/field/port
+```
+
+### 3. Session Data
+
+```bash
+# Store session with multiple attributes
+curl -X POST http://localhost:8080/api/hash/session:abc123 \
+     -H "Content-Type: application/json" \
+     -d '{
+       "fields": {
+         "user_id": "123",
+         "permissions": "read,write,admin",
+         "last_activity": "2024-01-15T10:30:00Z",
+         "ip_address": "192.168.1.100"
+       },
+       "ttl": 3600
+     }'
+
+# Check session exists
+curl http://localhost:8080/api/hash/session:abc123/exists
+```
+
+## Error Handling
+
+All endpoints return consistent error responses:
+
+```json
+{
+  "error": "not_found",
+  "message": "Hash key 'user:123' not found",
+  "status": 404
+}
+```
+
+Common error types:
+
+- `not_found` - Hash key doesn't exist
+- `field_not_found` - Field doesn't exist in hash
+- `invalid_key` - Key format is invalid
+- `invalid_field` - Field name is invalid
+- `invalid_value` - Value format is invalid
+- `server_error` - Internal server error
+
+## Performance Considerations
+
+1. **Field Count** - Large numbers of fields may impact performance
+2. **Field Names** - Use short, descriptive field names
+3. **Batch Operations** - Use batch endpoints for multiple operations
+4. **TTL Management** - Set appropriate TTL values for hash expiration
+
+## Data Types
+
+Hash fields support various data types:
+
+- **Strings** - Most common, stored as-is
+- **Numbers** - Stored as strings, can be parsed by client
+- **JSON** - Stored as stringified JSON
+- **Booleans** - Stored as "true"/"false" strings
+
+## Rate Limits
+
+Hash operations are subject to the same rate limiting as other API endpoints:
+
+- Default: 100 requests per minute per IP
+- Configurable via environment variables

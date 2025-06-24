@@ -1,0 +1,652 @@
+# TypeScript SDK Installation
+
+The DBX TypeScript SDK provides a type-safe, modern interface for interacting with DBX APIs. It includes full TypeScript support, comprehensive error handling, and built-in connection management.
+
+## Overview
+
+The TypeScript SDK is designed for modern JavaScript and TypeScript applications, providing:
+
+- Full TypeScript support with comprehensive type definitions
+- Promise-based API with async/await support
+- Automatic connection management and retry logic
+- Built-in error handling and validation
+- Support for both REST and WebSocket APIs
+
+## Installation
+
+### NPM
+
+```bash
+npm install @effortlesslabs/dbx
+```
+
+### Yarn
+
+```bash
+yarn add @effortlesslabs/dbx
+```
+
+### PNPM
+
+```bash
+pnpm add @effortlesslabs/dbx
+```
+
+## Quick Start
+
+### Basic Setup
+
+```typescript
+import { DBXClient } from "@effortlesslabs/dbx";
+
+// Create a client instance
+const client = new DBXClient({
+  baseUrl: "http://localhost:8080",
+  apiKey: "your-api-key-here",
+});
+
+// Test the connection
+async function testConnection() {
+  try {
+    const result = await client.admin.ping();
+    console.log("Connected to DBX:", result);
+  } catch (error) {
+    console.error("Connection failed:", error);
+  }
+}
+
+testConnection();
+```
+
+### TypeScript Configuration
+
+Add the following to your `tsconfig.json`:
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "outDir": "./dist"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
+```
+
+## Configuration
+
+### Client Options
+
+```typescript
+interface DBXClientOptions {
+  // Base URL for the DBX API
+  baseUrl: string;
+
+  // Authentication
+  apiKey?: string;
+
+  // Connection settings
+  timeout?: number; // Request timeout in milliseconds (default: 30000)
+  retries?: number; // Number of retry attempts (default: 3)
+  retryDelay?: number; // Delay between retries in milliseconds (default: 1000)
+
+  // Headers
+  headers?: Record<string, string>;
+
+  // WebSocket settings
+  wsEnabled?: boolean; // Enable WebSocket support (default: true)
+  wsUrl?: string; // WebSocket URL (auto-generated if not provided)
+
+  // Logging
+  logLevel?: "debug" | "info" | "warn" | "error" | "silent";
+
+  // Rate limiting
+  rateLimit?: {
+    requests: number; // Max requests per window
+    window: number; // Window size in milliseconds
+  };
+}
+```
+
+### Environment Variables
+
+You can configure the client using environment variables:
+
+```bash
+export DBX_BASE_URL=http://localhost:8080
+export DBX_API_KEY=your-api-key-here
+export DBX_TIMEOUT=30000
+export DBX_RETRIES=3
+export DBX_LOG_LEVEL=info
+```
+
+```typescript
+import { DBXClient } from "@effortlesslabs/dbx";
+
+const client = new DBXClient({
+  baseUrl: process.env.DBX_BASE_URL!,
+  apiKey: process.env.DBX_API_KEY,
+  timeout: parseInt(process.env.DBX_TIMEOUT || "30000"),
+  retries: parseInt(process.env.DBX_RETRIES || "3"),
+  logLevel: process.env.DBX_LOG_LEVEL as any,
+});
+```
+
+## Client Initialization
+
+### Basic Client
+
+```typescript
+import { DBXClient } from "@effortlesslabs/dbx";
+
+const client = new DBXClient({
+  baseUrl: "http://localhost:8080",
+});
+```
+
+### Authenticated Client
+
+```typescript
+const client = new DBXClient({
+  baseUrl: "http://localhost:8080",
+  apiKey: "your-api-key-here",
+});
+```
+
+### Custom Configuration
+
+```typescript
+const client = new DBXClient({
+  baseUrl: "https://api.yourdomain.com",
+  apiKey: "your-api-key-here",
+  timeout: 60000,
+  retries: 5,
+  retryDelay: 2000,
+  headers: {
+    "User-Agent": "MyApp/1.0.0",
+    "X-Custom-Header": "custom-value",
+  },
+  logLevel: "debug",
+  rateLimit: {
+    requests: 1000,
+    window: 60000,
+  },
+});
+```
+
+## API Clients
+
+The SDK provides separate clients for different data types:
+
+### String Client
+
+```typescript
+// Access string operations
+const stringClient = client.string;
+
+// Basic operations
+await stringClient.set("my-key", "my-value");
+const value = await stringClient.get("my-key");
+await stringClient.delete("my-key");
+```
+
+### Hash Client
+
+```typescript
+// Access hash operations
+const hashClient = client.hash;
+
+// Basic operations
+await hashClient.set("user:123", {
+  name: "John Doe",
+  email: "john@example.com",
+  age: "30",
+});
+
+const user = await hashClient.get("user:123");
+await hashClient.setField("user:123", "city", "New York");
+```
+
+### Set Client
+
+```typescript
+// Access set operations
+const setClient = client.set;
+
+// Basic operations
+await setClient.add("online-users", ["user1", "user2", "user3"]);
+const members = await setClient.get("online-users");
+await setClient.addMember("online-users", "user4");
+```
+
+### Admin Client
+
+```typescript
+// Access admin operations
+const adminClient = client.admin;
+
+// Health checks
+const health = await adminClient.health();
+const info = await adminClient.info();
+const stats = await adminClient.stats();
+```
+
+### WebSocket Client
+
+```typescript
+// Access WebSocket operations
+const wsClient = client.ws;
+
+// Connect to WebSocket
+await wsClient.connect();
+
+// Subscribe to events
+wsClient.on("connect", () => {
+  console.log("WebSocket connected");
+});
+
+wsClient.on("message", (data) => {
+  console.log("Received message:", data);
+});
+```
+
+## Error Handling
+
+### Basic Error Handling
+
+```typescript
+try {
+  const value = await client.string.get("non-existent-key");
+} catch (error) {
+  if (error instanceof DBXError) {
+    console.error(`DBX Error: ${error.code} - ${error.message}`);
+
+    switch (error.code) {
+      case "not_found":
+        console.log("Key does not exist");
+        break;
+      case "unauthorized":
+        console.log("Authentication required");
+        break;
+      case "rate_limit_exceeded":
+        console.log("Rate limit exceeded");
+        break;
+      default:
+        console.log("Unknown error");
+    }
+  } else {
+    console.error("Unexpected error:", error);
+  }
+}
+```
+
+### Custom Error Handler
+
+```typescript
+class CustomErrorHandler {
+  static handle(error: DBXError) {
+    switch (error.code) {
+      case "not_found":
+        // Handle not found errors
+        return this.handleNotFound(error);
+      case "rate_limit_exceeded":
+        // Handle rate limiting
+        return this.handleRateLimit(error);
+      default:
+        // Handle other errors
+        return this.handleGeneric(error);
+    }
+  }
+
+  private static handleNotFound(error: DBXError) {
+    // Implement custom not found handling
+    console.warn(`Resource not found: ${error.message}`);
+  }
+
+  private static handleRateLimit(error: DBXError) {
+    // Implement custom rate limit handling
+    const retryAfter = error.retryAfter || 60;
+    console.warn(`Rate limited. Retry after ${retryAfter} seconds.`);
+  }
+
+  private static handleGeneric(error: DBXError) {
+    // Implement generic error handling
+    console.error(`DBX Error: ${error.code} - ${error.message}`);
+  }
+}
+```
+
+## Connection Management
+
+### Automatic Retry
+
+```typescript
+const client = new DBXClient({
+  baseUrl: "http://localhost:8080",
+  retries: 3,
+  retryDelay: 1000,
+});
+
+// The client will automatically retry failed requests
+try {
+  const result = await client.string.get("my-key");
+} catch (error) {
+  // This will only be called after all retries are exhausted
+  console.error("All retry attempts failed:", error);
+}
+```
+
+### Connection Pooling
+
+```typescript
+import { DBXClientPool } from "@effortlesslabs/dbx";
+
+const pool = new DBXClientPool({
+  baseUrl: "http://localhost:8080",
+  apiKey: "your-api-key",
+  maxConnections: 10,
+  minConnections: 2,
+});
+
+// Get a client from the pool
+const client = await pool.getClient();
+
+try {
+  const result = await client.string.get("my-key");
+} finally {
+  // Return the client to the pool
+  await pool.releaseClient(client);
+}
+```
+
+## TypeScript Types
+
+### Basic Types
+
+```typescript
+// String operations
+interface StringValue {
+  value: string;
+  ttl?: number;
+}
+
+// Hash operations
+interface HashFields {
+  [field: string]: string;
+}
+
+interface HashValue {
+  fields: HashFields;
+  ttl?: number;
+}
+
+// Set operations
+interface SetValue {
+  members: string[];
+  cardinality: number;
+  ttl?: number;
+}
+```
+
+### Response Types
+
+```typescript
+// Generic response type
+interface DBXResponse<T> {
+  data: T;
+  timestamp: string;
+  requestId: string;
+}
+
+// Error response type
+interface DBXErrorResponse {
+  error: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+  status: number;
+  timestamp: string;
+  requestId: string;
+}
+```
+
+### Client Types
+
+```typescript
+// String client type
+interface StringClient {
+  get(key: string): Promise<StringValue>;
+  set(key: string, value: string, ttl?: number): Promise<void>;
+  delete(key: string): Promise<void>;
+  exists(key: string): Promise<boolean>;
+  ttl(key: string): Promise<number>;
+  expire(key: string, ttl: number): Promise<void>;
+}
+
+// Hash client type
+interface HashClient {
+  get(key: string): Promise<HashValue>;
+  set(key: string, fields: HashFields, ttl?: number): Promise<void>;
+  delete(key: string): Promise<void>;
+  getField(key: string, field: string): Promise<string>;
+  setField(key: string, field: string, value: string): Promise<void>;
+  deleteField(key: string, field: string): Promise<void>;
+  exists(key: string): Promise<boolean>;
+  keys(key: string): Promise<string[]>;
+  values(key: string): Promise<string[]>;
+}
+```
+
+## Testing
+
+### Unit Testing
+
+```typescript
+import { DBXClient } from "@effortlesslabs/dbx";
+import { mockDBXServer } from "@effortlesslabs/dbx/testing";
+
+describe("DBX Client", () => {
+  let client: DBXClient;
+  let server: any;
+
+  beforeEach(async () => {
+    server = await mockDBXServer();
+    client = new DBXClient({
+      baseUrl: server.url,
+    });
+  });
+
+  afterEach(async () => {
+    await server.close();
+  });
+
+  it("should get string value", async () => {
+    // Setup mock response
+    server.string.get("test-key").returns({
+      value: "test-value",
+      ttl: 3600,
+    });
+
+    const result = await client.string.get("test-key");
+
+    expect(result.value).toBe("test-value");
+    expect(result.ttl).toBe(3600);
+  });
+});
+```
+
+### Integration Testing
+
+```typescript
+import { DBXClient } from "@effortlesslabs/dbx";
+
+describe("DBX Integration Tests", () => {
+  let client: DBXClient;
+
+  beforeAll(() => {
+    client = new DBXClient({
+      baseUrl: process.env.DBX_TEST_URL || "http://localhost:8080",
+      apiKey: process.env.DBX_TEST_API_KEY,
+    });
+  });
+
+  it("should perform string operations", async () => {
+    const key = "test-string-key";
+    const value = "test-value";
+
+    // Set value
+    await client.string.set(key, value);
+
+    // Get value
+    const result = await client.string.get(key);
+    expect(result.value).toBe(value);
+
+    // Check exists
+    const exists = await client.string.exists(key);
+    expect(exists).toBe(true);
+
+    // Delete value
+    await client.string.delete(key);
+
+    // Check not exists
+    const notExists = await client.string.exists(key);
+    expect(notExists).toBe(false);
+  });
+});
+```
+
+## Performance Optimization
+
+### Connection Reuse
+
+```typescript
+// Create a singleton client for your application
+class DBXService {
+  private static instance: DBXClient;
+
+  static getInstance(): DBXClient {
+    if (!DBXService.instance) {
+      DBXService.instance = new DBXClient({
+        baseUrl: process.env.DBX_BASE_URL!,
+        apiKey: process.env.DBX_API_KEY,
+      });
+    }
+    return DBXService.instance;
+  }
+}
+
+// Use throughout your application
+const client = DBXService.getInstance();
+```
+
+### Batch Operations
+
+```typescript
+// Use batch operations for multiple requests
+const batchResults = await client.batch([
+  { method: "string.get", params: { key: "key1" } },
+  { method: "string.set", params: { key: "key2", value: "value2" } },
+  { method: "hash.get", params: { key: "hash1" } },
+]);
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### Connection Timeout
+
+```typescript
+// Increase timeout for slow connections
+const client = new DBXClient({
+  baseUrl: "http://localhost:8080",
+  timeout: 60000, // 60 seconds
+});
+```
+
+#### Authentication Errors
+
+```typescript
+// Check API key configuration
+const client = new DBXClient({
+  baseUrl: "http://localhost:8080",
+  apiKey: process.env.DBX_API_KEY, // Ensure this is set
+});
+
+// Test authentication
+try {
+  await client.admin.ping();
+  console.log("Authentication successful");
+} catch (error) {
+  console.error("Authentication failed:", error);
+}
+```
+
+#### Rate Limiting
+
+```typescript
+// Implement custom rate limiting
+class RateLimitedClient {
+  private client: DBXClient;
+  private requestQueue: Array<() => Promise<any>> = [];
+  private processing = false;
+
+  constructor(options: DBXClientOptions) {
+    this.client = new DBXClient(options);
+  }
+
+  async request<T>(fn: () => Promise<T>): Promise<T> {
+    return new Promise((resolve, reject) => {
+      this.requestQueue.push(async () => {
+        try {
+          const result = await fn();
+          resolve(result);
+        } catch (error) {
+          reject(error);
+        }
+      });
+
+      if (!this.processing) {
+        this.processQueue();
+      }
+    });
+  }
+
+  private async processQueue() {
+    this.processing = true;
+
+    while (this.requestQueue.length > 0) {
+      const request = this.requestQueue.shift();
+      if (request) {
+        await request();
+        // Add delay between requests
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+    }
+
+    this.processing = false;
+  }
+}
+```
+
+## Environment Variables Reference
+
+| Variable                  | Description                           | Default |
+| ------------------------- | ------------------------------------- | ------- |
+| `DBX_BASE_URL`            | Base URL for DBX API                  | -       |
+| `DBX_API_KEY`             | API key for authentication            | -       |
+| `DBX_TIMEOUT`             | Request timeout in milliseconds       | `30000` |
+| `DBX_RETRIES`             | Number of retry attempts              | `3`     |
+| `DBX_RETRY_DELAY`         | Delay between retries in milliseconds | `1000`  |
+| `DBX_LOG_LEVEL`           | Logging level                         | `info`  |
+| `DBX_WS_ENABLED`          | Enable WebSocket support              | `true`  |
+| `DBX_RATE_LIMIT_REQUESTS` | Rate limit requests per window        | `1000`  |
+| `DBX_RATE_LIMIT_WINDOW`   | Rate limit window in milliseconds     | `60000` |
