@@ -1,201 +1,365 @@
-# DBX Roadmap
+# DBX Project Roadmap
 
-This document outlines the development roadmap for the DBX project, detailing both current progress and future plans.
+## Project Overview
 
-## Current Status
+DBX is a lightweight API proxy for edge & embedded systems that exposes Redis and MDBX through a unified API layer. Built in Rust with TypeScript SDK support.
 
-As of now, DBX has implemented:
+## 🎯 Development Strategy
 
-- **Redis Adapter**: Complete Redis client functionality with connection management
-  - [x] String primitives with comprehensive operations
-  - [x] **Hash primitives with full CRUD operations, batch operations, pipeline support, transactions, and Lua scripts**
-  - [x] Set primitives with comprehensive operations
-  - [x] Pipeline support for batched commands
-  - [x] Transaction support for atomic operations
-  - [x] Lua scripting capabilities
-  - [x] Predefined utility scripts for common patterns
-- **REST API Layer (Redis)**: Complete REST API server for Redis with modular architecture
-  - [x] String operations API endpoints
-  - [x] **Hash operations API endpoints (GET, SET, DELETE, batch operations)**
-  - [x] Set operations API endpoints
-  - [x] Key management endpoints
-  - [x] Script execution endpoints
-  - [x] Proper route nesting under `/api/v1/redis`
-  - [x] State management and server compilation fixes
-- **WebSocket API Layer (Redis)**: Real-time WebSocket interface for low-latency operations
-  - [x] JSON-encoded command protocol
-  - [x] Support for all Redis string operations
-  - [x] Support for Redis hash operations
-  - [x] Batch operations for efficient multi-key operations
-  - [x] Connection management and error handling
-  - [x] Client examples in Rust and JavaScript
-  - [ ] PubSub/streaming support (future enhancement)
-- **Multi-database CLI**: Unified CLI to select database type and connection URL at runtime
-- **Extensible Architecture**: Easy to add new databases (Postgres, MongoDB, etc.) by adding handler/route modules
-- **TypeScript SDK**: Complete TypeScript SDK with full type definitions
-- **Server Infrastructure**:
-  - [x] Proper state management and router configuration
-  - [x] CORS support
-  - [x] Error handling and fallback routes
-  - [x] Health check endpoints
-  - [x] Redis connection validation
+**Phase 1: Complete Redis Implementation End-to-End**
 
-## Short-term Goals (0-3 months)
+- Focus on completing ALL Redis operations and features
+- Establish production-ready patterns and architecture
+- Create comprehensive testing and documentation
 
-### High Priority - Production Readiness
+**Phase 2: Production Deployment**
 
-- [ ] **Docker Support**
-  - [ ] Add `Dockerfile` for the API server
-  - [ ] Create `docker-compose.yml` with Redis included
-  - [ ] Add health checks and proper container configuration
-  - [ ] Environment variable configuration for database URLs
-- [ ] **Environment Configuration**
-  - [ ] Support for `.env` files
-  - [ ] Environment variable overrides for all config options
-  - [ ] Default configurations for common deployment scenarios
-- [ ] **Authentication & Security**
-  - [ ] Add authentication and authorization mechanisms
-  - [ ] API key management
-  - [ ] Rate limiting
-  - [ ] Input validation and sanitization
-- [ ] **Deployment Documentation**
-  - [ ] Quick start guide with Docker
-  - [ ] Deployment guides for common platforms (Heroku, Railway, DigitalOcean)
-  - [ ] Production configuration examples
+- Deploy Redis-only version to production
+- Gather real-world usage feedback
+- Optimize performance and stability
 
-### Core Features - Redis Completion
+**Phase 3: Multi-Database Expansion**
 
-- [ ] **Redis Adapter Enhancements**
-  - [ ] Add support for remaining Redis data types (Lists, Sorted Sets)
-  - [ ] Implement PubSub functionality
-  - [ ] Add cluster support
-  - [ ] Implement connection pooling improvements
-  - [ ] Add Redis Streams support
-- [ ] **API Enhancements**
-  - [ ] Add List operations API endpoints
-  - [ ] Add Sorted Set operations API endpoints
-  - [ ] Add Stream operations API endpoints
-  - [ ] Add PubSub endpoints
-  - [ ] Add cluster management endpoints
-- [ ] **Performance & Monitoring**
-  - [ ] Graceful shutdown handling
-  - [ ] Signal handling (SIGTERM, SIGINT)
-  - [ ] Enhanced health check endpoint with detailed metrics
-  - [ ] Basic metrics endpoint
-  - [ ] Logging configuration for production
-  - [ ] Performance benchmarking suite
+- Use Redis implementation as template for other databases
+- Implement MDBX, PostgreSQL, MongoDB following established patterns
 
-### Medium Priority
+## ✅ Completed Features
 
-- [ ] **New Database Adapters**
-  - [ ] SQLite adapter with REST API
-  - [ ] Basic PostgreSQL adapter with REST API
-  - [ ] Add modular routes/handlers for new databases
+### Core Infrastructure
+
+- [x] **Rust Backend API Server** - Complete Axum-based HTTP/WebSocket server
+- [x] **Database Adapter Architecture** - Pluggable adapter system for multiple databases
+- [x] **Connection Pooling** - Redis connection pool with configurable size
+- [x] **Configuration Management** - Environment-based configuration system
+- [x] **Error Handling** - Comprehensive error types and messages
+- [x] **Basic Logging** - Simple tracing initialization with basic info logs
+
+### Redis Implementation (Partially Complete)
+
+- [x] **Redis Adapter** - Complete Redis client adapter with connection pooling
+- [x] **String Operations** - GET, SET, DEL, EXISTS, TTL, EXPIRE
+- [x] **Hash Operations** - HSET, HGET, HDEL, HGETALL, HEXISTS, HKEYS, HVALS
+- [x] **Set Operations** - SADD, SMEMBERS, SREM, SISMEMBER, SCARD, SPOP
+- [x] **Admin Operations** - PING, HEALTH, INFO, CLIENT LIST, MEMORY USAGE
+- [x] **HTTP REST API** - Complete REST endpoints for all Redis operations
+- [x] **WebSocket API** - Real-time WebSocket endpoints for all operations
+- [x] **Comprehensive Testing** - Unit tests for all Redis operations
+
+### TypeScript SDK (Fully Complete)
+
+- [x] **HTTP Client** - Complete HTTP client with all Redis operations
+- [x] **WebSocket Client** - Real-time WebSocket client implementation
+- [x] **Type Safety** - Full TypeScript types for all operations
+- [x] **Error Handling** - Comprehensive error handling and retry logic
+- [x] **Configuration** - Flexible client configuration system
+- [x] **Testing** - Complete test suite for HTTP and WebSocket operations
+
+### Deployment & DevOps
+
+- [x] **Docker Support** - Multi-stage Dockerfile with health checks
+- [x] **Docker Compose** - Complete development environment setup
+- [x] **CI/CD Ready** - GitHub workflows and deployment scripts
+- [x] **Static Assets** - Landing page with API documentation
+- [x] **Health Checks** - Built-in health check endpoints
+- [x] **Environment Configuration** - Example environment files
+
+### Documentation
+
+- [x] **README** - Comprehensive project documentation
+- [x] **API Documentation** - Landing page with endpoint examples
+- [x] **Docker Documentation** - Deployment and usage guides
+- [x] **Contributing Guidelines** - Development setup and contribution process
+
+## 🚧 Phase 1: Complete Redis Implementation (Current Focus)
+
+### Redis Advanced Operations (Priority 1)
+
+- [ ] **List Operations** - LPUSH, RPUSH, LPOP, RPOP, LRANGE, LLEN, LINDEX, LSET, LTRIM, LREM
+- [ ] **Sorted Set Operations** - ZADD, ZRANGE, ZSCORE, ZCARD, ZREM, ZRANK, ZREVRANK, ZINCRBY, ZRANGEBYSCORE
+- [ ] **Stream Operations** - XADD, XREAD, XRANGE, XLEN, XDEL, XTRIM, XGROUP, XREADGROUP
+- [ ] **Pub/Sub Operations** - PUBLISH, SUBSCRIBE, UNSUBSCRIBE, PSUBSCRIBE, PUNSUBSCRIBE
+- [ ] **Lua Scripting** - EVAL, EVALSHA, SCRIPT LOAD, SCRIPT EXISTS, SCRIPT FLUSH
+- [ ] **Transaction Support** - MULTI, EXEC, DISCARD, WATCH, UNWATCH
+- [ ] **Pipeline Operations** - Batch command execution and optimization
+
+### Redis Advanced Features (Priority 2)
+
+- [ ] **Connection Management** - CLIENT LIST, CLIENT KILL, CLIENT SETNAME, CLIENT GETNAME
+- [ ] **Database Management** - SELECT, FLUSHDB, FLUSHALL, DBSIZE, KEYS, SCAN
+- [ ] **Key Management** - KEYS, SCAN, DEL, EXISTS, EXPIRE, TTL, PERSIST, RENAME
+- [ ] **Server Management** - CONFIG GET, CONFIG SET, SLOWLOG, LATENCY DOCTOR
+- [ ] **Cluster Operations** - CLUSTER INFO, CLUSTER NODES, CLUSTER SLOTS
+
+### Security & Production Features (Priority 3)
+
+- [ ] **Authentication & Authorization** - JWT, API keys, RBAC
+- [ ] **Rate Limiting** - Request throttling and quotas
+- [ ] **Caching Layer** - Response caching and invalidation
+- [ ] **Metrics & Monitoring** - Prometheus metrics, health dashboards
+- [ ] **Load Balancing** - Multiple Redis instance support
+- [ ] **Structured Logging** - JSON logging, request/response logging, correlation IDs
+
+### SDK Enhancements (Priority 4)
+
+- [ ] **TypeScript SDK Updates**
+  - [ ] Support for new Redis operations (Lists, Sorted Sets, Streams, Pub/Sub)
+  - [ ] Connection pooling in SDK
+  - [ ] Automatic retry logic improvements
+  - [ ] Circuit breaker implementation
+  - [ ] Offline mode support
+  - [ ] Local caching
+
+## 🚀 Phase 2: Production Deployment (After Redis Completion)
+
+### Production Readiness
+
+- [ ] **Performance Optimization**
+
+  - [ ] Connection pooling improvements
+  - [ ] Command pipelining
+  - [ ] Response compression
+  - [ ] Memory optimization
+  - [ ] Performance benchmarking
+
+- [ ] **Security Hardening**
+
+  - [ ] Production authentication
+  - [ ] Rate limiting implementation
+  - [ ] Security audit
+  - [ ] CORS configuration
+
+- [ ] **Monitoring & Observability**
+
+  - [ ] Production metrics
+  - [ ] Alerting system
+  - [ ] Performance dashboards
+  - [ ] Error tracking
+
+- [ ] **Deployment & Infrastructure**
+  - [ ] Production deployment pipeline
+  - [ ] Load balancing setup
+  - [ ] Backup and recovery
+  - [ ] Disaster recovery plan
+
+### Developer Experience
+
+- [ ] **CLI Tool**
+
+  - [ ] Command-line interface
+  - [ ] Redis management commands
+  - [ ] Configuration management
+  - [ ] Migration tools
+
 - [ ] **Documentation**
-  - [x] CLI and API usage examples
-  - [x] WebSocket API documentation and examples
-  - [x] Modular architecture and extension guide
-  - [ ] Comprehensive API documentation with OpenAPI/Swagger
-  - [ ] Usage examples for all implemented features
-  - [ ] Integration guides
-  - [ ] Performance tuning guide
+  - [ ] Production deployment guide
+  - [ ] API reference documentation
+  - [ ] SDK documentation
+  - [ ] Tutorials and examples
 
-## Mid-term Goals (3-6 months)
+## 🌐 Phase 3: Multi-Database Support (After Production)
 
-- [ ] **Advanced Database Features**
-  - [ ] Query builder interface
-  - [ ] Migration support
-  - [ ] Schema validation
-  - [ ] Backup and restore functionality
-- [ ] **Additional Database Adapters**
-  - [ ] MongoDB adapter (with REST API and WebSocket)
-  - [ ] MySQL adapter (with REST API and WebSocket)
-  - [ ] DynamoDB adapter
-  - [ ] Cassandra adapter
-- [ ] **Runtime Compatibility**
-  - [ ] WASM compatibility
-  - [ ] Embedded systems support
-  - [ ] Worker runtime support
-- [ ] **Advanced Use Cases**
-  - [ ] Caching layer with TTL management
-  - [ ] Distributed locks implementation
-  - [ ] Job queues with Redis
-  - [ ] Session management
-  - [ ] Real-time analytics
+### MDBX Integration (First Priority)
 
-## Long-term Goals (6+ months)
+- [ ] **MDBX Adapter Implementation**
 
-- [ ] **Language Bindings**
-  - [x] TypeScript/JavaScript bindings
-  - [ ] Python bindings
-  - [ ] Ruby bindings
-  - [ ] C# bindings
-  - [ ] Java bindings
-  - [ ] Go bindings
-- [ ] **Enterprise Features**
-  - [ ] Advanced security features (encryption, audit logs)
-  - [ ] Monitoring and observability (Prometheus, Grafana)
-  - [ ] Distributed tracing integration (Jaeger, Zipkin)
-  - [ ] Multi-tenancy support
-  - [ ] Data replication and failover
+  - [ ] Core adapter structure
+  - [ ] Connection management
+  - [ ] Transaction support
+  - [ ] Error handling
+
+- [ ] **MDBX Operations**
+
+  - [ ] Basic CRUD operations
+  - [ ] Transaction operations
+  - [ ] Database management
+  - [ ] Backup and recovery
+
+- [ ] **MDBX SDK Support**
+  - [ ] TypeScript SDK updates
+  - [ ] Type definitions
+  - [ ] Testing
+
+### PostgreSQL Integration (Second Priority)
+
+- [ ] **PostgreSQL Adapter Implementation**
+
+  - [ ] Connection pooling
+  - [ ] Query execution
+  - [ ] Transaction support
+  - [ ] Error handling
+
+- [ ] **PostgreSQL Operations**
+
+  - [ ] SQL query execution
+  - [ ] Table operations
+  - [ ] Index management
+  - [ ] Stored procedures
+
+- [ ] **PostgreSQL SDK Support**
+  - [ ] TypeScript SDK updates
+  - [ ] Query builder
+  - [ ] Type definitions
+
+### MongoDB Integration (Third Priority)
+
+- [ ] **MongoDB Adapter Implementation**
+
+  - [ ] Connection management
+  - [ ] Document operations
+  - [ ] Aggregation support
+  - [ ] Error handling
+
+- [ ] **MongoDB Operations**
+
+  - [ ] Document CRUD
+  - [ ] Collection management
+  - [ ] Index operations
+  - [ ] Aggregation pipeline
+
+- [ ] **MongoDB SDK Support**
+  - [ ] TypeScript SDK updates
+  - [ ] Document types
+  - [ ] Query builder
+
+## 🔧 Additional Language SDKs (Future)
+
+- [ ] **Python SDK**
+- [ ] **Go SDK**
+- [ ] **Java SDK**
+- [ ] **.NET SDK**
+- [ ] **Rust SDK**
+
+## ☁️ Cloud & Edge Computing (Future)
+
 - [ ] **Cloud Integration**
-  - [ ] AWS ElastiCache integration
-  - [ ] Azure Cache for Redis integration
-  - [ ] Google Cloud Memorystore integration
-  - [ ] Kubernetes operator
 
-## Community Goals
+  - [ ] AWS Lambda support
+  - [ ] Google Cloud Functions
+  - [ ] Azure Functions
+  - [ ] Cloudflare Workers
 
-- [ ] **Community Building**
-  - [ ] Contributor guidelines
-  - [ ] Code of conduct
-  - [ ] Regular release schedule
-  - [ ] Community meetings
-  - [ ] Discord/Slack community
-- [ ] **Quality Assurance**
-  - [ ] Comprehensive test suite (unit, integration, e2e)
-  - [ ] CI/CD pipeline with GitHub Actions
-  - [ ] Code coverage reporting
-  - [ ] Security scanning
-  - [ ] Performance regression testing
+- [ ] **Kubernetes Support**
 
-## Recent Achievements
+  - [ ] Helm charts
+  - [ ] Operator implementation
+  - [ ] Service mesh integration
 
-- ✅ **Redis Hash API**: Complete implementation with full CRUD operations
-- ✅ **Server Compilation**: Fixed type mismatches and state management issues
-- ✅ **Route Registration**: Proper nesting of Redis routes under `/api/v1/redis`
-- ✅ **Connection Management**: Robust Redis connection handling with validation
-- ✅ **Error Handling**: Comprehensive error responses and fallback routes
+- [ ] **Edge Computing**
+  - [ ] ARM64 optimization
+  - [ ] RISC-V support
+  - [ ] WebAssembly compilation
 
-## How to Add a New Database
+## 📊 Current Status Summary
 
-1. Add a new variant to the `DatabaseType` enum in `api/src/config.rs`
-2. Create new handler and route modules in `api/src/handlers/` and `api/src/routes/`
-3. Update the CLI/server logic to support the new type
-4. Add API endpoint documentation and usage examples
+### ✅ Fully Implemented (100%)
 
-## How to Add WebSocket Support for New Databases
+- **Core Redis Operations**: String, Hash, Set, Admin operations
+- **TypeScript SDK**: Full-featured client library
+- **Core Infrastructure**: Server, configuration, error handling
+- **Deployment**: Docker, Docker Compose, health checks
+- **Documentation**: README, API docs, contributing guidelines
 
-1. Create a new WebSocket handler in `api/src/handlers/websocket.rs` or create a separate module
-2. Implement the `process_command` method for the new database type
-3. Add WebSocket routes in `api/src/routes/websocket.rs`
-4. Update the server to include the new WebSocket handler
-5. Add WebSocket command documentation and examples
+### 🚧 Partially Implemented (60%)
 
-## How to Contribute
+- **Redis Support**: Basic operations complete, advanced operations pending
+- **Security**: Basic CORS, no authentication
+- **Monitoring**: Basic health checks only
+- **Logging**: Basic tracing initialization, no structured logging
 
-We welcome contributions to help us achieve these roadmap items! If you're interested in working on a specific feature or enhancement:
+### 📋 Not Started (0%)
 
-1. Check the [issues](https://github.com/effortlesslabs/dbx/issues) to see if there's already work being done
-2. If not, create a new issue describing what you'd like to work on
-3. Fork the repository and submit a pull request with your changes
+- **Advanced Redis Operations**: Lists, Sorted Sets, Streams, Pub/Sub, Lua scripting
+- **Security Features**: Authentication, rate limiting
+- **Additional SDKs**: Python, Go, Java, .NET, Rust
+- **CLI Tools**: Command-line interface
+- **Multi-Database Support**: MDBX, PostgreSQL, MongoDB
 
-For major features, please discuss them first in the issues to ensure they align with the project's direction.
+## 🎯 Immediate Next Steps (Phase 1 Focus)
 
-## Next Immediate Steps
+### Week 1-2: Redis List Operations
 
-1. **Docker Support**: Containerize the application for easy deployment
-2. **Authentication**: Add basic API key authentication
-3. **Redis Lists**: Implement List data type support
-4. **Documentation**: Create comprehensive API documentation
-5. **Testing**: Add integration tests for all endpoints
+- [ ] Implement LPUSH, RPUSH, LPOP, RPOP, LRANGE
+- [ ] Add LLEN, LINDEX, LSET, LTRIM, LREM
+- [ ] Update TypeScript SDK with List operations
+- [ ] Add comprehensive tests
+
+### Week 3-4: Redis Sorted Set Operations
+
+- [ ] Implement ZADD, ZRANGE, ZSCORE, ZCARD
+- [ ] Add ZREM, ZRANK, ZREVRANK, ZINCRBY
+- [ ] Update TypeScript SDK with Sorted Set operations
+- [ ] Add comprehensive tests
+
+### Week 5-6: Redis Stream Operations
+
+- [ ] Implement XADD, XREAD, XRANGE, XLEN
+- [ ] Add XDEL, XTRIM, XGROUP, XREADGROUP
+- [ ] Update TypeScript SDK with Stream operations
+- [ ] Add comprehensive tests
+
+### Week 7-8: Redis Pub/Sub & Lua Scripting
+
+- [ ] Implement PUBLISH, SUBSCRIBE, UNSUBSCRIBE
+- [ ] Add PSUBSCRIBE, PUNSUBSCRIBE
+- [ ] Implement EVAL, EVALSHA, SCRIPT operations
+- [ ] Update TypeScript SDK with Pub/Sub and Lua support
+
+### Week 9-10: Redis Transactions & Pipelines
+
+- [ ] Implement MULTI, EXEC, DISCARD, WATCH
+- [ ] Add pipeline operations for batch execution
+- [ ] Update TypeScript SDK with transaction support
+- [ ] Performance optimization
+
+### Week 11-12: Security & Production Features
+
+- [ ] Implement JWT authentication
+- [ ] Add rate limiting
+- [ ] Implement Prometheus metrics
+- [ ] Add structured logging
+
+## 🚀 Phase 2 Timeline (After Redis Completion)
+
+### Month 1: Production Preparation
+
+- Performance optimization and benchmarking
+- Security hardening and audit
+- Production deployment pipeline
+
+### Month 2: Production Deployment
+
+- Deploy to production environment
+- Monitor and optimize performance
+- Gather user feedback
+
+### Month 3: Production Stabilization
+
+- Address production issues
+- Performance tuning
+- Documentation updates
+
+## 🌐 Phase 3 Timeline (After Production)
+
+### Month 1-2: MDBX Integration
+
+- Implement MDBX adapter
+- Add MDBX operations
+- Update SDK support
+
+### Month 3-4: PostgreSQL Integration
+
+- Implement PostgreSQL adapter
+- Add SQL operations
+- Update SDK support
+
+### Month 5-6: MongoDB Integration
+
+- Implement MongoDB adapter
+- Add document operations
+- Update SDK support
+
+---
+
+**Last Updated**: December 2024
+**Current Phase**: Phase 1 - Complete Redis Implementation
+**Project Status**: Core Redis functionality complete, focusing on advanced Redis operations before production deployment
