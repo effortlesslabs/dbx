@@ -3,7 +3,7 @@ pub mod redis;
 pub mod redis_ws;
 
 use std::sync::Arc;
-use dbx_api::{ config::{ Config, DatabaseType }, server::Server };
+use dbx_api::{ config::{ Config, DatabaseType }, server::Server, constants::defaults::Defaults };
 use std::net::SocketAddr;
 
 pub struct TestServer {
@@ -17,14 +17,14 @@ impl TestServer {
             database_type: DatabaseType::Redis,
             database_url: std::env
                 ::var("DATABASE_URL")
-                .unwrap_or_else(|_| "redis://default:redispw@localhost:55000".to_string()),
-            host: std::env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_string()),
+                .unwrap_or_else(|_| Defaults::TEST_DATABASE_URL.to_string()),
+            host: std::env::var("HOST").unwrap_or_else(|_| Defaults::TEST_HOST.to_string()),
             port: 0, // Use port 0 for random available port
             pool_size: std::env
                 ::var("POOL_SIZE")
-                .unwrap_or_else(|_| "5".to_string())
+                .unwrap_or_else(|_| Defaults::TEST_POOL_SIZE.to_string())
                 .parse()
-                .unwrap_or(5),
+                .unwrap_or(Defaults::TEST_POOL_SIZE),
         };
 
         let server = Server::new(config).await?;
