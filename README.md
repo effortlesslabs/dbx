@@ -37,57 +37,6 @@ cargo run --bin api
 ./scripts/run.sh --redis-url redis://localhost:6379
 ```
 
-### TypeScript SDK Usage
-
-```typescript
-import { DbxClient } from "@effortlesslabs/dbx";
-
-const client = new DbxClient({
-  baseUrl: "http://localhost:8080",
-});
-
-// Basic string operations
-await client.string.set("my-key", "my-value");
-const value = await client.string.get("my-key");
-
-// Batch operations
-await client.string.batchGet(["key1", "key2", "key3"]);
-```
-
-### Pattern-based Batch Operations
-
-The SDK now supports pattern-based batch operations using Redis wildcards:
-
-```typescript
-// Set up some test data
-await client.string.set("tokenBalance:0x123:ethereum:100", "100.5");
-await client.string.set("tokenBalance:0x123:ethereum:200", "200.0");
-await client.string.set("tokenBalancePending:0x123:ethereum:50", "50.25");
-await client.string.set("tokenBalancePending:0x123:ethereum:75", "75.75");
-
-// Get all token balances for a specific address and network
-const results = await client.string.batchGetPatternsFlat([
-  "tokenBalance:0x123:ethereum:*",
-  "tokenBalancePending:0x123:ethereum:*",
-]);
-
-// Results will be:
-// {
-//   'tokenBalance:0x123:ethereum:100': '100.5',
-//   'tokenBalance:0x123:ethereum:200': '200.0',
-//   'tokenBalancePending:0x123:ethereum:50': '50.25',
-//   'tokenBalancePending:0x123:ethereum:75': '75.75'
-// }
-
-// Or get grouped results by pattern
-const groupedResults = await client.string.batchGetPatternsGrouped([
-  "tokenBalance:0x123:ethereum:*",
-  "tokenBalancePending:0x123:ethereum:*",
-]);
-
-// Results will be grouped by pattern for easier processing
-```
-
 ## Features
 
 - **🚀 Lightweight**: Minimal footprint, perfect for edge computing
