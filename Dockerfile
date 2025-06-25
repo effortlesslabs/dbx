@@ -1,5 +1,5 @@
-# Use the official Rust image as the base image
-FROM rust:1.82-slim as builder
+# Use the official Rust image as the base image (supports multi-platform)
+FROM --platform=$BUILDPLATFORM rust:1.82-slim as builder
 
 # Set the working directory
 WORKDIR /usr/src/dbx
@@ -22,8 +22,8 @@ COPY api/src/ ./api/src/
 # Build the application
 RUN cargo build --release --bin dbx-api
 
-# Create a new stage with a minimal runtime image
-FROM debian:bookworm-slim
+# Create a new stage with a minimal runtime image (supports multi-platform)
+FROM --platform=$TARGETPLATFORM debian:bookworm-slim
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
