@@ -145,3 +145,4 @@ temp/
 .yarn/install-state.gz
 .pnp.* 
 .zed
+@internals

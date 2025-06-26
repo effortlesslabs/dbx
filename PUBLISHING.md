@@ -2,6 +2,14 @@
 
 This guide explains how to publish new versions of DBX, including both the Docker image and TypeScript SDK.
 
+## Docker Image Architecture (Default)
+
+**By default, all Docker images are built and published as multi-architecture (linux/amd64, linux/arm64).**
+
+- This ensures compatibility with Railway, AWS, GCP, Azure, Apple Silicon, and more.
+- You do **not** need to specify `--platform` unless you want a custom build.
+- The default `./scripts/publish.sh` will always build for both `amd64` and `arm64`.
+
 ## Prerequisites
 
 Before publishing, ensure you have:
@@ -71,9 +79,9 @@ For more control, use the manual script:
   --npm-token $NPM_TOKEN
 ```
 
-### Method 4: Docker Image Only
+### Method 4: Docker Image Only (Multi-Arch by Default)
 
-To publish only the Docker image:
+To publish only the Docker image (multi-arch):
 
 ```bash
 ./scripts/publish.sh --tag 1.0.0 --push
@@ -111,11 +119,11 @@ The following files are automatically updated:
 
 ## Docker Image Details
 
-### Multi-Platform Support
+### Multi-Platform Support (Default)
 
-The Docker image is built for multiple platforms:
+The Docker image is built for multiple platforms by default:
 
-- `linux/amd64` - Intel/AMD 64-bit
+- `linux/amd64` - Intel/AMD 64-bit (Railway, most cloud)
 - `linux/arm64` - ARM 64-bit (Apple Silicon, Raspberry Pi, etc.)
 
 ### Image Tags

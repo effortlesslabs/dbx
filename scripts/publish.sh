@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Script to build and publish DBX API to Docker Hub with multi-platform support
-# Usage: ./scripts/publish-multiarch.sh [options]
+# Default: linux/amd64,linux/arm64 (multi-arch, works for Railway, Apple Silicon, etc)
+# Usage: ./scripts/publish.sh [options]
 #
 # Options:
 #   --tag <tag>             Image tag (default: latest)
@@ -16,6 +17,7 @@ TAG="latest"
 PUSH=false
 USERNAME="fnlog0"
 REPO="dbx"
+# Default: multi-arch for Railway and all major platforms
 PLATFORMS="linux/amd64,linux/arm64"
 
 # Parse command line arguments
@@ -86,6 +88,15 @@ if [ "$PUSH" = true ]; then
     docker buildx build \
         --platform "$PLATFORMS" \
         --tag "$IMAGE_NAME" \
+        --tag "$USERNAME/$REPO:${TAG}-amd64" \
+        --push \
+        .
+    
+    # Also create an AMD64-only tag for Railway compatibility
+    echo "🔧 Creating AMD64-only tag for Railway compatibility..."
+    docker buildx build \
+        --platform linux/amd64 \
+        --tag "$USERNAME/$REPO:${TAG}-amd64-only" \
         --push \
         .
 else
@@ -93,6 +104,15 @@ else
     docker buildx build \
         --platform "$PLATFORMS" \
         --tag "$IMAGE_NAME" \
+        --tag "$USERNAME/$REPO:${TAG}-amd64" \
+        --load \
+        .
+    
+    # Also create an AMD64-only tag for Railway compatibility
+    echo "🔧 Creating AMD64-only tag for Railway compatibility..."
+    docker buildx build \
+        --platform linux/amd64 \
+        --tag "$USERNAME/$REPO:${TAG}-amd64-only" \
         --load \
         .
 fi
@@ -101,14 +121,18 @@ echo ""
 echo "✅ Multi-platform image built successfully!"
 echo "🐳 Image: $IMAGE_NAME"
 echo "📦 Platforms: $PLATFORMS"
+echo "🔧 AMD64-only tag: $USERNAME/$REPO:${TAG}-amd64-only (for Railway)"
 
 if [ "$PUSH" = true ]; then
     echo ""
     echo "✅ Image pushed successfully to Docker Hub!"
     echo "📦 Users can now run on any supported platform:"
-    echo "   docker run -d --name dbx-api -p 3000:3000 \\"
-    echo "     -e DATABASE_URL=redis://localhost:6379 \\"
-    echo "     $IMAGE_NAME"
+    echo "   docker run -d --name dbx-api -p 3000:3000 \
+     -e DATABASE_URL=redis://localhost:6379 \
+     $IMAGE_NAME"
+    echo ""
+    echo "🚂 For Railway deployment, use the AMD64-only tag:"
+    echo "   $USERNAME/$REPO:${TAG}-amd64-only"
 else
     echo ""
     echo "💡 To push to Docker Hub, run:"
@@ -119,14 +143,14 @@ echo ""
 echo "📋 Platform-specific usage examples:"
 echo ""
 echo "1. On ARM64 (Apple Silicon, Raspberry Pi, etc.):"
-echo "   docker run --platform linux/arm64 -d --name dbx-api -p 3000:3000 \\"
-echo "     -e DATABASE_URL=redis://localhost:6379 \\"
-echo "     $IMAGE_NAME"
+echo "   docker run --platform linux/arm64 -d --name dbx-api -p 3000:3000 \
+     -e DATABASE_URL=redis://localhost:6379 \
+     $IMAGE_NAME"
 echo ""
 echo "2. On AMD64 (Intel/AMD):"
-echo "   docker run --platform linux/amd64 -d --name dbx-api -p 3000:3000 \\"
-echo "     -e DATABASE_URL=redis://localhost:6379 \\"
-echo "     $IMAGE_NAME"
+echo "   docker run --platform linux/amd64 -d --name dbx-api -p 3000:3000 \
+     -e DATABASE_URL=redis://localhost:6379 \
+     $IMAGE_NAME"
 echo ""
 echo "3. Using docker-compose (auto-detects platform):"
 echo "   export REDIS_URL=redis://localhost:6379"

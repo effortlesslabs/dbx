@@ -125,6 +125,52 @@ docker run -d --name dbx -p 8080:3000 \
   fnlog0/dbx:latest
 ```
 
+## Deployment
+
+### Railway Deployment
+
+For Railway deployment, use the AMD64-only Docker image tags to avoid "exec format error" issues:
+
+```bash
+# Use AMD64-only tag for Railway
+fnlog0/dbx:latest-amd64-only
+fnlog0/dbx:0.1.4-amd64-only
+```
+
+📖 **See our [Railway Deployment Guide](docs/deployment/railway.md) for detailed instructions.**
+
+### Other Platforms
+
+For other platforms (local development, other cloud providers), use the multi-arch tags:
+
+```bash
+# Multi-arch (AMD64 + ARM64)
+fnlog0/dbx:latest
+fnlog0/dbx:0.1.4
+```
+
+### Docker Compose
+
+```yaml
+version: "3.8"
+services:
+  dbx-api:
+    image: fnlog0/dbx:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=redis://redis:6379
+      - PORT=3000
+      - LOG_LEVEL=INFO
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+```
+
 ## Publishing
 
 To publish new versions of DBX (Docker image and TypeScript SDK), see our comprehensive [Publishing Guide](PUBLISHING.md).

@@ -1,5 +1,5 @@
 # Use the official Rust image as the base image (supports multi-platform)
-FROM --platform=$BUILDPLATFORM rust:1.82-slim as builder
+FROM --platform=$TARGETPLATFORM rust:1.82-slim as builder
 
 # Set the working directory
 WORKDIR /usr/src/dbx
@@ -66,7 +66,7 @@ ENV LOG_LEVEL=INFO
 # Add labels for better image metadata
 LABEL maintainer="DBX Team"
 LABEL description="High-performance Redis API Gateway with HTTP and WebSocket interfaces"
-LABEL version="0.1.2"
+LABEL version="0.1.5"
 LABEL org.opencontainers.image.source="https://github.com/your-org/dbx"
 
 # Run the binary
