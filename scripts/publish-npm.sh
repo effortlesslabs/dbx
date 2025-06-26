@@ -195,8 +195,19 @@ else
     log_info "Step 1: Skipping version update (not requested or no version provided)"
 fi
 
-# Step 2: Run TypeScript tests
-log_step "Step 2: Running TypeScript tests"
+# Step 2: Clean previous build
+log_step "Step 2: Cleaning previous build"
+if [ "$DRY_RUN" = true ]; then
+    echo "Would clean TypeScript build directory"
+else
+    if ! clean_typescript_build; then
+        log_error "Failed to clean TypeScript build directory"
+        exit 1
+    fi
+fi
+
+# Step 3: Run TypeScript tests
+log_step "Step 3: Running TypeScript tests"
 if [ "$DRY_RUN" = true ]; then
     echo "Would run: cd $TYPESCRIPT_BUILD_DIR && $TYPESCRIPT_TEST_CMD"
 else
@@ -206,8 +217,8 @@ else
     fi
 fi
 
-# Step 3: Build TypeScript SDK
-log_step "Step 3: Building TypeScript SDK"
+# Step 4: Build TypeScript SDK
+log_step "Step 4: Building TypeScript SDK"
 if [ "$DRY_RUN" = true ]; then
     echo "Would run: cd $TYPESCRIPT_BUILD_DIR && $TYPESCRIPT_BUILD_CMD"
 else
@@ -217,8 +228,8 @@ else
     fi
 fi
 
-# Step 4: Publish TypeScript SDK to NPM
-log_step "Step 4: Publishing TypeScript SDK to NPM"
+# Step 5: Publish TypeScript SDK to NPM
+log_step "Step 5: Publishing TypeScript SDK to NPM"
 if [ "$DRY_RUN" = true ]; then
     echo "Would publish $NPM_PACKAGE_NAME@$PUBLISH_VERSION to NPM"
 else
@@ -229,7 +240,7 @@ else
     fi
     
     # Publish with retry logic
-    local retry_count=0
+    retry_count=0
     while [ $retry_count -lt $MAX_RETRIES ]; do
         if publish_npm_package "$TYPESCRIPT_BUILD_DIR" "$NPM_PACKAGE_ACCESS"; then
             break
@@ -246,9 +257,9 @@ else
     done
 fi
 
-# Step 5: Verify publication
+# Step 6: Verify publication
 if [ "$DRY_RUN" = false ]; then
-    log_step "Step 5: Verifying publication"
+    log_step "Step 6: Verifying publication"
     show_progress "Verifying package on NPM" 3
     
     if npm view "$NPM_PACKAGE_NAME@$PUBLISH_VERSION" version > /dev/null 2>&1; then

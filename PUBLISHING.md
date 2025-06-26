@@ -8,7 +8,7 @@ This guide explains how to publish new versions of DBX, including both the Docke
 
 - This ensures compatibility with Railway, AWS, GCP, Azure, Apple Silicon, and more.
 - You do **not** need to specify `--platform` unless you want a custom build.
-- The default `./scripts/publish.sh` will always build for both `amd64` and `arm64`.
+- The default `./scripts/publish-docker.sh` will always build for both `amd64` and `arm64`.
 
 ## Prerequisites
 
@@ -84,8 +84,42 @@ For more control, use the manual script:
 To publish only the Docker image (multi-arch):
 
 ```bash
-./scripts/publish.sh --tag 1.0.0 --push
+./scripts/publish-docker.sh --tag 1.0.0 --push
 ```
+
+### Method 5: NPM Package Only
+
+To publish only the TypeScript SDK to NPM:
+
+```bash
+./scripts/publish-npm.sh --version 1.0.0 --npm-token $NPM_TOKEN
+```
+
+## Publishing Scripts Overview
+
+### `publish-release.sh` - Full Release Script
+
+- **Purpose**: Complete release process (Docker + NPM + Git tags)
+- **Features**: Version bumping, testing, building, publishing, git tagging
+- **Usage**: `./scripts/publish-release.sh --version 1.0.0 --docker-username user --docker-password token --npm-token token`
+
+### `publish-docker.sh` - Docker Only Script
+
+- **Purpose**: Docker image building and publishing only
+- **Features**: Multi-arch builds, version tagging, Docker Hub push
+- **Usage**: `./scripts/publish-docker.sh --tag 1.0.0 --push`
+
+### `publish-npm.sh` - NPM Only Script
+
+- **Purpose**: TypeScript SDK building and publishing only
+- **Features**: Clean build, testing, NPM publishing, version management
+- **Usage**: `./scripts/publish-npm.sh --version 1.0.0 --npm-token token`
+
+### `quick-publish.sh` - Interactive Wrapper
+
+- **Purpose**: User-friendly interactive publishing
+- **Features**: Prompts for credentials, confirmation, calls full release script
+- **Usage**: `./scripts/quick-publish.sh`
 
 ## Publishing Process
 
@@ -93,7 +127,7 @@ The publishing process includes the following steps:
 
 1. **Version Update**: Updates version in `Cargo.toml`, `ts/package.json`, and `Dockerfile`
 2. **Testing**: Runs all Rust and TypeScript tests
-3. **TypeScript SDK Build**: Builds the TypeScript SDK
+3. **TypeScript SDK Build**: Cleans previous builds and builds the TypeScript SDK
 4. **NPM Publishing**: Publishes the TypeScript SDK to NPM
 5. **Docker Build**: Builds multi-platform Docker image (linux/amd64, linux/arm64)
 6. **Docker Push**: Pushes image to Docker Hub
@@ -265,6 +299,19 @@ Test the publishing process without actually publishing:
   --npm-token $NPM_TOKEN \
   --dry-run
 ```
+
+## Script Optimizations
+
+The publishing scripts have been optimized with:
+
+- **Shared Functions**: Common utilities in `scripts/common.sh`
+- **Centralized Config**: Configuration management in `scripts/config.sh`
+- **Better Error Handling**: Comprehensive error checking and recovery
+- **Progress Indicators**: Visual feedback during long operations
+- **Parallel Processing**: Concurrent operations where possible
+- **Caching**: Build artifact caching for faster rebuilds
+- **Validation**: Input validation and pre-flight checks
+- **Enhanced Logging**: Detailed logging with different verbosity levels
 
 ## Security Considerations
 

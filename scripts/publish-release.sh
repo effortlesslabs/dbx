@@ -224,11 +224,19 @@ else
     fi
 fi
 
-# Step 5: Build TypeScript SDK
-log_step "Step 5: Building TypeScript SDK"
+# Step 5: Clean and build TypeScript SDK
+log_step "Step 5: Cleaning and building TypeScript SDK"
 if [ "$DRY_RUN" = true ]; then
+    echo "Would clean TypeScript build directory"
     echo "Would run: cd $TYPESCRIPT_BUILD_DIR && $TYPESCRIPT_BUILD_CMD"
 else
+    # Clean previous build
+    if ! clean_typescript_build; then
+        log_error "Failed to clean TypeScript build directory"
+        exit 1
+    fi
+    
+    # Build TypeScript SDK
     if ! build_typescript_sdk; then
         log_error "TypeScript SDK build failed"
         exit 1
