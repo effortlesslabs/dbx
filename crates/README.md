@@ -351,6 +351,167 @@ cargo test -p dbx-crates test_name
 cargo test -p dbx-crates --doc
 ```
 
+### Testing Prerequisites
+
+**Important**: The test suite includes integration tests that require a running Redis server. Before running tests, ensure Redis is available on `127.0.0.1:6379`.
+
+#### Option 1: Using Docker (Recommended)
+
+```bash
+# Start Redis server using Docker
+docker run -d --name redis-test -p 6379:6379 redis:7-alpine
+
+# Run tests
+cargo test -p dbx-crates
+
+# Clean up Redis container when done
+docker stop redis-test && docker rm redis-test
+```
+
+#### Option 2: Local Redis Installation
+
+```bash
+# macOS (using Homebrew)
+brew install redis
+brew services start redis
+
+# Ubuntu/Debian
+sudo apt-get install redis-server
+sudo systemctl start redis-server
+
+# CentOS/RHEL
+sudo yum install redis
+sudo systemctl start redis
+
+# Verify Redis is running
+redis-cli ping
+# Should return: PONG
+```
+
+#### Option 3: Using Docker Compose
+
+Create a `docker-compose.test.yml` file:
+
+```yaml
+version: "3.8"
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+```
+
+Then run:
+
+```bash
+# Start Redis for testing
+docker-compose -f docker-compose.test.yml up -d
+
+# Run tests
+cargo test -p dbx-crates
+
+# Stop Redis
+docker-compose -f docker-compose.test.yml down
+```
+
+### Test Categories
+
+The test suite includes several types of tests:
+
+#### Unit Tests
+
+- **Compilation tests**: Verify code compiles correctly
+- **Module tests**: Test individual functions and methods
+- **Integration tests**: Test Redis operations with real server
+
+#### Integration Tests
+
+These tests require a running Redis server and test actual Redis operations:
+
+- **Admin operations**: Server info, health checks, configuration
+- **String operations**: Basic CRUD, counters, TTL management
+- **Hash operations**: Field-value operations, batch processing
+- **Set operations**: Set operations, intersections, unions
+
+#### Doc Tests
+
+- **Documentation examples**: Verify code examples in documentation work
+- **API documentation**: Test public API examples
+
+### Troubleshooting Test Failures
+
+#### Common Issues
+
+1. **Connection Refused Error**
+
+   ```
+   called `Result::unwrap()` on an `Err` value: Connection refused (os error 61)
+   ```
+
+   **Solution**: Start Redis server before running tests
+
+2. **Redis Not Found**
+
+   ```
+   command not found: redis-cli
+   ```
+
+   **Solution**: Install Redis or use Docker
+
+3. **Port Already in Use**
+   ```
+   Error response from daemon: Ports are not available
+   ```
+   **Solution**: Stop existing Redis instances or use different port
+
+#### Test Environment Variables
+
+You can configure test behavior with environment variables:
+
+```bash
+# Use different Redis URL for tests
+export REDIS_URL=redis://127.0.0.1:6380
+cargo test -p dbx-crates
+
+# Enable verbose test output
+RUST_LOG=debug cargo test -p dbx-crates -- --nocapture
+```
+
+### Continuous Integration
+
+For CI/CD pipelines, ensure Redis is started before running tests:
+
+```yaml
+# GitHub Actions example
+- name: Start Redis
+  run: |
+    docker run -d --name redis-test -p 6379:6379 redis:7-alpine
+    sleep 5  # Wait for Redis to start
+
+- name: Run tests
+  run: cargo test -p dbx-crates
+
+- name: Cleanup Redis
+  if: always()
+  run: docker stop redis-test && docker rm redis-test
+```
+
+### Performance Testing
+
+For performance testing with larger datasets:
+
+```bash
+# Start Redis with more memory
+docker run -d --name redis-perf \
+  -p 6379:6379 \
+  -e REDIS_MAXMEMORY=1gb \
+  redis:7-alpine
+
+# Run tests with performance profiling
+cargo test -p dbx-crates --release
+```
+
 ## Contributing
 
 We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.

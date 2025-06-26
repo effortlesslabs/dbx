@@ -1,4 +1,4 @@
-use redis::{Commands, Connection, FromRedisValue, Pipeline, RedisResult, Script, ToRedisArgs};
+use redis::{ Commands, Connection, FromRedisValue, Pipeline, RedisResult, Script, ToRedisArgs };
 
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -135,7 +135,7 @@ impl RedisHash {
     pub fn hrandfield_withvalues(
         &self,
         key: &str,
-        count: isize,
+        count: isize
     ) -> RedisResult<Vec<(String, String)>> {
         let mut conn = self.conn.lock().unwrap();
         let mut cmd = redis::cmd("HRANDFIELD");
@@ -149,7 +149,7 @@ impl RedisHash {
         key: &str,
         cursor: usize,
         pattern: Option<&str>,
-        count: Option<usize>,
+        count: Option<usize>
     ) -> RedisResult<(usize, Vec<(String, String)>)> {
         let mut conn = self.conn.lock().unwrap();
         let mut cmd = redis::cmd("HSCAN");
@@ -215,9 +215,7 @@ impl RedisHash {
     /// # }
     /// ```
     pub fn with_pipeline<F, T>(&self, f: F) -> RedisResult<T>
-    where
-        F: FnOnce(&mut Pipeline) -> &mut Pipeline,
-        T: FromRedisValue,
+        where F: FnOnce(&mut Pipeline) -> &mut Pipeline, T: FromRedisValue
     {
         let mut conn = self.conn.lock().unwrap();
         let mut pipe = redis::pipe();
@@ -227,14 +225,22 @@ impl RedisHash {
 
     /// Helper: batch set multiple fields in multiple hashes using pipeline
     pub fn hset_many(&self, hash_fields: Vec<(&str, Vec<(&str, &str)>)>) -> RedisResult<Vec<bool>> {
-        self.with_pipeline(|pipe| {
+        let raw_results: Vec<i32> = self.with_pipeline(|pipe| {
             for (hash_key, fields) in hash_fields {
                 for (field, value) in fields {
                     pipe.cmd("HSET").arg(hash_key).arg(field).arg(value);
                 }
             }
             pipe
-        })
+        })?;
+
+        // Convert raw integer results to booleans (1 = true, 0 = false)
+        Ok(
+            raw_results
+                .into_iter()
+                .map(|result| result == 1)
+                .collect()
+        )
     }
 
     /// Helper: batch get multiple fields from multiple hashes using pipeline
@@ -250,7 +256,7 @@ impl RedisHash {
     /// Helper: batch get all fields from multiple hashes using pipeline
     pub fn hgetall_many(
         &self,
-        keys: Vec<&str>,
+        keys: Vec<&str>
     ) -> RedisResult<Vec<std::collections::HashMap<String, String>>> {
         self.with_pipeline(|pipe| {
             for key in keys {
@@ -327,9 +333,7 @@ impl RedisHash {
     /// # }
     /// ```
     pub fn with_transaction<F, T>(&self, f: F) -> RedisResult<T>
-    where
-        F: FnOnce(&mut Pipeline) -> &mut Pipeline,
-        T: FromRedisValue,
+        where F: FnOnce(&mut Pipeline) -> &mut Pipeline, T: FromRedisValue
     {
         let mut conn = self.conn.lock().unwrap();
         let mut pipe = redis::pipe();
@@ -341,7 +345,7 @@ impl RedisHash {
     /// Helper: atomically set multiple fields in multiple hashes
     pub fn hset_many_atomic(
         &self,
-        hash_fields: Vec<(&str, Vec<(&str, &str)>)>,
+        hash_fields: Vec<(&str, Vec<(&str, &str)>)>
     ) -> RedisResult<Vec<bool>> {
         self.with_transaction(|pipe| {
             for (hash_key, fields) in hash_fields {
@@ -403,10 +407,7 @@ impl RedisHash {
     /// # }
     /// ```
     pub fn eval_script<T, K, A>(&self, script: &Script, keys: K, args: A) -> RedisResult<T>
-    where
-        T: FromRedisValue,
-        K: ToRedisArgs,
-        A: ToRedisArgs,
+        where T: FromRedisValue, K: ToRedisArgs, A: ToRedisArgs
     {
         let mut conn = self.conn.lock().unwrap();
         script.key(keys).arg(args).invoke(&mut *conn)
@@ -444,7 +445,7 @@ impl RedisHash {
             local previous = redis.call('HGET', KEYS[1], ARGV[1])
             redis.call('HSET', KEYS[1], ARGV[1], ARGV[2])
             return previous
-            "#,
+            "#
         )
     }
 
@@ -459,7 +460,7 @@ impl RedisHash {
             else
                 return 0
             end
-            "#,
+            "#
         )
     }
 
@@ -469,7 +470,7 @@ impl RedisHash {
             r#"
             local removed = redis.call('HDEL', KEYS[1], ARGV[1])
             return removed
-            "#,
+            "#
         )
     }
 
@@ -479,7 +480,7 @@ impl RedisHash {
             r#"
             local new_value = redis.call('HINCRBY', KEYS[1], ARGV[1], ARGV[2])
             return new_value
-            "#,
+            "#
         )
     }
 
@@ -495,7 +496,7 @@ impl RedisHash {
                 count = count + 1
             end
             return count
-            "#,
+            "#
         )
     }
 
@@ -509,7 +510,7 @@ impl RedisHash {
                 deleted = deleted + redis.call('HDEL', KEYS[1], field)
             end
             return deleted
-            "#,
+            "#
         )
     }
 }
