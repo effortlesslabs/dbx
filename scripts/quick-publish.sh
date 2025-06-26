@@ -1,5 +1,28 @@
 #!/bin/bash
 
+# =============================================================================
+# DBX INTERACTIVE RELEASE HELPER
+# =============================================================================
+# 
+# DESCRIPTION:
+#   User-friendly interactive wrapper script that prompts for all necessary
+#   information and then calls the full release script. This makes the release
+#   process more accessible for developers who prefer interactive workflows.
+#
+# WHAT IT DOES:
+#   1. Prompts for new version number
+#   2. Collects Docker Hub credentials
+#   3. Collects NPM token
+#   4. Validates all inputs
+#   5. Confirms before proceeding
+#   6. Calls publish-release.sh with collected parameters
+#
+# WHEN TO USE:
+#   - Interactive releases
+#   - When you want to be prompted for credentials
+#   - Development workflows
+#   - When you prefer guided release process
+#
 # Quick publishing script for DBX
 # This script prompts for credentials and publishes both Docker image and TypeScript SDK
 

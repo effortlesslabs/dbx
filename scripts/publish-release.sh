@@ -1,5 +1,28 @@
 #!/bin/bash
 
+# =============================================================================
+# DBX FULL RELEASE SCRIPT
+# =============================================================================
+# 
+# DESCRIPTION:
+#   Complete release automation script for DBX that handles the entire release
+#   process from version bumping to publishing both Docker images and TypeScript SDK.
+#   This is the main script used for official releases and CI/CD pipelines.
+#
+# WHAT IT DOES:
+#   1. Updates version numbers in Cargo.toml, package.json, and Dockerfile
+#   2. Runs comprehensive tests (Rust + TypeScript)
+#   3. Builds TypeScript SDK
+#   4. Publishes TypeScript SDK to NPM
+#   5. Builds and pushes multi-platform Docker images
+#   6. Creates git tags and commits
+#
+# WHEN TO USE:
+#   - Official releases
+#   - CI/CD pipelines
+#   - When you have all credentials ready
+#   - When you need both Docker and NPM publishing
+#
 # Script to publish a new release of DBX
 # This script handles version bumping, Docker image publishing, and TypeScript SDK publishing
 # Usage: ./scripts/publish-release.sh [options]
@@ -246,7 +269,7 @@ else
     git add .
     git commit -m "Release version $VERSION"
     git tag "v$VERSION"
-    git push origin main
+    git push origin master
     git push origin "v$VERSION"
     log_success "Git tag v$VERSION created and pushed"
 fi

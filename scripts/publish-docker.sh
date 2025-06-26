@@ -1,8 +1,29 @@
 #!/bin/bash
 
+# =============================================================================
+# DBX DOCKER-ONLY PUBLISHING SCRIPT
+# =============================================================================
+# 
+# DESCRIPTION:
+#   Focused Docker image building and publishing script for DBX. This script
+#   only handles Docker operations and is optimized for multi-platform builds
+#   with special consideration for Railway deployment compatibility.
+#
+# WHAT IT DOES:
+#   1. Builds multi-platform Docker images (linux/amd64, linux/arm64)
+#   2. Creates Railway-compatible AMD64-only tags
+#   3. Pushes images to Docker Hub (optional)
+#   4. Provides platform-specific usage examples
+#
+# WHEN TO USE:
+#   - Quick Docker-only deployments
+#   - Testing Docker builds
+#   - When you only need Docker images (not NPM packages)
+#   - Railway deployments (uses AMD64-only tags)
+#
 # Script to build and publish DBX API to Docker Hub with multi-platform support
 # Default: linux/amd64,linux/arm64 (multi-arch, works for Railway, Apple Silicon, etc)
-# Usage: ./scripts/publish.sh [options]
+# Usage: ./scripts/publish-docker.sh [options]
 #
 # Options:
 #   --tag <tag>             Image tag (default: latest)
