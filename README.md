@@ -125,6 +125,30 @@ docker run -d --name dbx -p 8080:3000 \
   fnlog0/dbx:latest
 ```
 
+## Publishing
+
+To publish new versions of DBX (Docker image and TypeScript SDK), see our comprehensive [Publishing Guide](PUBLISHING.md).
+
+### Quick Publish
+
+```bash
+# Interactive publishing
+./scripts/quick-publish.sh
+
+# Manual publishing
+./scripts/publish-release.sh --version 1.0.0 \
+  --docker-username fnlog0 \
+  --docker-password $DOCKER_TOKEN \
+  --npm-token $NPM_TOKEN
+```
+
+### GitHub Actions
+
+The easiest way to publish is using GitHub Actions:
+
+1. Create a git tag: `git tag v1.0.0 && git push origin v1.0.0`
+2. Or manually trigger the workflow from GitHub Actions
+
 ## Contributing
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.

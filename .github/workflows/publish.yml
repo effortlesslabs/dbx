@@ -1,0 +1,198 @@
+name: Publish Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to publish (e.g., v1.0.0)"
+        required: true
+        type: string
+      docker_username:
+        description: "Docker Hub username"
+        required: true
+        type: string
+        default: "fnlog0"
+      npm_token:
+        description: "NPM token for publishing"
+        required: true
+        type: string
+
+env:
+  REGISTRY: docker.io
+  IMAGE_NAME: ${{ github.event.inputs.docker_username || 'fnlog0' }}/dbx
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run Rust tests
+        run: |
+          cargo test --all
+          cargo clippy --all -- -D warnings
+        env:
+          REDIS_URL: redis://localhost:6379
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: ts/package-lock.json
+
+      - name: Install TypeScript dependencies
+        working-directory: ts
+        run: npm ci
+
+      - name: Run TypeScript tests
+        working-directory: ts
+        run: npm run test:run
+
+  build-and-push-docker:
+    name: Build and Push Docker Image
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ github.event.inputs.docker_username || 'fnlog0' }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ github.event.inputs.version }},enable=${{ github.event_name == 'workflow_dispatch' }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  publish-typescript:
+    name: Publish TypeScript SDK
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Log in to NPM
+        run: echo "//registry.npmjs.org/:_authToken=${{ github.event.inputs.npm_token || secrets.NPM_TOKEN }}" > ~/.npmrc
+
+      - name: Install dependencies
+        working-directory: ts
+        run: npm ci
+
+      - name: Build TypeScript SDK
+        working-directory: ts
+        run: npm run build
+
+      - name: Publish to NPM
+        working-directory: ts
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ github.event.inputs.npm_token || secrets.NPM_TOKEN }}
+
+  create-release:
+    name: Create GitHub Release
+    needs: [build-and-push-docker, publish-typescript]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.event.inputs.version || github.ref_name }}
+          release_name: Release ${{ github.event.inputs.version || github.ref_name }}
+          body: |
+            ## 🚀 New Release
+
+            ### Docker Image
+            - **Image**: `${{ env.IMAGE_NAME }}:${{ github.event.inputs.version || github.ref_name }}`
+            - **Platforms**: linux/amd64, linux/arm64
+
+            ### TypeScript SDK
+            - **Package**: `dbx-sdk@${{ github.event.inputs.version || github.ref_name }}`
+            - **Registry**: npm
+
+            ### Installation
+
+            ```bash
+            # Docker
+            docker pull ${{ env.IMAGE_NAME }}:${{ github.event.inputs.version || github.ref_name }}
+
+            # TypeScript SDK
+            npm install dbx-sdk@${{ github.event.inputs.version || github.ref_name }}
+            ```
+          draft: false
+          prerelease: false

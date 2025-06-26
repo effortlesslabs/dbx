@@ -3,7 +3,7 @@ pub struct Defaults;
 
 impl Defaults {
     /// Default database URL for Redis connection
-    pub const DATABASE_URL: &'static str = "redis://default:redispw@host.docker.internal:55000";
+    pub const DATABASE_URL: &'static str = "redis://default:redispw@localhost:55000";
 
     /// Default server host address
     pub const HOST: &'static str = "0.0.0.0";

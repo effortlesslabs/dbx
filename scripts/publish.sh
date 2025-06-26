@@ -1,11 +1,12 @@
 #!/bin/bash
 
-# Script to build and publish DBX API to Docker Hub
-# Usage: ./scripts/publish.sh [options]
+# Script to build and publish DBX API to Docker Hub with multi-platform support
+# Usage: ./scripts/publish-multiarch.sh [options]
 #
 # Options:
 #   --tag <tag>             Image tag (default: latest)
 #   --push                  Push to Docker Hub after building
+#   --platforms <platforms> Comma-separated list of platforms (default: linux/amd64,linux/arm64)
 #   --help                  Show this help message
 
 set -e
@@ -15,6 +16,7 @@ TAG="latest"
 PUSH=false
 USERNAME="fnlog0"
 REPO="dbx"
+PLATFORMS="linux/amd64,linux/arm64"
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -27,18 +29,24 @@ while [[ $# -gt 0 ]]; do
             PUSH=true
             shift
             ;;
+        --platforms)
+            PLATFORMS="$2"
+            shift 2
+            ;;
         --help)
             echo "Usage: $0 [options]"
             echo ""
             echo "Options:"
             echo "  --tag <tag>             Image tag (default: latest)"
             echo "  --push                  Push to Docker Hub after building"
+            echo "  --platforms <platforms> Comma-separated list of platforms (default: linux/amd64,linux/arm64)"
             echo "  --help                  Show this help message"
             echo ""
             echo "Examples:"
             echo "  $0 --tag latest"
             echo "  $0 --tag v1.0.0 --push"
-            echo "  $0 --tag stable --push"
+            echo "  $0 --tag stable --push --platforms linux/arm64"
+            echo "  $0 --tag multiarch --push --platforms linux/amd64,linux/arm64,linux/arm/v7"
             exit 0
             ;;
         *)
@@ -51,32 +59,53 @@ done
 
 IMAGE_NAME="$USERNAME/$REPO:$TAG"
 
-echo "🏗️  Building Docker image: $IMAGE_NAME"
+echo "🏗️  Building multi-platform Docker image: $IMAGE_NAME"
+echo "📦 Platforms: $PLATFORMS"
 echo ""
 
-# Build the image
-docker build -t "$IMAGE_NAME" .
+# Check if Docker Buildx is available
+if ! docker buildx version > /dev/null 2>&1; then
+    echo "❌ Error: Docker Buildx is not available. Please install Docker Buildx."
+    echo "   You can install it with: docker buildx install"
+    exit 1
+fi
+
+# Create a new builder instance if it doesn't exist
+BUILDER_NAME="dbx-multiarch-builder"
+if ! docker buildx inspect "$BUILDER_NAME" > /dev/null 2>&1; then
+    echo "🔧 Creating new buildx builder: $BUILDER_NAME"
+    docker buildx create --name "$BUILDER_NAME" --use
+else
+    echo "🔧 Using existing buildx builder: $BUILDER_NAME"
+    docker buildx use "$BUILDER_NAME"
+fi
+
+# Build the multi-platform image
+if [ "$PUSH" = true ]; then
+    echo "🚀 Building and pushing multi-platform image..."
+    docker buildx build \
+        --platform "$PLATFORMS" \
+        --tag "$IMAGE_NAME" \
+        --push \
+        .
+else
+    echo "🔨 Building multi-platform image (local only)..."
+    docker buildx build \
+        --platform "$PLATFORMS" \
+        --tag "$IMAGE_NAME" \
+        --load \
+        .
+fi
 
 echo ""
-echo "✅ Image built successfully!"
+echo "✅ Multi-platform image built successfully!"
 echo "🐳 Image: $IMAGE_NAME"
+echo "📦 Platforms: $PLATFORMS"
 
 if [ "$PUSH" = true ]; then
     echo ""
-    echo "🚀 Pushing to Docker Hub..."
-    
-    # Login to Docker Hub if not already logged in
-    if ! docker info | grep -q "Username"; then
-        echo "Please login to Docker Hub:"
-        docker login
-    fi
-    
-    # Push the image
-    docker push "$IMAGE_NAME"
-    
-    echo ""
     echo "✅ Image pushed successfully to Docker Hub!"
-    echo "📦 Users can now run:"
+    echo "📦 Users can now run on any supported platform:"
     echo "   docker run -d --name dbx-api -p 3000:3000 \\"
     echo "     -e DATABASE_URL=redis://localhost:6379 \\"
     echo "     $IMAGE_NAME"
@@ -87,20 +116,21 @@ else
 fi
 
 echo ""
-echo "📋 Usage examples for users:"
+echo "📋 Platform-specific usage examples:"
 echo ""
-echo "1. Basic usage:"
-echo "   docker run -d --name dbx-api -p 3000:3000 \\"
+echo "1. On ARM64 (Apple Silicon, Raspberry Pi, etc.):"
+echo "   docker run --platform linux/arm64 -d --name dbx-api -p 3000:3000 \\"
 echo "     -e DATABASE_URL=redis://localhost:6379 \\"
 echo "     $IMAGE_NAME"
 echo ""
-echo "2. With all options:"
-echo "   docker run -d --name dbx-api -p 8080:3000 \\"
-echo "     -e DATABASE_URL=redis://user:pass@redis.com:6379 \\"
-echo "     -e POOL_SIZE=20 \\"
-echo "     -e LOG_LEVEL=DEBUG \\"
+echo "2. On AMD64 (Intel/AMD):"
+echo "   docker run --platform linux/amd64 -d --name dbx-api -p 3000:3000 \\"
+echo "     -e DATABASE_URL=redis://localhost:6379 \\"
 echo "     $IMAGE_NAME"
 echo ""
-echo "3. Using docker-compose:"
+echo "3. Using docker-compose (auto-detects platform):"
 echo "   export REDIS_URL=redis://localhost:6379"
-echo "   docker-compose up -d" 
+echo "   docker-compose up -d"
+echo ""
+echo "🔍 To inspect the image platforms:"
+echo "   docker buildx imagetools inspect $IMAGE_NAME" 
