@@ -257,7 +257,7 @@ export class HashClient extends BaseClient {
    * Batch get hash lengths
    */
   async batchGetLengths(keys: string[]): Promise<number[]> {
-    return this.makeRequest<number[]>(`${this.baseUrl}/redis/hash/batch/length`, {
+    return this.makeRequest<number[]>(`${this.baseUrl}/redis/hash/batch/lengths`, {
       method: "POST",
       data: JSON.stringify({ keys }),
     });

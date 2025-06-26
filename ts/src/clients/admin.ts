@@ -1,5 +1,5 @@
 import { BaseClient } from "./base";
-import { HealthCheck, ServerStatus } from "../types";
+import { AdminHealthCheck as HealthCheck, AdminServerStatus as ServerStatus } from "../types";
 
 /**
  * Admin client for server management operations

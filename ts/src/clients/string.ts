@@ -142,16 +142,11 @@ export class StringClient extends BaseClient {
   /**
    * Batch set multiple key-value pairs
    */
-  async batchSet(keyValues: Record<string, string>, ttl?: number): Promise<Record<string, string>> {
-    const payload: SetManyRequest = { key_values: keyValues, ...(ttl && { ttl }) };
-    const response = await this.makeRequest<ApiResponse<{ key_values: Record<string, string> }>>(
-      `${this.baseUrl}/api/v1/redis/strings/batch/set`,
-      {
-        method: "POST",
-        data: JSON.stringify(payload),
-      }
-    );
-    return this.handleApiResponse(response).key_values;
+  async batchSet(operations: StringOperation[]): Promise<void> {
+    await this.makeRequest<void>(`${this.baseUrl}/redis/string/batch/set`, {
+      method: "POST",
+      data: JSON.stringify({ operations }),
+    });
   }
 
   /**
@@ -216,17 +211,7 @@ export class StringClient extends BaseClient {
   }
 
   /**
-   * Batch set multiple operations
-   */
-  async batchSetOperations(operations: StringOperation[]): Promise<void> {
-    await this.makeRequest<void>(`${this.baseUrl}/redis/string/batch/set`, {
-      method: "POST",
-      data: JSON.stringify({ operations }),
-    });
-  }
-
-  /**
-   * Batch get strings by patterns (supports wildcards like *)
+   * Batch get patterns
    */
   async batchGetPatterns(
     patterns: string[],
@@ -243,7 +228,7 @@ export class StringClient extends BaseClient {
   }
 
   /**
-   * Batch get strings by patterns, returning flat results
+   * Batch get patterns (flat response)
    */
   async batchGetPatternsFlat(patterns: string[]): Promise<Record<string, string | null>> {
     const response = await this.batchGetPatterns(patterns, false);
@@ -251,7 +236,7 @@ export class StringClient extends BaseClient {
   }
 
   /**
-   * Batch get strings by patterns, returning grouped results
+   * Batch get patterns (grouped response)
    */
   async batchGetPatternsGrouped(
     patterns: string[]

@@ -56,7 +56,7 @@ export interface StringOperation {
  */
 export interface StringInfo {
   ttl: number;
-  type: string;
+  type_: string;
 }
 
 export interface BatchGetPatternsRequest {

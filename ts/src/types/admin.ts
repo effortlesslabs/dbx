@@ -145,18 +145,26 @@ export interface WebSocketConfig {
  * Health check response
  */
 export interface HealthCheck {
-  status: string;
-  uptime: number;
+  is_healthy: boolean;
+  ping_response: string;
+  database_size: number;
   version: string;
+  memory_usage: Record<string, string>;
 }
 
 /**
  * Server status response
  */
 export interface ServerStatus {
+  timestamp: number;
+  uptime_seconds: number;
   connected_clients: number;
   used_memory: number;
   total_commands_processed: number;
+  keyspace_hits: number;
+  keyspace_misses: number;
+  version: string;
+  role: string;
 }
 
 /**
