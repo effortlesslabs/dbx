@@ -1,5 +1,4 @@
 import { BaseClient } from "./base";
-import { MoveSetMemberRequest, BatchSetMembersRequest } from "../types";
 
 /**
  * Set client for Redis set operations

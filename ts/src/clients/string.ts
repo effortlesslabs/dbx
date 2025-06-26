@@ -9,7 +9,6 @@ import {
   IncrByRequest,
   SetIfNotExistsRequest,
   CompareAndSetRequest,
-  SetManyRequest,
   StringOperation,
   StringInfo,
   BatchGetPatternsRequest,

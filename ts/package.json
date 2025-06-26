@@ -1,6 +1,6 @@
 {
   "name": "dbx-sdk",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "TypeScript SDK for DBX - A minimal API layer for databases (fetch-based)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

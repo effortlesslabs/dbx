@@ -52,10 +52,10 @@ describe("SetClient - Comprehensive Tests", () => {
     });
 
     it("should not add duplicate member", async () => {
-      const key = "test:set:basic";
+      const key = `test:set:basic:duplicate:${Date.now()}:${Math.random()}`;
       const member = "member1";
 
-      // Add member
+      // Add member first time
       const result1 = await client.set.addMember(key, member);
       console.log("addMember first result:", result1);
       // Add same member again
