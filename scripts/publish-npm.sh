@@ -29,39 +29,22 @@
 #   --npm-token <token>     NPM token for publishing
 #   --update-version        Update version in package.json before publishing
 #   --dry-run              Show what would be done without executing
+#   --verbose              Enable verbose output
+#   --debug                Enable debug mode
 #   --help                 Show this help message
 
 set -e
+
+# Source shared functions and configuration
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/config.sh"
+source "$SCRIPT_DIR/common.sh"
 
 # Default values
 VERSION=""
 NPM_TOKEN=""
 UPDATE_VERSION=false
 DRY_RUN=false
-
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-# Helper functions
-log_info() {
-    echo -e "${BLUE}ℹ️  $1${NC}"
-}
-
-log_success() {
-    echo -e "${GREEN}✅ $1${NC}"
-}
-
-log_warning() {
-    echo -e "${YELLOW}⚠️  $1${NC}"
-}
-
-log_error() {
-    echo -e "${RED}❌ $1${NC}"
-}
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -82,6 +65,14 @@ while [[ $# -gt 0 ]]; do
             DRY_RUN=true
             shift
             ;;
+        --verbose)
+            VERBOSE=true
+            shift
+            ;;
+        --debug)
+            DEBUG=true
+            shift
+            ;;
         --help)
             echo "Usage: $0 [options]"
             echo ""
@@ -90,12 +81,21 @@ while [[ $# -gt 0 ]]; do
             echo "  --npm-token <token>     NPM token for publishing"
             echo "  --update-version        Update version in package.json before publishing"
             echo "  --dry-run              Show what would be done without executing"
+            echo "  --verbose              Enable verbose output"
+            echo "  --debug                Enable debug mode"
             echo "  --help                 Show this help message"
+            echo ""
+            echo "Environment Variables:"
+            echo "  NPM_TOKEN              NPM authentication token"
+            echo "  NPM_PACKAGE_NAME       Package name (default: dbx-sdk)"
+            echo "  DEBUG                  Enable debug mode"
+            echo "  VERBOSE                Enable verbose output"
             echo ""
             echo "Examples:"
             echo "  $0 --npm-token \$NPM_TOKEN"
             echo "  $0 --version 1.0.0 --npm-token \$NPM_TOKEN --update-version"
-            echo "  $0 --version 1.1.0 --dry-run"
+            echo "  $0 --version 1.1.0 --dry-run --verbose"
+            echo "  NPM_TOKEN=\$TOKEN $0 --update-version"
             exit 0
             ;;
         *)
@@ -106,34 +106,71 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Pre-flight checks
+log_info "🔍 Running pre-flight checks..."
+
+# Check required tools
+if ! check_required_tools "npm" "node" "git"; then
+    exit 1
+fi
+
+# Check if we're in the right directory
+if [ ! -f "ts/package.json" ]; then
+    log_error "TypeScript package.json not found. Are you in the correct directory?"
+    exit 1
+fi
+
 # Validate required arguments
 if [ "$DRY_RUN" = false ] && [ -z "$NPM_TOKEN" ]; then
-    log_error "NPM token is required for publishing. Use --npm-token <token>"
+    log_error "NPM token is required for publishing. Use --npm-token <token> or set NPM_TOKEN environment variable"
     exit 1
 fi
 
 # Get current version from package.json
-CURRENT_VERSION=$(grep '"version"' ts/package.json | cut -d'"' -f4)
+CURRENT_VERSION=$(get_current_version "ts/package.json")
+if [ $? -ne 0 ]; then
+    log_error "Failed to get current version from ts/package.json"
+    exit 1
+fi
+
 log_info "Current TypeScript SDK version: $CURRENT_VERSION"
 
 # Determine version to publish
 if [ -n "$VERSION" ]; then
     PUBLISH_VERSION="$VERSION"
     log_info "Will publish version: $PUBLISH_VERSION"
+    
+    # Validate version format
+    if ! validate_version_format "$VERSION"; then
+        exit 1
+    fi
+    
+    if ! validate_semver "$VERSION"; then
+        exit 1
+    fi
 else
     PUBLISH_VERSION="$CURRENT_VERSION"
     log_info "Will publish current version: $PUBLISH_VERSION"
 fi
 
-# Validate version format if provided
-if [ -n "$VERSION" ] && [[ ! $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    log_error "Invalid version format. Use semantic versioning (e.g., 1.0.0)"
-    exit 1
+# Check if version already exists on NPM
+if [ "$DRY_RUN" = false ]; then
+    log_debug "Checking if version $PUBLISH_VERSION already exists on NPM..."
+    if npm view "$NPM_PACKAGE_NAME@$PUBLISH_VERSION" version > /dev/null 2>&1; then
+        log_warning "Version $PUBLISH_VERSION already exists on NPM"
+        read -p "Continue anyway? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            log_info "Publishing cancelled"
+            exit 0
+        fi
+    fi
 fi
 
 log_info "🚀 Starting DBX TypeScript SDK publishing process"
-log_info "📦 NPM Package: dbx-sdk"
+log_info "📦 NPM Package: $NPM_PACKAGE_NAME"
 log_info "📦 Version: $PUBLISH_VERSION"
+log_info "📦 Registry: $NPM_REGISTRY"
 
 if [ "$DRY_RUN" = true ]; then
     log_warning "DRY RUN MODE - No changes will be made"
@@ -143,70 +180,109 @@ echo ""
 
 # Step 1: Update version in package.json (if requested)
 if [ "$UPDATE_VERSION" = true ] && [ -n "$VERSION" ]; then
-    log_info "Step 1: Updating version in TypeScript package.json"
+    log_step "Step 1: Updating version in TypeScript package.json"
     if [ "$DRY_RUN" = true ]; then
         echo "Would update version to $VERSION in ts/package.json"
     else
-        sed -i.bak "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" ts/package.json
-        rm ts/package.json.bak
-        log_success "Updated TypeScript SDK version to $VERSION"
+        if update_version_in_file "ts/package.json" "$VERSION"; then
+            log_success "Updated TypeScript SDK version to $VERSION"
+        else
+            log_error "Failed to update version in ts/package.json"
+            exit 1
+        fi
     fi
 else
     log_info "Step 1: Skipping version update (not requested or no version provided)"
 fi
 
 # Step 2: Run TypeScript tests
-log_info "Step 2: Running TypeScript tests"
+log_step "Step 2: Running TypeScript tests"
 if [ "$DRY_RUN" = true ]; then
-    echo "Would run: cd ts && npm run test:run"
+    echo "Would run: cd $TYPESCRIPT_BUILD_DIR && $TYPESCRIPT_TEST_CMD"
 else
-    cd ts
-    npm run test:run
-    cd ..
-    log_success "TypeScript tests passed"
+    if ! run_typescript_tests; then
+        log_error "TypeScript tests failed"
+        exit 1
+    fi
 fi
 
 # Step 3: Build TypeScript SDK
-log_info "Step 3: Building TypeScript SDK"
+log_step "Step 3: Building TypeScript SDK"
 if [ "$DRY_RUN" = true ]; then
-    echo "Would run: cd ts && npm run build"
+    echo "Would run: cd $TYPESCRIPT_BUILD_DIR && $TYPESCRIPT_BUILD_CMD"
 else
-    cd ts
-    npm run build
-    cd ..
-    log_success "TypeScript SDK built successfully"
+    if ! build_typescript_sdk; then
+        log_error "TypeScript SDK build failed"
+        exit 1
+    fi
 fi
 
 # Step 4: Publish TypeScript SDK to NPM
-log_info "Step 4: Publishing TypeScript SDK to NPM"
+log_step "Step 4: Publishing TypeScript SDK to NPM"
 if [ "$DRY_RUN" = true ]; then
-    echo "Would publish dbx-sdk@$PUBLISH_VERSION to NPM"
+    echo "Would publish $NPM_PACKAGE_NAME@$PUBLISH_VERSION to NPM"
 else
-    cd ts
-    echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
-    npm publish --access public
-    cd ..
-    log_success "TypeScript SDK published to NPM as dbx-sdk@$PUBLISH_VERSION"
+    # Setup NPM authentication
+    if ! setup_npm_auth "$NPM_TOKEN"; then
+        log_error "Failed to setup NPM authentication"
+        exit 1
+    fi
+    
+    # Publish with retry logic
+    local retry_count=0
+    while [ $retry_count -lt $MAX_RETRIES ]; do
+        if publish_npm_package "$TYPESCRIPT_BUILD_DIR" "$NPM_PACKAGE_ACCESS"; then
+            break
+        else
+            retry_count=$((retry_count + 1))
+            if [ $retry_count -lt $MAX_RETRIES ]; then
+                log_warning "Publish failed, retrying in $RETRY_DELAY seconds... (attempt $retry_count/$MAX_RETRIES)"
+                sleep $RETRY_DELAY
+            else
+                log_error "Failed to publish after $MAX_RETRIES attempts"
+                exit 1
+            fi
+        fi
+    done
+fi
+
+# Step 5: Verify publication
+if [ "$DRY_RUN" = false ]; then
+    log_step "Step 5: Verifying publication"
+    show_progress "Verifying package on NPM" 3
+    
+    if npm view "$NPM_PACKAGE_NAME@$PUBLISH_VERSION" version > /dev/null 2>&1; then
+        log_success "Package verified on NPM"
+    else
+        log_warning "Package verification failed (may take a few minutes to appear)"
+    fi
 fi
 
 echo ""
 log_success "🎉 TypeScript SDK $PUBLISH_VERSION published successfully!"
 echo ""
 echo "📦 Published artifact:"
-echo "   • TypeScript SDK: dbx-sdk@$PUBLISH_VERSION"
+echo "   • TypeScript SDK: $NPM_PACKAGE_NAME@$PUBLISH_VERSION"
 echo ""
 echo "🔗 Installation commands:"
 echo "   # NPM"
-echo "   npm install dbx-sdk@$PUBLISH_VERSION"
+echo "   npm install $NPM_PACKAGE_NAME@$PUBLISH_VERSION"
 echo ""
 echo "   # Yarn"
-echo "   yarn add dbx-sdk@$PUBLISH_VERSION"
+echo "   yarn add $NPM_PACKAGE_NAME@$PUBLISH_VERSION"
 echo ""
 echo "   # PNPM"
-echo "   pnpm add dbx-sdk@$PUBLISH_VERSION"
+echo "   pnpm add $NPM_PACKAGE_NAME@$PUBLISH_VERSION"
 echo ""
 echo "📋 Next steps:"
-echo "   1. Verify the package on NPM: https://www.npmjs.com/package/dbx-sdk"
+echo "   1. Verify the package on NPM: https://www.npmjs.com/package/$NPM_PACKAGE_NAME"
 echo "   2. Test the new version in a project"
 echo "   3. Update documentation if needed"
-echo "   4. Consider creating a GitHub release if this is a significant update" 
+echo "   4. Consider creating a GitHub release if this is a significant update"
+
+# Cleanup
+if [ "$CLEANUP_TEMP_FILES" = "true" ]; then
+    cleanup_temp_files
+fi
+
+log_info "✨ NPM publishing process completed successfully!" 

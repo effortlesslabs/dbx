@@ -21,8 +21,34 @@ on:
         type: string
 
 env:
-  REGISTRY: docker.io
-  IMAGE_NAME: ${{ github.event.inputs.docker_username || 'fnlog0' }}/dbx
+  # Docker Configuration
+  DOCKER_USERNAME: ${{ github.event.inputs.docker_username || 'fnlog0' }}
+  DOCKER_REPO: dbx
+  DOCKER_PLATFORMS: linux/amd64,linux/arm64
+
+  # NPM Configuration
+  NPM_PACKAGE_NAME: dbx-sdk
+  NPM_PACKAGE_ACCESS: public
+
+  # Build Configuration
+  TYPESCRIPT_BUILD_DIR: ts
+  RUST_BUILD_DIR: .
+
+  # Testing Configuration
+  ENABLE_PARALLEL_TESTS: true
+  RUST_TEST_CMD: cargo test --all
+  TYPESCRIPT_TEST_CMD: npm run test:run
+
+  # Error Handling
+  MAX_RETRIES: 3
+  RETRY_DELAY: 5
+  ENABLE_AUTO_BACKUP: true
+  ENABLE_AUTO_RESTORE: true
+
+  # Logging
+  DEBUG: false
+  VERBOSE: true
+  LOG_LEVEL: info
 
 jobs:
   test:
@@ -40,7 +66,8 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -78,121 +105,191 @@ jobs:
         working-directory: ts
         run: npm run test:run
 
-  build-and-push-docker:
-    name: Build and Push Docker Image
+  publish:
+    name: Publish Release
     needs: test
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
-          username: ${{ github.event.inputs.docker_username || 'fnlog0' }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=${{ github.event.inputs.version }},enable=${{ github.event_name == 'workflow_dispatch' }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  publish-typescript:
-    name: Publish TypeScript SDK
-    needs: test
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-      - uses: actions/checkout@v4
+          fetch-depth: 0 # Required for git operations
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "18"
-          registry-url: "https://registry.npmjs.org"
+          cache: "npm"
+          cache-dependency-path: ts/package-lock.json
 
-      - name: Log in to NPM
-        run: echo "//registry.npmjs.org/:_authToken=${{ github.event.inputs.npm_token || secrets.NPM_TOKEN }}" > ~/.npmrc
-
-      - name: Install dependencies
+      - name: Install TypeScript dependencies
         working-directory: ts
         run: npm ci
 
-      - name: Build TypeScript SDK
-        working-directory: ts
-        run: npm run build
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Publish to NPM
-        working-directory: ts
-        run: npm publish --access public
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Extract version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+
+      - name: Publish Release
+        run: |
+          # Set environment variables for the publishing script
+          export DOCKER_PASSWORD="${{ secrets.DOCKER_PASSWORD }}"
+          export NPM_TOKEN="${{ github.event.inputs.npm_token || secrets.NPM_TOKEN }}"
+
+          # Run the optimized publishing script
+          ./scripts/publish-release.sh \
+            --version "${{ steps.version.outputs.version }}" \
+            --docker-username "${{ env.DOCKER_USERNAME }}" \
+            --docker-password "${{ secrets.DOCKER_PASSWORD }}" \
+            --npm-token "${{ github.event.inputs.npm_token || secrets.NPM_TOKEN }}" \
+            --verbose
         env:
-          NODE_AUTH_TOKEN: ${{ github.event.inputs.npm_token || secrets.NPM_TOKEN }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          NPM_TOKEN: ${{ github.event.inputs.npm_token || secrets.NPM_TOKEN }}
 
   create-release:
     name: Create GitHub Release
-    needs: [build-and-push-docker, publish-typescript]
+    needs: publish
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          # Generate release notes based on git commits
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+
+          # Get previous tag for changelog
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+
+          if [ -n "$PREVIOUS_TAG" ]; then
+            CHANGELOG=$(git log --pretty=format:"- %s" ${PREVIOUS_TAG}..HEAD)
+          else
+            CHANGELOG=$(git log --pretty=format:"- %s" --max-count=20)
+          fi
+
+          # Create release body
+          RELEASE_BODY="## 🚀 Release $VERSION
+
+          ### 📦 Published Artifacts
+
+          #### Docker Images
+          - **Main Image**: \`${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_REPO }}:$VERSION\`
+          - **Latest Tag**: \`${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_REPO }}:latest\`
+          - **Railway Compatible**: \`${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_REPO }}:${VERSION}-amd64-only\`
+          - **Platforms**: ${{ env.DOCKER_PLATFORMS }}
+
+          #### TypeScript SDK
+          - **Package**: \`${{ env.NPM_PACKAGE_NAME }}@$VERSION\`
+          - **Registry**: npm
+
+          ### 🔗 Installation
+
+          \`\`\`bash
+          # Docker
+          docker pull ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_REPO }}:$VERSION
+
+          # TypeScript SDK
+          npm install ${{ env.NPM_PACKAGE_NAME }}@$VERSION
+          \`\`\`
+
+          ### 📋 Changes
+
+          $CHANGELOG
+
+          ### 🚀 Quick Start
+
+          \`\`\`bash
+          # Run with Docker
+          docker run -d --name dbx-api -p 3000:3000 \\
+            -e DATABASE_URL=redis://localhost:6379 \\
+            ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_REPO }}:$VERSION
+
+          # Use TypeScript SDK
+          import { DBXClient } from '${{ env.NPM_PACKAGE_NAME }}';
+          const client = new DBXClient('http://localhost:3000');
+          \`\`\`"
+
+          echo "release_body<<EOF" >> $GITHUB_OUTPUT
+          echo "$RELEASE_BODY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create Release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.event.inputs.version || github.ref_name }}
-          release_name: Release ${{ github.event.inputs.version || github.ref_name }}
-          body: |
-            ## 🚀 New Release
-
-            ### Docker Image
-            - **Image**: `${{ env.IMAGE_NAME }}:${{ github.event.inputs.version || github.ref_name }}`
-            - **Platforms**: linux/amd64, linux/arm64
-
-            ### TypeScript SDK
-            - **Package**: `dbx-sdk@${{ github.event.inputs.version || github.ref_name }}`
-            - **Registry**: npm
-
-            ### Installation
-
-            ```bash
-            # Docker
-            docker pull ${{ env.IMAGE_NAME }}:${{ github.event.inputs.version || github.ref_name }}
-
-            # TypeScript SDK
-            npm install dbx-sdk@${{ github.event.inputs.version || github.ref_name }}
-            ```
+          tag_name: ${{ steps.version.outputs.version }}
+          release_name: Release ${{ steps.version.outputs.version }}
+          body: ${{ steps.release_notes.outputs.release_body }}
           draft: false
           prerelease: false
+
+  notify:
+    name: Notify Success
+    needs: [publish, create-release]
+    runs-on: ubuntu-latest
+    if: success()
+
+    steps:
+      - name: Extract version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Success notification
+        run: |
+          echo "🎉 Release ${{ steps.version.outputs.version }} published successfully!"
+          echo ""
+          echo "📦 Published artifacts:"
+          echo "  • Docker: ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_REPO }}:${{ steps.version.outputs.version }}"
+          echo "  • NPM: ${{ env.NPM_PACKAGE_NAME }}@${{ steps.version.outputs.version }}"
+          echo "  • GitHub Release: ${{ steps.version.outputs.version }}"
+          echo ""
+          echo "🔗 Links:"
+          echo "  • Docker Hub: https://hub.docker.com/r/${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_REPO }}"
+          echo "  • NPM: https://www.npmjs.com/package/${{ env.NPM_PACKAGE_NAME }}"
+          echo "  • GitHub Release: https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.version }}"
