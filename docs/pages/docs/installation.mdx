@@ -195,56 +195,41 @@ dbx --redis-url redis://localhost:6379
 
 ### Environment Variables
 
-| Variable       | Default                  | Description             |
-| -------------- | ------------------------ | ----------------------- |
-| `DATABASE_URL` | `redis://localhost:6379` | Database connection URL |
-| `PORT`         | `3000`                   | Server port             |
-| `HOST`         | `0.0.0.0`                | Server host             |
-| `LOG_LEVEL`    | `INFO`                   | Logging level           |
-| `POOL_SIZE`    | `10`                     | Connection pool size    |
-| `TIMEOUT`      | `5000`                   | Request timeout (ms)    |
-| `CORS_ORIGIN`  | `*`                      | CORS allowed origins    |
-| `RATE_LIMIT`   | `1000`                   | Requests per minute     |
+| Variable        | Default                  | Description             |
+| --------------- | ------------------------ | ----------------------- |
+| `DATABASE_URL`  | `redis://localhost:6379` | Database connection URL |
+| `DATABASE_TYPE` | `redis`                  | Database type           |
+| `PORT`          | `3000`                   | Server port             |
+| `HOST`          | `0.0.0.0`                | Server host             |
+| `LOG_LEVEL`     | `INFO`                   | Logging level           |
+| `POOL_SIZE`     | `10`                     | Connection pool size    |
 
 ### Configuration File
 
 Create a `config.toml` file:
 
-```toml
-[server]
-port = 3000
-host = "0.0.0.0"
-cors_origin = "*"
-
-[database]
-url = "redis://localhost:6379"
-pool_size = 10
-timeout = 5000
-
-[logging]
-level = "INFO"
-format = "json"
-
-[security]
-rate_limit = 1000
-enable_auth = false
+```bash
+# Basic configuration using environment variables
+DATABASE_URL=redis://localhost:6379
+DATABASE_TYPE=redis
+HOST=0.0.0.0
+PORT=3000
+POOL_SIZE=10
+LOG_LEVEL=INFO
 ```
 
 ### Command Line Options
 
 ```bash
-# Basic options
-dbx --redis-url redis://localhost:6379 --port 8080
+# Use the run script for easy configuration
+./scripts/run.sh --redis-url redis://localhost:6379
 
-# Advanced options
-dbx \
+# With additional options
+./scripts/run.sh \
   --redis-url redis://user:pass@redis.com:6379 \
-  --port 3000 \
-  --host 127.0.0.1 \
-  --log-level DEBUG \
+  --port 8080 \
   --pool-size 20 \
-  --timeout 10000 \
-  --config config.toml
+  --log-level DEBUG
 ```
 
 ## Verification
@@ -253,24 +238,24 @@ After installation, verify that DBX is running correctly:
 
 ```bash
 # Health check
-curl http://localhost:3000/api/admin/health
+curl http://localhost:3000/redis/admin/health
 # Expected: {"status": "ok"}
 
 # Ping test
-curl http://localhost:3000/api/admin/ping
+curl http://localhost:3000/redis/admin/ping
 # Expected: {"pong": true}
 
 # Server info
-curl http://localhost:3000/api/admin/info
+curl http://localhost:3000/redis/admin/info
 # Expected: Server information JSON
 ```
 
 ## Next Steps
 
-- **Getting Started**: Follow the [quick start guide](/getting-started)
-- **Configuration**: Learn about [advanced configuration](/configuration)
-- **Deployment**: Deploy to production with our [deployment guides](/deployment/docker)
-- **API Reference**: Explore the complete [API documentation](/api/rest)
+- **Getting Started**: Follow the quick start guide to begin using DBX
+- **Configuration**: Learn about advanced configuration options
+- **Deployment**: Deploy to production with Docker or cloud platforms  
+- **API Reference**: Explore the complete API documentation
 
 ## Troubleshooting
 

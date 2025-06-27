@@ -111,23 +111,23 @@ const health = await client.admin.health();
 
 ```bash
 # String operations
-curl -X POST "http://localhost:3000/api/string/my-key" \
+curl -X POST "http://localhost:3000/redis/string/my-key" \
   -H "Content-Type: application/json" \
   -d '{"value": "hello world", "ttl": 3600}'
 
-curl "http://localhost:3000/api/string/my-key"
+curl "http://localhost:3000/redis/string/my-key"
 # Response: "hello world"
 
 # Hash operations
-curl -X POST "http://localhost:3000/api/hash/user:1/field/name" \
+curl -X POST "http://localhost:3000/redis/hash/user:1/field/name" \
   -H "Content-Type: application/json" \
   -d '{"value": "John"}'
 
-curl "http://localhost:3000/api/hash/user:1/field/name"
+curl "http://localhost:3000/redis/hash/user:1/field/name"
 # Response: "John"
 
 # Health check
-curl "http://localhost:3000/api/admin/health"
+curl "http://localhost:3000/redis/admin/health"
 # Response: {"status": "ok"}
 ```
 
@@ -137,7 +137,7 @@ curl "http://localhost:3000/api/admin/health"
 import { DbxWebSocketClient } from "dbx-sdk";
 
 const wsClient = new DbxWebSocketClient({
-  url: "ws://localhost:3000/ws",
+  url: "ws://localhost:3000/redis_ws/string/ws",
 });
 
 // Connect
@@ -148,8 +148,8 @@ await wsClient.string.set("my-key", "hello world");
 const value = await wsClient.string.get("my-key");
 
 // Listen for real-time updates
-wsClient.on("string:set", (data) => {
-  console.log("String set:", data);
+wsClient.on("message", (data) => {
+  console.log("WebSocket message:", data);
 });
 ```
 
@@ -157,39 +157,36 @@ wsClient.on("string:set", (data) => {
 
 ### Environment Variables
 
-| Variable       | Default                  | Description                              |
-| -------------- | ------------------------ | ---------------------------------------- |
-| `DATABASE_URL` | `redis://localhost:6379` | Database connection URL                  |
-| `PORT`         | `3000`                   | Server port                              |
-| `HOST`         | `0.0.0.0`                | Server host                              |
-| `LOG_LEVEL`    | `INFO`                   | Logging level (DEBUG, INFO, WARN, ERROR) |
-| `POOL_SIZE`    | `10`                     | Connection pool size                     |
-| `TIMEOUT`      | `5000`                   | Request timeout in milliseconds          |
+| Variable        | Default                  | Description                              |
+| --------------- | ------------------------ | ---------------------------------------- |
+| `DATABASE_URL`  | `redis://localhost:6379` | Database connection URL                  |
+| `DATABASE_TYPE` | `redis`                  | Database type (currently only redis)    |
+| `PORT`          | `3000`                   | Server port                              |
+| `HOST`          | `0.0.0.0`                | Server host                              |
+| `LOG_LEVEL`     | `INFO`                   | Logging level (DEBUG, INFO, WARN, ERROR) |
+| `POOL_SIZE`     | `10`                     | Connection pool size                     |
 
-### Configuration File
+### Docker Environment Variables
 
-Create a `config.toml` file:
+When running with Docker, you can pass environment variables:
 
-```toml
-[server]
-port = 3000
-host = "0.0.0.0"
-
-[database]
-url = "redis://localhost:6379"
-pool_size = 10
-timeout = 5000
-
-[logging]
-level = "INFO"
+```bash
+docker run -d --name dbx -p 3000:3000 \
+  -e DATABASE_URL=redis://localhost:6379 \
+  -e DATABASE_TYPE=redis \
+  -e HOST=0.0.0.0 \
+  -e PORT=3000 \
+  -e POOL_SIZE=10 \
+  -e LOG_LEVEL=INFO \
+  fnlog0/dbx:latest
 ```
 
 ## Next Steps
 
-- **API Reference**: Explore the complete [REST API](/api/rest) and [WebSocket API](/api/websocket)
-- **SDK Documentation**: Learn more about the [TypeScript SDK](/sdk/typescript)
-- **Deployment**: Deploy to production with our [deployment guides](/deployment/docker)
-- **Examples**: Check out [use cases and examples](/guides/use-cases)
+- **API Reference**: Explore the complete REST API and WebSocket API documentation
+- **SDK Documentation**: Learn more about the TypeScript SDK for seamless integration
+- **Deployment**: Deploy to production with Docker or cloud platforms
+- **Examples**: Check out various use cases and examples for edge computing
 
 ## Troubleshooting
 

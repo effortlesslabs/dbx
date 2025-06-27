@@ -11,10 +11,10 @@ import { HomePage } from "vocs/components";
   <HomePage.Tagline>
     Minimal, blazing-fast API proxy for edge and embedded systems.
   </HomePage.Tagline>
-  <HomePage.InstallPackage name="@effortlesslabs/dbx" type="install" />
+  <HomePage.InstallPackage name="dbx-sdk" type="install" />
   <HomePage.Description>
-    DBX is a minimal, blazing-fast API proxy designed for edge and embedded systems. Expose Redis,
-    Qdrant, and MDBX through a unified API layer with REST and WebSocket support.
+    DBX is a minimal, blazing-fast Redis API proxy designed for edge and embedded systems. Built in Rust 
+    with TypeScript SDK support, providing REST and WebSocket APIs for Redis operations.
   </HomePage.Description>
   <HomePage.Buttons>
     <HomePage.Button href="/docs" variant="accent">
@@ -30,29 +30,28 @@ import { HomePage } from "vocs/components";
 
 Ultra-low latency optimized for edge computing environments with high throughput and minimal overhead.
 
-## 🔧 Database Support
+## 🔧 Redis Operations
 
-Full support for Redis, Qdrant vector database, and MDBX embedded key-value store.
+String, Hash, and Set operations with batch support and connection pooling.
 
 ## 🌐 Connectivity
 
 REST API and WebSocket connections with a full-featured TypeScript SDK.
 
-## 🛡️ Security
+## 🛡️ Edge-Optimized
 
-JWT-based authentication, rate limiting, and configurable CORS support.
+~50MB Docker image designed for Cloudflare Workers, IoT devices, and microservices.
 
 # Quick Start
 
 ```bash
-# Install DBX
-cargo install dbx
-
-# Start the server
-dbx --config config.toml
+# Run with Docker
+docker run -d --name dbx -p 3000:3000 \
+  -e DATABASE_URL=redis://localhost:6379 \
+  fnlog0/dbx:latest
 
 # Use the TypeScript SDK
-npm install @effortlesslabs/dbx
+npm install dbx-sdk
 ```
 
 # Community

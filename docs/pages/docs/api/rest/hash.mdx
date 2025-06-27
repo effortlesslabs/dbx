@@ -8,7 +8,7 @@ Hash operations support storing multiple field-value pairs under a single key, m
 
 ## Endpoints
 
-### GET /api/hash/{key}
+### GET /redis/hash/`{key}`
 
 Retrieve all fields and values from a hash.
 
@@ -33,10 +33,10 @@ Retrieve all fields and values from a hash.
 **Example:**
 
 ```bash
-curl http://localhost:8080/api/hash/user:123
+curl http://localhost:8080/redis/hash/user:123
 ```
 
-### POST /api/hash/{key}
+### POST /redis/hash/`{key}`
 
 Create or update a hash with multiple fields.
 
@@ -73,7 +73,7 @@ Create or update a hash with multiple fields.
 **Example:**
 
 ```bash
-curl -X POST http://localhost:8080/api/hash/user:123 \
+curl -X POST http://localhost:8080/redis/hash/user:123 \
      -H "Content-Type: application/json" \
      -d '{
        "fields": {
@@ -86,7 +86,7 @@ curl -X POST http://localhost:8080/api/hash/user:123 \
      }'
 ```
 
-### DELETE /api/hash/{key}
+### DELETE /redis/hash/`{key}`
 
 Delete an entire hash and all its fields.
 
@@ -106,10 +106,10 @@ Delete an entire hash and all its fields.
 **Example:**
 
 ```bash
-curl -X DELETE http://localhost:8080/api/hash/user:123
+curl -X DELETE http://localhost:8080/redis/hash/user:123
 ```
 
-### GET /api/hash/{key}/field/{field}
+### GET /redis/hash/`{key}`/field/`{field}`
 
 Retrieve a specific field value from a hash.
 
@@ -130,10 +130,10 @@ Retrieve a specific field value from a hash.
 **Example:**
 
 ```bash
-curl http://localhost:8080/api/hash/user:123/field/name
+curl http://localhost:8080/redis/hash/user:123/field/name
 ```
 
-### POST /api/hash/{key}/field/{field}
+### POST /redis/hash/`{key}`/field/`{field}`
 
 Set or update a specific field in a hash.
 
@@ -164,12 +164,12 @@ Set or update a specific field in a hash.
 **Example:**
 
 ```bash
-curl -X POST http://localhost:8080/api/hash/user:123/field/name \
+curl -X POST http://localhost:8080/redis/hash/user:123/field/name \
      -H "Content-Type: application/json" \
      -d '{"value": "Jane Doe"}'
 ```
 
-### DELETE /api/hash/{key}/field/{field}
+### DELETE /redis/hash/`{key}`/field/`{field}`
 
 Delete a specific field from a hash.
 
@@ -190,10 +190,10 @@ Delete a specific field from a hash.
 **Example:**
 
 ```bash
-curl -X DELETE http://localhost:8080/api/hash/user:123/field/age
+curl -X DELETE http://localhost:8080/redis/hash/user:123/field/age
 ```
 
-### GET /api/hash/{key}/exists
+### GET /redis/hash/`{key}`/exists
 
 Check if a hash key exists.
 
@@ -212,10 +212,10 @@ Check if a hash key exists.
 **Example:**
 
 ```bash
-curl http://localhost:8080/api/hash/user:123/exists
+curl http://localhost:8080/redis/hash/user:123/exists
 ```
 
-### GET /api/hash/{key}/keys
+### GET /redis/hash/`{key}`/keys
 
 Get all field names (keys) from a hash.
 
@@ -234,10 +234,10 @@ Get all field names (keys) from a hash.
 **Example:**
 
 ```bash
-curl http://localhost:8080/api/hash/user:123/keys
+curl http://localhost:8080/redis/hash/user:123/keys
 ```
 
-### GET /api/hash/{key}/values
+### GET /redis/hash/`{key}`/values
 
 Get all field values from a hash.
 
@@ -256,12 +256,12 @@ Get all field values from a hash.
 **Example:**
 
 ```bash
-curl http://localhost:8080/api/hash/user:123/values
+curl http://localhost:8080/redis/hash/user:123/values
 ```
 
 ## Batch Operations
 
-### POST /api/hash/batch
+### POST /redis/hash/batch
 
 Perform multiple hash operations in a single request.
 
@@ -327,7 +327,7 @@ Perform multiple hash operations in a single request.
 
 ```bash
 # Store user profile
-curl -X POST http://localhost:8080/api/hash/user:123 \
+curl -X POST http://localhost:8080/redis/hash/user:123 \
      -H "Content-Type: application/json" \
      -d '{
        "fields": {
@@ -341,19 +341,19 @@ curl -X POST http://localhost:8080/api/hash/user:123 \
      }'
 
 # Update specific field
-curl -X POST http://localhost:8080/api/hash/user:123/field/city \
+curl -X POST http://localhost:8080/redis/hash/user:123/field/city \
      -H "Content-Type: application/json" \
      -d '{"value": "San Francisco"}'
 
 # Get user name
-curl http://localhost:8080/api/hash/user:123/field/name
+curl http://localhost:8080/redis/hash/user:123/field/name
 ```
 
 ### 2. Configuration Objects
 
 ```bash
 # Store app configuration
-curl -X POST http://localhost:8080/api/hash/config:app \
+curl -X POST http://localhost:8080/redis/hash/config:app \
      -H "Content-Type: application/json" \
      -d '{
        "fields": {
@@ -365,14 +365,14 @@ curl -X POST http://localhost:8080/api/hash/config:app \
      }'
 
 # Get specific config value
-curl http://localhost:8080/api/hash/config:app/field/port
+curl http://localhost:8080/redis/hash/config:app/field/port
 ```
 
 ### 3. Session Data
 
 ```bash
 # Store session with multiple attributes
-curl -X POST http://localhost:8080/api/hash/session:abc123 \
+curl -X POST http://localhost:8080/redis/hash/session:abc123 \
      -H "Content-Type: application/json" \
      -d '{
        "fields": {
@@ -385,7 +385,7 @@ curl -X POST http://localhost:8080/api/hash/session:abc123 \
      }'
 
 # Check session exists
-curl http://localhost:8080/api/hash/session:abc123/exists
+curl http://localhost:8080/redis/hash/session:abc123/exists
 ```
 
 ## Error Handling

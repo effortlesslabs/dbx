@@ -3,7 +3,7 @@ import { defineConfig } from "vocs";
 
 export default defineConfig({
   description:
-    "DBX is a minimal, blazing-fast API proxy for edge and embedded systems. Expose Redis, Qdrant, and MDBX through a unified API layer.",
+    "DBX is a minimal, blazing-fast Redis API proxy for edge and embedded systems. Built in Rust with TypeScript SDK support.",
   rootDir: ".",
   sidebar: [
     {
@@ -33,10 +33,6 @@ export default defineConfig({
         {
           text: "REST API",
           items: [
-            {
-              text: "Authentication",
-              link: "/docs/api/rest/authentication",
-            },
             {
               text: "String Operations",
               link: "/docs/api/rest/string",
@@ -87,103 +83,44 @@ export default defineConfig({
       ],
     },
     {
-      text: "SDK Documentation",
+      text: "TypeScript SDK",
       items: [
         {
-          text: "TypeScript SDK",
-          items: [
-            {
-              text: "Installation",
-              link: "/docs/sdk/typescript/installation",
-            },
-            {
-              text: "String Client",
-              link: "/docs/sdk/typescript/string",
-            },
-            {
-              text: "Hash Client",
-              link: "/docs/sdk/typescript/hash",
-            },
-            {
-              text: "Set Client",
-              link: "/docs/sdk/typescript/set",
-            },
-            {
-              text: "Admin Client",
-              link: "/docs/sdk/typescript/admin",
-            },
-            {
-              text: "WebSocket Client",
-              link: "/docs/sdk/typescript/websocket",
-            },
-          ],
+          text: "Installation",
+          link: "/docs/sdk/typescript/installation",
+        },
+        {
+          text: "String Client",
+          link: "/docs/sdk/typescript/string",
+        },
+        {
+          text: "Hash Client",
+          link: "/docs/sdk/typescript/hash",
+        },
+        {
+          text: "Set Client",
+          link: "/docs/sdk/typescript/set",
+        },
+        {
+          text: "Admin Client",
+          link: "/docs/sdk/typescript/admin",
+        },
+        {
+          text: "WebSocket Client",
+          link: "/docs/sdk/typescript/websocket",
         },
       ],
     },
     {
-      text: "Deployment & Operations",
+      text: "Deployment",
       items: [
         {
           text: "Docker Deployment",
           link: "/docs/deployment/docker",
         },
         {
-          text: "Kubernetes Deployment",
-          link: "/docs/deployment/kubernetes",
-        },
-        {
           text: "Cloud Deployment",
           link: "/docs/deployment/cloud",
-        },
-        {
-          text: "Edge Deployment",
-          link: "/docs/deployment/edge",
-        },
-        {
-          text: "Monitoring",
-          link: "/docs/deployment/monitoring",
-        },
-        {
-          text: "Troubleshooting",
-          link: "/docs/deployment/troubleshooting",
-        },
-      ],
-    },
-    {
-      text: "Advanced Topics",
-      items: [
-        {
-          text: "Use Cases",
-          link: "/docs/advanced/use-cases",
-        },
-        {
-          text: "Performance",
-          link: "/docs/advanced/performance",
-        },
-        {
-          text: "Security",
-          link: "/docs/advanced/security",
-        },
-        {
-          text: "Architecture",
-          link: "/docs/advanced/architecture",
-        },
-      ],
-    },
-    {
-      text: "Development",
-      items: [
-        {
-          text: "Development Guide",
-          link: "/docs/development/guide",
-        },
-        {
-          text: "Contributing",
-          link: "/docs/development/contributing",
-        },
-        {
-          text: "Changelog",
-          link: "/docs/development/changelog",
         },
       ],
     },

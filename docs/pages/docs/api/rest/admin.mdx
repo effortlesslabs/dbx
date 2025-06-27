@@ -8,7 +8,7 @@ Admin operations provide insights into the DBX system status, performance metric
 
 ## Endpoints
 
-### GET /api/admin/ping
+### GET /redis/admin/ping
 
 Simple health check endpoint to verify the API is responding.
 
@@ -24,10 +24,10 @@ Simple health check endpoint to verify the API is responding.
 **Example:**
 
 ```bash
-curl http://localhost:8080/api/admin/ping
+curl http://localhost:8080/redis/admin/ping
 ```
 
-### GET /api/admin/health
+### GET /redis/admin/health
 
 Comprehensive health check including database connectivity and system status.
 
@@ -54,10 +54,10 @@ Comprehensive health check including database connectivity and system status.
 **Example:**
 
 ```bash
-curl http://localhost:8080/api/admin/health
+curl http://localhost:8080/redis/admin/health
 ```
 
-### GET /api/admin/info
+### GET /redis/admin/info
 
 Get detailed system information and configuration.
 
@@ -86,10 +86,10 @@ Get detailed system information and configuration.
 **Example:**
 
 ```bash
-curl http://localhost:8080/api/admin/info
+curl http://localhost:8080/redis/admin/info
 ```
 
-### GET /api/admin/clients
+### GET /redis/admin/clients
 
 Get information about connected clients and their activity.
 
@@ -122,10 +122,10 @@ Get information about connected clients and their activity.
 **Example:**
 
 ```bash
-curl http://localhost:8080/api/admin/clients
+curl http://localhost:8080/redis/admin/clients
 ```
 
-### GET /api/admin/memory/{key}
+### GET /redis/admin/memory/`{key}`
 
 Get memory usage information for a specific key.
 
@@ -149,10 +149,10 @@ Get memory usage information for a specific key.
 **Example:**
 
 ```bash
-curl http://localhost:8080/api/admin/memory/user:123
+curl http://localhost:8080/redis/admin/memory/user:123
 ```
 
-### GET /api/admin/stats
+### GET /redis/admin/stats
 
 Get comprehensive system statistics and metrics.
 
@@ -204,10 +204,10 @@ Get comprehensive system statistics and metrics.
 **Example:**
 
 ```bash
-curl http://localhost:8080/api/admin/stats
+curl http://localhost:8080/redis/admin/stats
 ```
 
-### POST /api/admin/flush
+### POST /redis/admin/flush
 
 Clear all data from the database (use with caution).
 
@@ -224,10 +224,10 @@ Clear all data from the database (use with caution).
 **Example:**
 
 ```bash
-curl -X POST http://localhost:8080/api/admin/flush
+curl -X POST http://localhost:8080/redis/admin/flush
 ```
 
-### POST /api/admin/reload
+### POST /redis/admin/reload
 
 Reload configuration without restarting the service.
 
@@ -244,29 +244,29 @@ Reload configuration without restarting the service.
 **Example:**
 
 ```bash
-curl -X POST http://localhost:8080/api/admin/reload
+curl -X POST http://localhost:8080/redis/admin/reload
 ```
 
 ## Monitoring Integration
 
 ### Health Check for Load Balancers
 
-Use the `/api/admin/health` endpoint for load balancer health checks:
+Use the `/redis/admin/health` endpoint for load balancer health checks:
 
 ```bash
 # Nginx configuration example
 location /health {
-    proxy_pass http://localhost:8080/api/admin/health;
+    proxy_pass http://localhost:8080/redis/admin/health;
     access_log off;
 }
 ```
 
 ### Prometheus Metrics
 
-DBX exposes metrics in Prometheus format at `/api/admin/metrics`:
+DBX exposes metrics in Prometheus format at `/redis/admin/metrics`:
 
 ```bash
-curl http://localhost:8080/api/admin/metrics
+curl http://localhost:8080/redis/admin/metrics
 ```
 
 Example metrics output:
@@ -312,7 +312,7 @@ histogram_quantile(0.95, rate(dbx_response_time_seconds_bucket[5m]))
 ```bash
 # Health check script
 #!/bin/bash
-response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/api/admin/health)
+response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/redis/admin/health)
 if [ $response -eq 200 ]; then
     echo "DBX is healthy"
     exit 0
@@ -326,30 +326,30 @@ fi
 
 ```bash
 # Monitor response times
-curl -s http://localhost:8080/api/admin/stats | jq '.performance.average_response_time'
+curl -s http://localhost:8080/redis/admin/stats | jq '.performance.average_response_time'
 
 # Monitor error rates
-curl -s http://localhost:8080/api/admin/stats | jq '.errors.rate'
+curl -s http://localhost:8080/redis/admin/stats | jq '.errors.rate'
 ```
 
 ### 3. Capacity Planning
 
 ```bash
 # Check memory usage
-curl -s http://localhost:8080/api/admin/health | jq '.memory.used'
+curl -s http://localhost:8080/redis/admin/health | jq '.memory.used'
 
 # Check database connections
-curl -s http://localhost:8080/api/admin/stats | jq '.database.connection_pool'
+curl -s http://localhost:8080/redis/admin/stats | jq '.database.connection_pool'
 ```
 
 ### 4. Debugging
 
 ```bash
 # Check specific key memory usage
-curl http://localhost:8080/api/admin/memory/user:123
+curl http://localhost:8080/redis/admin/memory/user:123
 
 # Get client activity
-curl http://localhost:8080/api/admin/clients
+curl http://localhost:8080/redis/admin/clients
 ```
 
 ## Security Considerations
@@ -361,7 +361,7 @@ Admin endpoints should be protected with authentication:
 ```bash
 # Use API key for admin operations
 curl -H "Authorization: Bearer ADMIN_API_KEY" \
-     http://localhost:8080/api/admin/stats
+     http://localhost:8080/redis/admin/stats
 ```
 
 ### Network Security

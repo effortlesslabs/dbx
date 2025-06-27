@@ -1,89 +1,186 @@
 # Cloud Deployment
 
-This guide covers deploying DBX on various cloud platforms including AWS, Google Cloud, and Azure.
+Deploy DBX to various cloud platforms including Railway, Heroku, and other container-based services.
 
-## AWS Deployment
+## Railway
 
-### Using AWS ECS
+Railway provides an easy way to deploy DBX with automatic container orchestration.
 
-Create a task definition:
+### Important: Architecture Compatibility
 
-```json
-{
-  "family": "dbx",
-  "networkMode": "awsvpc",
-  "requiresCompatibilities": ["FARGATE"],
-  "cpu": "256",
-  "memory": "512",
-  "executionRoleArn": "arn:aws:iam::account:role/ecsTaskExecutionRole",
-  "containerDefinitions": [
-    {
-      "name": "dbx",
-      "image": "effortlesslabs/dbx:latest",
-      "portMappings": [
-        {
-          "containerPort": 8080,
-          "protocol": "tcp"
-        }
-      ],
-      "environment": [
-        {
-          "name": "DBX_DATABASE_URL",
-          "value": "redis://your-redis-endpoint:6379"
-        }
-      ],
-      "logConfiguration": {
-        "logDriver": "awslogs",
-        "options": {
-          "awslogs-group": "/ecs/dbx",
-          "awslogs-region": "us-west-2",
-          "awslogs-stream-prefix": "ecs"
-        }
-      }
-    }
-  ]
-}
-```
-
-### Using AWS Lambda
-
-```yaml
-AWSTemplateFormatVersion: "2010-09-09"
-Resources:
-  DBXFunction:
-    Type: AWS::Lambda::Function
-    Properties:
-      FunctionName: dbx-proxy
-      Runtime: provided.al2
-      Handler: bootstrap
-      Code:
-        S3Bucket: your-bucket
-        S3Key: dbx-lambda.zip
-      MemorySize: 512
-      Timeout: 30
-      Environment:
-        Variables:
-          DBX_DATABASE_URL: "redis://your-redis-endpoint:6379"
-```
-
-## Google Cloud Platform
-
-### Using Google Cloud Run
+Railway runs on AMD64 architecture. If you're deploying from an ARM64 machine (like Apple Silicon Macs), you must use the AMD64-only image tags to avoid "exec format error":
 
 ```bash
-# Build and push image
-gcloud builds submit --tag gcr.io/PROJECT_ID/dbx
-
-# Deploy to Cloud Run
-gcloud run deploy dbx \
-  --image gcr.io/PROJECT_ID/dbx \
-  --platform managed \
-  --region us-central1 \
-  --allow-unauthenticated \
-  --set-env-vars DBX_DATABASE_URL="redis://your-redis-endpoint:6379"
+# Use AMD64-only tags for Railway
+fnlog0/dbx:latest-amd64-only
+fnlog0/dbx:0.1.5-amd64-only
 ```
 
-### Using Google Kubernetes Engine
+### Prerequisites
+
+- Railway account
+- Redis instance (Railway provides managed Redis)
+
+### Deployment Steps
+
+1. **Create a New Project**
+   - Go to [Railway Dashboard](https://railway.app/dashboard)
+   - Click "New Project"
+   - Select "Deploy from Docker Hub"
+
+2. **Configure the Service**
+   
+   **Image Name**: `fnlog0/dbx:latest-amd64-only`
+   
+   **Environment Variables**:
+   ```bash
+   DATABASE_URL=redis://your-redis-url:6379
+   DATABASE_TYPE=redis
+   HOST=0.0.0.0
+   PORT=3000
+   POOL_SIZE=10
+   LOG_LEVEL=INFO
+   ```
+
+3. **Add Redis Service (Optional)**
+   - Click "New Service" → "Database" → "Redis"
+   - Railway will provide the connection URL
+   - Use that URL in your `DATABASE_URL` environment variable
+
+4. **Deploy**
+   Click "Deploy" and wait for the build to complete.
+
+### Verification
+
+Check the logs to ensure the service started correctly:
+
+```bash
+# Check Railway logs
+railway logs
+```
+
+You should see output like:
+```
+🚀 DBX API starting...
+🌐 Server listening on port 3000
+✅ Connected to Redis
+```
+
+### Troubleshooting
+
+**Exec Format Error**
+If you see this error:
+```
+exec container process `/app/./dbx-api`: Exec format error
+```
+
+**Solution**: Use the AMD64-only image tag:
+- Change from: `fnlog0/dbx:latest`
+- Change to: `fnlog0/dbx:latest-amd64-only`
+
+## Heroku
+
+Deploy DBX to Heroku using the container registry:
+
+### Prerequisites
+
+- Heroku account
+- Heroku CLI installed
+- Redis addon (Heroku provides managed Redis)
+
+### Deployment Steps
+
+1. **Login to Heroku Container Registry**
+   ```bash
+   heroku login
+   heroku container:login
+   ```
+
+2. **Create a New App**
+   ```bash
+   heroku create your-dbx-app
+   ```
+
+3. **Add Redis Addon**
+   ```bash
+   heroku addons:create heroku-redis:mini -a your-dbx-app
+   ```
+
+4. **Deploy with Docker**
+   ```bash
+   # Pull and tag the image
+   docker pull fnlog0/dbx:latest
+   docker tag fnlog0/dbx:latest registry.heroku.com/your-dbx-app/web
+   
+   # Push to Heroku
+   docker push registry.heroku.com/your-dbx-app/web
+   
+   # Release the image
+   heroku container:release web -a your-dbx-app
+   ```
+
+5. **Configure Environment Variables**
+   ```bash
+   heroku config:set DATABASE_TYPE=redis -a your-dbx-app
+   heroku config:set HOST=0.0.0.0 -a your-dbx-app
+   heroku config:set LOG_LEVEL=INFO -a your-dbx-app
+   ```
+
+The `DATABASE_URL` will be automatically set by the Heroku Redis addon.
+
+## Container Platforms
+
+### Generic Container Platform
+
+For any container platform that supports Docker:
+
+1. **Pull the Image**
+   ```bash
+   docker pull fnlog0/dbx:latest
+   ```
+
+2. **Run with Environment Variables**
+   ```bash
+   docker run -d --name dbx -p 3000:3000 \
+     -e DATABASE_URL=redis://your-redis-url:6379 \
+     -e DATABASE_TYPE=redis \
+     -e HOST=0.0.0.0 \
+     -e PORT=3000 \
+     -e POOL_SIZE=10 \
+     -e LOG_LEVEL=INFO \
+     fnlog0/dbx:latest
+   ```
+
+### Docker Swarm
+
+```yaml
+version: '3.8'
+services:
+  dbx:
+    image: fnlog0/dbx:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=redis://redis:6379
+      - DATABASE_TYPE=redis
+      - HOST=0.0.0.0
+      - PORT=3000
+      - POOL_SIZE=10
+      - LOG_LEVEL=INFO
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    deploy:
+      replicas: 1
+```
+
+### Kubernetes
 
 ```yaml
 apiVersion: apps/v1
@@ -102,212 +199,58 @@ spec:
     spec:
       containers:
         - name: dbx
-          image: gcr.io/PROJECT_ID/dbx:latest
+          image: fnlog0/dbx:latest
           ports:
-            - containerPort: 8080
+            - containerPort: 3000
           env:
-            - name: DBX_DATABASE_URL
-              value: "redis://your-redis-endpoint:6379"
-```
-
-## Azure Deployment
-
-### Using Azure Container Instances
-
-```bash
-az container create \
-  --resource-group myResourceGroup \
-  --name dbx \
-  --image effortlesslabs/dbx:latest \
-  --dns-name-label dbx-unique \
-  --ports 8080 \
-  --environment-variables DBX_DATABASE_URL="redis://your-redis-endpoint:6379"
-```
-
-### Using Azure Kubernetes Service
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: dbx
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: dbx
-  template:
-    metadata:
-      labels:
-        app: dbx
-    spec:
-      containers:
-        - name: dbx
-          image: effortlesslabs/dbx:latest
-          ports:
-            - containerPort: 8080
-          env:
-            - name: DBX_DATABASE_URL
-              value: "redis://your-redis-endpoint:6379"
-```
-
-## Database Setup
-
-### Redis on Cloud
-
-#### AWS ElastiCache
-
-```bash
-aws elasticache create-cache-cluster \
-  --cache-cluster-id dbx-redis \
-  --engine redis \
-  --cache-node-type cache.t3.micro \
-  --num-cache-nodes 1
-```
-
-#### Google Cloud Memorystore
-
-```bash
-gcloud redis instances create dbx-redis \
-  --size=1 \
-  --region=us-central1 \
-  --redis-version=redis_6_x
-```
-
-#### Azure Cache for Redis
-
-```bash
-az redis create \
-  --name dbx-redis \
-  --resource-group myResourceGroup \
-  --location eastus \
-  --sku Basic \
-  --vm-size c0
-```
-
-## Load Balancing
-
-### AWS Application Load Balancer
-
-```yaml
-Resources:
-  ALB:
-    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
-    Properties:
-      Scheme: internet-facing
-      Type: application
-      Subnets: !Ref PublicSubnets
-
-  TargetGroup:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    Properties:
-      VpcId: !Ref VPC
-      Port: 8080
-      Protocol: HTTP
-      HealthCheckPath: /health
-      HealthCheckIntervalSeconds: 30
-```
-
-### Google Cloud Load Balancer
-
-```yaml
+            - name: DATABASE_URL
+              value: "redis://redis:6379"
+            - name: DATABASE_TYPE
+              value: "redis"
+            - name: HOST
+              value: "0.0.0.0"
+            - name: PORT
+              value: "3000"
+            - name: POOL_SIZE
+              value: "10"
+            - name: LOG_LEVEL
+              value: "INFO"
+---
 apiVersion: v1
 kind: Service
 metadata:
   name: dbx-service
-  annotations:
-    cloud.google.com/load-balancer-type: "External"
 spec:
   type: LoadBalancer
   ports:
     - port: 80
-      targetPort: 8080
+      targetPort: 3000
   selector:
     app: dbx
 ```
 
-## Monitoring and Logging
+## Health Checks
 
-### AWS CloudWatch
+All cloud platforms can use DBX's built-in health endpoints:
 
-```json
-{
-  "logConfiguration": {
-    "logDriver": "awslogs",
-    "options": {
-      "awslogs-group": "/aws/ecs/dbx",
-      "awslogs-region": "us-west-2",
-      "awslogs-stream-prefix": "ecs"
-    }
-  }
-}
-```
+- **Health Check**: `GET /redis/admin/health`
+- **Ping**: `GET /redis/admin/ping`
+- **Server Info**: `GET /redis/admin/info`
 
-### Google Cloud Logging
-
+Example health check configuration:
 ```yaml
-env:
-  - name: DBX_LOG_LEVEL
-    value: "info"
-  - name: GOOGLE_CLOUD_PROJECT
-    value: "your-project-id"
+healthcheck:
+  test: ["CMD", "curl", "-f", "http://localhost:3000/redis/admin/ping"]
+  interval: 30s
+  timeout: 10s
+  retries: 3
 ```
-
-### Azure Monitor
-
-```yaml
-env:
-  - name: DBX_LOG_LEVEL
-    value: "info"
-  - name: APPLICATIONINSIGHTS_CONNECTION_STRING
-    value: "your-connection-string"
-```
-
-## Security
-
-### Network Security
-
-- Use VPC for network isolation
-- Configure security groups/firewall rules
-- Enable SSL/TLS encryption
-- Use private subnets for database access
-
-### Authentication
-
-- Implement JWT token validation
-- Use IAM roles for service authentication
-- Enable API Gateway for additional security
-
-### Secrets Management
-
-- Use AWS Secrets Manager
-- Use Google Secret Manager
-- Use Azure Key Vault
-
-## Cost Optimization
-
-### Resource Sizing
-
-- Start with minimal resources
-- Use auto-scaling based on metrics
-- Monitor and adjust resource allocation
-
-### Reserved Instances
-
-- Use reserved instances for predictable workloads
-- Consider spot instances for non-critical workloads
-
-### Storage Optimization
-
-- Use appropriate storage classes
-- Implement data lifecycle policies
-- Monitor storage usage
 
 ## Best Practices
 
-1. **High Availability**: Deploy across multiple availability zones
-2. **Auto-scaling**: Implement horizontal pod autoscaling
-3. **Monitoring**: Set up comprehensive monitoring and alerting
-4. **Backup**: Implement regular backup strategies
-5. **Security**: Follow security best practices for cloud deployments
-6. **Cost Management**: Monitor and optimize costs regularly
+1. **Use managed Redis**: Most cloud platforms offer managed Redis services
+2. **Set resource limits**: Configure appropriate CPU and memory limits
+3. **Enable health checks**: Use DBX's built-in health endpoints
+4. **Monitor logs**: Configure log aggregation for troubleshooting
+5. **Use environment variables**: Never hardcode configuration values
+6. **Scale horizontally**: DBX is stateless and scales well horizontally

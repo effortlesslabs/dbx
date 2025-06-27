@@ -8,7 +8,7 @@ Set operations support storing collections of unique values under a single key, 
 
 ## Endpoints
 
-### GET /api/set/{key}
+### GET /redis/set/`{key}`
 
 Retrieve all members from a set.
 
@@ -29,10 +29,10 @@ Retrieve all members from a set.
 **Example:**
 
 ```bash
-curl http://localhost:8080/api/set/online-users
+curl http://localhost:8080/redis/set/online-users
 ```
 
-### POST /api/set/{key}
+### POST /redis/set/`{key}`
 
 Create or update a set with multiple members.
 
@@ -64,7 +64,7 @@ Create or update a set with multiple members.
 **Example:**
 
 ```bash
-curl -X POST http://localhost:8080/api/set/online-users \
+curl -X POST http://localhost:8080/redis/set/online-users \
      -H "Content-Type: application/json" \
      -d '{
        "members": ["user1", "user2", "user3", "user4"],
@@ -72,7 +72,7 @@ curl -X POST http://localhost:8080/api/set/online-users \
      }'
 ```
 
-### DELETE /api/set/{key}
+### DELETE /redis/set/`{key}`
 
 Delete an entire set and all its members.
 
@@ -92,10 +92,10 @@ Delete an entire set and all its members.
 **Example:**
 
 ```bash
-curl -X DELETE http://localhost:8080/api/set/online-users
+curl -X DELETE http://localhost:8080/redis/set/online-users
 ```
 
-### POST /api/set/{key}/member/{member}
+### POST /redis/set/`{key}`/member/`{member}`
 
 Add a single member to a set.
 
@@ -117,10 +117,10 @@ Add a single member to a set.
 **Example:**
 
 ```bash
-curl -X POST http://localhost:8080/api/set/online-users/member/user5
+curl -X POST http://localhost:8080/redis/set/online-users/member/user5
 ```
 
-### DELETE /api/set/{key}/member/{member}
+### DELETE /redis/set/`{key}`/member/`{member}`
 
 Remove a single member from a set.
 
@@ -142,10 +142,10 @@ Remove a single member from a set.
 **Example:**
 
 ```bash
-curl -X DELETE http://localhost:8080/api/set/online-users/member/user1
+curl -X DELETE http://localhost:8080/redis/set/online-users/member/user1
 ```
 
-### GET /api/set/{key}/member/{member}/exists
+### GET /redis/set/`{key}`/member/`{member}`/exists
 
 Check if a member exists in a set.
 
@@ -165,10 +165,10 @@ Check if a member exists in a set.
 **Example:**
 
 ```bash
-curl http://localhost:8080/api/set/online-users/member/user1/exists
+curl http://localhost:8080/redis/set/online-users/member/user1/exists
 ```
 
-### GET /api/set/{key}/cardinality
+### GET /redis/set/`{key}`/cardinality
 
 Get the number of members in a set.
 
@@ -187,10 +187,10 @@ Get the number of members in a set.
 **Example:**
 
 ```bash
-curl http://localhost:8080/api/set/online-users/cardinality
+curl http://localhost:8080/redis/set/online-users/cardinality
 ```
 
-### POST /api/set/{key}/pop
+### POST /redis/set/`{key}`/pop
 
 Remove and return a random member from the set.
 
@@ -210,12 +210,12 @@ Remove and return a random member from the set.
 **Example:**
 
 ```bash
-curl -X POST http://localhost:8080/api/set/online-users/pop
+curl -X POST http://localhost:8080/redis/set/online-users/pop
 ```
 
 ## Set Operations
 
-### POST /api/set/union
+### POST /redis/set/union
 
 Compute the union of multiple sets.
 
@@ -239,12 +239,12 @@ Compute the union of multiple sets.
 **Example:**
 
 ```bash
-curl -X POST http://localhost:8080/api/set/union \
+curl -X POST http://localhost:8080/redis/set/union \
      -H "Content-Type: application/json" \
      -d '{"keys": ["set1", "set2", "set3"]}'
 ```
 
-### POST /api/set/intersection
+### POST /redis/set/intersection
 
 Compute the intersection of multiple sets.
 
@@ -268,12 +268,12 @@ Compute the intersection of multiple sets.
 **Example:**
 
 ```bash
-curl -X POST http://localhost:8080/api/set/intersection \
+curl -X POST http://localhost:8080/redis/set/intersection \
      -H "Content-Type: application/json" \
      -d '{"keys": ["set1", "set2", "set3"]}'
 ```
 
-### POST /api/set/difference
+### POST /redis/set/difference
 
 Compute the difference between sets (members in first set but not in others).
 
@@ -297,14 +297,14 @@ Compute the difference between sets (members in first set but not in others).
 **Example:**
 
 ```bash
-curl -X POST http://localhost:8080/api/set/difference \
+curl -X POST http://localhost:8080/redis/set/difference \
      -H "Content-Type: application/json" \
      -d '{"keys": ["set1", "set2", "set3"]}'
 ```
 
 ## Batch Operations
 
-### POST /api/set/batch
+### POST /redis/set/batch
 
 Perform multiple set operations in a single request.
 
@@ -364,23 +364,23 @@ Perform multiple set operations in a single request.
 
 ```bash
 # Add user to online set
-curl -X POST http://localhost:8080/api/set/online-users/member/user123
+curl -X POST http://localhost:8080/redis/set/online-users/member/user123
 
 # Check if user is online
-curl http://localhost:8080/api/set/online-users/member/user123/exists
+curl http://localhost:8080/redis/set/online-users/member/user123/exists
 
 # Get online user count
-curl http://localhost:8080/api/set/online-users/cardinality
+curl http://localhost:8080/redis/set/online-users/cardinality
 
 # Remove user when they go offline
-curl -X DELETE http://localhost:8080/api/set/online-users/member/user123
+curl -X DELETE http://localhost:8080/redis/set/online-users/member/user123
 ```
 
 ### 2. Tag Management
 
 ```bash
 # Store post tags
-curl -X POST http://localhost:8080/api/set/post:123:tags \
+curl -X POST http://localhost:8080/redis/set/post:123:tags \
      -H "Content-Type: application/json" \
      -d '{
        "members": ["javascript", "nodejs", "api"],
@@ -388,17 +388,17 @@ curl -X POST http://localhost:8080/api/set/post:123:tags \
      }'
 
 # Add new tag
-curl -X POST http://localhost:8080/api/set/post:123:tags/member/redis
+curl -X POST http://localhost:8080/redis/set/post:123:tags/member/redis
 
 # Check if post has specific tag
-curl http://localhost:8080/api/set/post:123:tags/member/javascript/exists
+curl http://localhost:8080/redis/set/post:123:tags/member/javascript/exists
 ```
 
 ### 3. Unique Collections
 
 ```bash
 # Store unique IP addresses
-curl -X POST http://localhost:8080/api/set/unique-visitors \
+curl -X POST http://localhost:8080/redis/set/unique-visitors \
      -H "Content-Type: application/json" \
      -d '{
        "members": ["192.168.1.100", "192.168.1.101", "10.0.0.50"],
@@ -406,27 +406,27 @@ curl -X POST http://localhost:8080/api/set/unique-visitors \
      }'
 
 # Add new visitor
-curl -X POST http://localhost:8080/api/set/unique-visitors/member/192.168.1.102
+curl -X POST http://localhost:8080/redis/set/unique-visitors/member/192.168.1.102
 
 # Get unique visitor count
-curl http://localhost:8080/api/set/unique-visitors/cardinality
+curl http://localhost:8080/redis/set/unique-visitors/cardinality
 ```
 
 ### 4. User Groups and Permissions
 
 ```bash
 # Store admin users
-curl -X POST http://localhost:8080/api/set/admins \
+curl -X POST http://localhost:8080/redis/set/admins \
      -H "Content-Type: application/json" \
      -d '{
        "members": ["user1", "user2", "user3"]
      }'
 
 # Check if user is admin
-curl http://localhost:8080/api/set/admins/member/user1/exists
+curl http://localhost:8080/redis/set/admins/member/user1/exists
 
 # Add new admin
-curl -X POST http://localhost:8080/api/set/admins/member/user4
+curl -X POST http://localhost:8080/redis/set/admins/member/user4
 ```
 
 ## Error Handling

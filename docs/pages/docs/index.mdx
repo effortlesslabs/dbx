@@ -1,52 +1,49 @@
 # Introduction
 
-DBX is a minimal, blazing-fast API proxy designed for edge and embedded systems. It provides a unified API layer to expose Redis, Qdrant, and MDBX databases through a clean, RESTful interface and WebSocket connections.
+DBX is a minimal, blazing-fast Redis API proxy designed for edge and embedded systems. Built in Rust, it provides a clean RESTful interface and real-time WebSocket connections for Redis operations.
 
 ## What is DBX?
 
-DBX acts as a lightweight proxy that sits between your applications and your databases, providing:
+DBX acts as a lightweight proxy that sits between your applications and Redis, providing:
 
-- **Unified API**: Single interface for multiple database types
-- **Edge-Optimized**: Designed for low-latency, high-throughput edge deployments
-- **Embedded-Friendly**: Minimal resource footprint perfect for embedded systems
-- **Protocol Support**: Both REST API and WebSocket connections
+- **Redis-Optimized**: High-performance Redis operations with connection pooling
+- **Edge-Friendly**: Minimal ~50MB Docker image perfect for edge deployments
+- **Dual Protocol**: Both REST API and WebSocket support for different use cases
 - **Type Safety**: Full TypeScript SDK with comprehensive type definitions
+- **Batch Operations**: Efficient bulk operations for better performance
 
 ## Key Features
 
 ### 🚀 Performance
 
-- **Ultra-low latency**: Optimized for edge computing environments
-- **High throughput**: Efficient connection pooling and request handling
-- **Minimal overhead**: Lightweight proxy with minimal resource usage
+- **Ultra-low latency**: Built in Rust for maximum performance
+- **Connection pooling**: Configurable Redis connection pool
+- **Batch operations**: Reduce round trips with bulk operations
+- **WebSocket support**: Real-time operations without HTTP overhead
 
-### 🔧 Database Support
+### 🔧 Redis Operations
 
-- **Redis**: Full Redis protocol support with all data types
-- **Qdrant**: Vector database operations for AI/ML workloads
-- **MDBX**: Embedded key-value store for local persistence
+- **String Operations**: Get, set, delete with TTL support
+- **Hash Operations**: Field operations, batch operations, metadata
+- **Set Operations**: Member operations, set arithmetic, batch operations
+- **Admin Operations**: Health checks, server stats, configuration management
 
 ### 🌐 Connectivity
 
-- **REST API**: Standard HTTP endpoints for all operations
+- **REST API**: Standard HTTP endpoints for all Redis operations
 - **WebSocket**: Real-time bidirectional communication
 - **TypeScript SDK**: Full-featured client library with type safety
-
-### 🛡️ Security
-
-- **Authentication**: JWT-based authentication system
-- **Rate Limiting**: Built-in request throttling
-- **CORS Support**: Configurable cross-origin resource sharing
+- **Batch Support**: Pattern-based and bulk operations
 
 ## Architecture
 
 ```
 ┌─────────────────┐    ┌─────────────┐    ┌─────────────┐
-│   Your App      │    │     DBX     │    │  Database   │
-│                 │◄──►│   Proxy     │◄──►│  (Redis/    │
-│  (Client SDK)   │    │             │    │  Qdrant/    │
-└─────────────────┘    └─────────────┘    │  MDBX)      │
-                                          └─────────────┘
+│   Your App      │    │     DBX     │    │    Redis    │
+│                 │◄──►│   Proxy     │◄──►│             │
+│  (TypeScript    │    │  (Rust)     │    │  Database   │
+│   SDK)          │    │             │    │             │
+└─────────────────┘    └─────────────┘    └─────────────┘
 ```
 
 ## Use Cases
@@ -72,14 +69,32 @@ Leverage WebSocket connections for real-time data synchronization and event stre
 Get started with DBX in minutes:
 
 ```bash
-# Install DBX
-cargo install dbx
+# Using Docker (recommended)
+docker run -d --name dbx -p 3000:3000 \
+  -e DATABASE_URL=redis://localhost:6379 \
+  fnlog0/dbx:latest
 
-# Start the server
-dbx --config config.toml
+# Or run with convenience script
+./scripts/run.sh --redis-url redis://localhost:6379
 
-# Use the TypeScript SDK
-npm install @effortlesslabs/dbx
+# Install TypeScript SDK
+npm install dbx-sdk
+```
+
+```typescript
+import { DbxClient } from "dbx-sdk";
+
+const client = new DbxClient({
+  baseUrl: "http://localhost:3000"
+});
+
+// String operations
+await client.string.set("key", "value", 3600);
+const value = await client.string.get("key");
+
+// Hash operations
+await client.hash.setField("user:1", "name", "John");
+const name = await client.hash.getField("user:1", "name");
 ```
 
 ## Next Steps
@@ -87,7 +102,7 @@ npm install @effortlesslabs/dbx
 - [Quick Start Guide](/docs/getting-started) - Get up and running in minutes
 - [Installation](/docs/installation) - Detailed installation instructions
 - [Configuration](/docs/configuration) - Learn about configuration options
-- [API Reference](/docs/api/rest/authentication) - Explore the REST API
+- [API Reference](/docs/api/rest/string) - Explore the REST API
 - [TypeScript SDK](/docs/sdk/typescript/installation) - Use the official SDK
 
 ## Community

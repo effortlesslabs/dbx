@@ -8,7 +8,7 @@ String operations are the most basic data type in DBX, supporting simple key-val
 
 ## Endpoints
 
-### GET /api/string/{key}
+### GET /redis/string/`{key}`
 
 Retrieve a string value by key.
 
@@ -28,7 +28,7 @@ Retrieve a string value by key.
 **Example:**
 
 ```bash
-curl http://localhost:8080/api/string/my-key
+curl http://localhost:8080/redis/string/my-key
 ```
 
 **Error Responses:**
@@ -36,7 +36,7 @@ curl http://localhost:8080/api/string/my-key
 - `404 Not Found` - Key doesn't exist
 - `400 Bad Request` - Invalid key format
 
-### POST /api/string/{key}
+### POST /redis/string/`{key}`
 
 Create or update a string value.
 
@@ -67,12 +67,12 @@ Create or update a string value.
 **Example:**
 
 ```bash
-curl -X POST http://localhost:8080/api/string/my-key \
+curl -X POST http://localhost:8080/redis/string/my-key \
      -H "Content-Type: application/json" \
      -d '{"value": "Hello, World!", "ttl": 3600}'
 ```
 
-### DELETE /api/string/{key}
+### DELETE /redis/string/`{key}`
 
 Delete a string value by key.
 
@@ -92,10 +92,10 @@ Delete a string value by key.
 **Example:**
 
 ```bash
-curl -X DELETE http://localhost:8080/api/string/my-key
+curl -X DELETE http://localhost:8080/redis/string/my-key
 ```
 
-### GET /api/string/{key}/exists
+### GET /redis/string/`{key}`/exists
 
 Check if a key exists.
 
@@ -114,10 +114,10 @@ Check if a key exists.
 **Example:**
 
 ```bash
-curl http://localhost:8080/api/string/my-key/exists
+curl http://localhost:8080/redis/string/my-key/exists
 ```
 
-### GET /api/string/{key}/ttl
+### GET /redis/string/`{key}`/ttl
 
 Get the remaining TTL for a key.
 
@@ -136,10 +136,10 @@ Get the remaining TTL for a key.
 **Example:**
 
 ```bash
-curl http://localhost:8080/api/string/my-key/ttl
+curl http://localhost:8080/redis/string/my-key/ttl
 ```
 
-### POST /api/string/{key}/expire
+### POST /redis/string/`{key}`/expire
 
 Set or update the TTL for a key.
 
@@ -168,14 +168,14 @@ Set or update the TTL for a key.
 **Example:**
 
 ```bash
-curl -X POST http://localhost:8080/api/string/my-key/expire \
+curl -X POST http://localhost:8080/redis/string/my-key/expire \
      -H "Content-Type: application/json" \
      -d '{"ttl": 7200}'
 ```
 
 ## Batch Operations
 
-### POST /api/string/batch
+### POST /redis/string/batch
 
 Perform multiple string operations in a single request.
 
@@ -232,36 +232,36 @@ Perform multiple string operations in a single request.
 
 ```bash
 # Store a cached value
-curl -X POST http://localhost:8080/api/string/cache:user:123 \
+curl -X POST http://localhost:8080/redis/string/cache:user:123 \
      -H "Content-Type: application/json" \
      -d '{"value": "{\"name\":\"John\",\"email\":\"john@example.com\"}", "ttl": 300}'
 
 # Retrieve cached value
-curl http://localhost:8080/api/string/cache:user:123
+curl http://localhost:8080/redis/string/cache:user:123
 ```
 
 ### 2. Session Storage
 
 ```bash
 # Store session data
-curl -X POST http://localhost:8080/api/string/session:abc123 \
+curl -X POST http://localhost:8080/redis/string/session:abc123 \
      -H "Content-Type: application/json" \
      -d '{"value": "{\"user_id\":123,\"permissions\":[\"read\",\"write\"]}", "ttl": 3600}'
 
 # Check session exists
-curl http://localhost:8080/api/string/session:abc123/exists
+curl http://localhost:8080/redis/string/session:abc123/exists
 ```
 
 ### 3. Rate Limiting
 
 ```bash
 # Track API calls
-curl -X POST http://localhost:8080/api/string/rate:ip:192.168.1.1 \
+curl -X POST http://localhost:8080/redis/string/rate:ip:192.168.1.1 \
      -H "Content-Type: application/json" \
      -d '{"value": "10", "ttl": 60}'
 
 # Check remaining calls
-curl http://localhost:8080/api/string/rate:ip:192.168.1.1
+curl http://localhost:8080/redis/string/rate:ip:192.168.1.1
 ```
 
 ## Error Handling
