@@ -8,19 +8,21 @@
 pub mod client;
 pub mod primitives;
 
-use redis::{Connection, RedisError, RedisResult, Script};
+use redis::{ Connection, RedisError, RedisResult, Script };
 
 use client::RedisClient;
 use primitives::admin::AdminOperations;
 use primitives::hash::RedisHash;
 use primitives::set::RedisSet;
 use primitives::string::RedisString;
+use primitives::bitmap::RedisBitmap;
 
 /// Redis data type adapters providing type-specific operations
 pub mod types {
     pub use super::primitives::hash::RedisHash;
     pub use super::primitives::set::RedisSet;
     pub use super::primitives::string::RedisString;
+    pub use super::primitives::bitmap::RedisBitmap;
     // Other Redis types will be added here as they're implemented:
     // pub use super::primitives::list::RedisList;
     // pub use super::primitives::sorted_set::RedisSortedSet;
@@ -120,6 +122,11 @@ impl Redis {
         RedisHash::new(self.client.connection().clone())
     }
 
+    /// Get access to bitmap operations
+    pub fn bitmap(&self) -> RedisBitmap {
+        RedisBitmap::new(self.client.connection().clone())
+    }
+
     /// Get access to admin operations
     pub fn admin(&self) -> AdminOperations {
         AdminOperations::new(self.client.connection().clone())
@@ -127,10 +134,7 @@ impl Redis {
 
     /// Execute a Lua script directly
     pub fn eval_script<T, K, A>(&self, script: &Script, keys: K, args: A) -> RedisResult<T>
-    where
-        T: redis::FromRedisValue,
-        K: redis::ToRedisArgs,
-        A: redis::ToRedisArgs,
+        where T: redis::FromRedisValue, K: redis::ToRedisArgs, A: redis::ToRedisArgs
     {
         self.string().eval_script(script, keys, args)
     }
@@ -141,11 +145,10 @@ impl Redis {
         pipe: &'a mut redis::Pipeline,
         script: &Script,
         keys: K,
-        args: A,
-    ) -> &'a mut redis::Pipeline
-    where
-        K: redis::ToRedisArgs,
-        A: redis::ToRedisArgs,
+        args: A
+    )
+        -> &'a mut redis::Pipeline
+        where K: redis::ToRedisArgs, A: redis::ToRedisArgs
     {
         primitives::string::RedisString::add_script_to_pipeline(pipe, script, keys, args)
     }
@@ -256,14 +259,11 @@ impl RedisPoolAdapter {
 /// Error types for Redis operations
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("Redis error: {0}")]
-    Redis(#[from] RedisError),
+    #[error("Redis error: {0}")] Redis(#[from] RedisError),
 
-    #[error("Connection error: {0}")]
-    Connection(String),
+    #[error("Connection error: {0}")] Connection(String),
 
-    #[error("Serialization error: {0}")]
-    Serialization(String),
+    #[error("Serialization error: {0}")] Serialization(String),
 }
 
 /// Helper functions for Redis operations
