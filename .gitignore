@@ -146,3 +146,16 @@ temp/
 .pnp.* 
 .zed
 @internals
+
+# Python
+*.py[cod]
+__pycache__/
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+.pytest_cache/
+# Python packaging
+**/*.egg-info/
