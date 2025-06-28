@@ -1,0 +1,60 @@
+{
+  "name": "dbx-redis-ts-bindings",
+  "version": "0.1.0",
+  "description": "NAPI bindings for DBX Redis SDK",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "napi": {
+    "name": "dbx-redis-ts-bindings",
+    "triples": {
+      "defaults": true,
+      "additional": [
+        "x86_64-pc-windows-msvc",
+        "i686-pc-windows-msvc",
+        "aarch64-apple-darwin",
+        "x86_64-apple-darwin",
+        "x86_64-unknown-linux-gnu",
+        "x86_64-unknown-linux-musl",
+        "aarch64-unknown-linux-gnu",
+        "armv7-unknown-linux-gnueabihf",
+        "aarch64-unknown-linux-musl",
+        "x86_64-unknown-freebsd"
+      ]
+    }
+  },
+  "scripts": {
+    "build": "napi build --platform --release",
+    "build:debug": "napi build --platform",
+    "prepublishOnly": "napi prepublish -t npm",
+    "artifacts": "napi artifacts",
+    "universal": "napi universal",
+    "test": "node -e \"console.log('Testing bindings...'); const { create_client } = require('./index.js'); console.log('Bindings loaded successfully');\""
+  },
+  "keywords": [
+    "napi-rs",
+    "NAPI",
+    "napi",
+    "node-api",
+    "redis",
+    "database",
+    "api",
+    "bindings"
+  ],
+  "author": "Effortless Labs",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/effortlesslabs/dbx.git"
+  },
+  "engines": {
+    "node": ">= 14"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^2.16.0"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "*.node"
+  ]
+}
