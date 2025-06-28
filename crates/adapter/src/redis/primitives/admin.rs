@@ -3,7 +3,6 @@ use redis::{ Connection };
 use std::collections::HashMap;
 use std::sync::{ Arc, Mutex };
 use serde::{ Serialize, Deserialize };
-use crate::redis::Redis;
 
 /// Provides administrative operations for Redis.
 ///

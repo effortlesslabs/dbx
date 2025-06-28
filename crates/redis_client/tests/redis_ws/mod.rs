@@ -1,7 +1,7 @@
 #![cfg(feature = "websocket")]
 //! Tests for WebSocket Redis client functionality
 
-use redis_rs::{ WsClient, StringOperations, SetOperations, error::Result };
+use redis_client::{ WsClient, StringOperations, SetOperations, error::Result };
 use crate::utils;
 
 // Import string and set test modules
@@ -72,17 +72,17 @@ async fn test_websocket_string_batch_operations() -> Result<()> {
     ];
 
     let operations = vec![
-        redis_rs::StringOperation {
+        redis_client::StringOperation {
             key: keys[0].clone(),
             value: Some("ws_value1".to_string()),
             ttl: Some(3600),
         },
-        redis_rs::StringOperation {
+        redis_client::StringOperation {
             key: keys[1].clone(),
             value: Some("ws_value2".to_string()),
             ttl: None,
         },
-        redis_rs::StringOperation {
+        redis_client::StringOperation {
             key: keys[2].clone(),
             value: Some("ws_value3".to_string()),
             ttl: Some(1800),
@@ -287,14 +287,14 @@ async fn test_websocket_concurrent_operations() -> Result<()> {
                 let retrieved = string_client.get(&key).await?;
                 assert_eq!(retrieved, Some(value));
                 string_client.delete(&key).await?;
-                Ok::<(), redis_rs::error::DbxError>(())
+                Ok::<(), redis_client::error::DbxError>(())
             })
         })
         .collect();
 
     // Wait for all operations to complete
     for handle in handles {
-        handle.await.map_err(|e| redis_rs::error::DbxError::Other(anyhow::anyhow!("{}", e)))??;
+        handle.await.map_err(|e| redis_client::error::DbxError::Other(anyhow::anyhow!("{}", e)))??;
     }
 
     Ok(())

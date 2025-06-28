@@ -15,9 +15,9 @@
 //! # Example
 //!
 //! ```rust,no_run
-//! use redis_rs::{HttpClient, StringOperations, SetOperations};
+//! use redis_client::{HttpClient, StringOperations, SetOperations};
 //! #[cfg(feature = "websocket")]
-//! use redis_rs::WsClient;
+//! use redis_client::WsClient;
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {

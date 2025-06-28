@@ -28,7 +28,9 @@
     "prepublishOnly": "napi prepublish -t npm",
     "artifacts": "napi artifacts",
     "universal": "napi universal",
-    "test": "node -e \"console.log('Testing bindings...'); const { create_client } = require('./index.js'); console.log('Bindings loaded successfully');\""
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:ui": "vitest --ui"
   },
   "keywords": [
     "napi-rs",
@@ -50,7 +52,10 @@
     "node": ">= 14"
   },
   "devDependencies": {
-    "@napi-rs/cli": "^2.16.0"
+    "@napi-rs/cli": "^2.16.0",
+    "vitest": "^1.0.0",
+    "@vitest/ui": "^1.0.0",
+    "@types/node": "^20.0.0"
   },
   "files": [
     "index.js",

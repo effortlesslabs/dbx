@@ -310,10 +310,15 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { DbxRedisClient, StringClient, SetClient, createClient, createClientWithTimeout } = nativeBinding
+const { StringClient, StringInfoJs, SetClient, WsStringClient, WsSetClient, DbxRedisClient, DbxWsClient, createClient, createClientWithTimeout, createWsClient } = nativeBinding
 
-module.exports.DbxRedisClient = DbxRedisClient
 module.exports.StringClient = StringClient
+module.exports.StringInfoJs = StringInfoJs
 module.exports.SetClient = SetClient
+module.exports.WsStringClient = WsStringClient
+module.exports.WsSetClient = WsSetClient
+module.exports.DbxRedisClient = DbxRedisClient
+module.exports.DbxWsClient = DbxWsClient
 module.exports.createClient = createClient
 module.exports.createClientWithTimeout = createClientWithTimeout
+module.exports.createWsClient = createWsClient
