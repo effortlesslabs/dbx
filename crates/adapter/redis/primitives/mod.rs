@@ -15,8 +15,8 @@ pub mod admin;
 pub mod bitmap;
 pub mod hash;
 pub mod set;
+pub mod sorted_set;
 pub mod string;
 
 // These will be implemented in future versions:
 // pub mod list;
-// pub mod sorted_set;
