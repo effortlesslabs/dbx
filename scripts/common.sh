@@ -166,7 +166,7 @@ update_version_in_file() {
 
 restore_version_files() {
     local backup_suffix="${1:-.bak}"
-    local files=("Cargo.toml" "ts/package.json" "Dockerfile")
+    local files=("Cargo.toml" "bindings/redis_ts/package.json" "Dockerfile")
     
     for file in "${files[@]}"; do
         if [ -f "${file}${backup_suffix}" ]; then
@@ -212,7 +212,7 @@ run_rust_tests() {
 
 run_typescript_tests() {
     log_step "Running TypeScript tests..."
-    if ! (cd ts && npm run test:run); then
+    if ! (cd "$TYPESCRIPT_BUILD_DIR" && npm run test:run); then
         log_error "TypeScript tests failed"
         return 1
     fi
@@ -228,7 +228,7 @@ run_all_tests() {
         log_debug "Running tests in parallel"
         parallel --jobs 2 ::: \
             "cargo test --all" \
-            "cd ts && npm run test:run"
+            "cd $TYPESCRIPT_BUILD_DIR && npm run test:run"
     else
         log_debug "Running tests sequentially"
         run_rust_tests || return 1
@@ -257,12 +257,28 @@ clean_typescript_build() {
     fi
 }
 
+# Build TypeScript SDK
 build_typescript_sdk() {
-    log_step "Building TypeScript SDK..."
+    local build_dir="${1:-$TYPESCRIPT_BUILD_DIR}"
+    
+    log_info "Building TypeScript SDK in $build_dir..."
+    
+    if [ ! -d "$build_dir" ]; then
+        log_error "TypeScript build directory $build_dir not found"
+        return 1
+    fi
+    
+    if [ ! -f "$build_dir/package.json" ]; then
+        log_error "package.json not found in $build_dir"
+        return 1
+    fi
+    
+    # Build the TypeScript SDK
     if ! (cd "$TYPESCRIPT_BUILD_DIR" && npm run build); then
         log_error "TypeScript SDK build failed"
         return 1
     fi
+    
     log_success "TypeScript SDK built successfully"
     return 0
 }
@@ -419,3 +435,26 @@ trap cleanup_on_error ERR
 
 # Load environment when this file is sourced
 load_environment 
+
+# Update version in multiple files
+update_all_versions() {
+    local version="$1"
+    local files=("Cargo.toml" "bindings/redis_ts/package.json" "Dockerfile")
+    
+    log_info "Updating version to $version in all files..."
+    
+    for file in "${files[@]}"; do
+        if [ -f "$file" ]; then
+            if update_version_in_file "$file" "$version"; then
+                log_success "Updated version in $file"
+            else
+                log_error "Failed to update version in $file"
+                return 1
+            fi
+        else
+            log_warning "File $file not found, skipping"
+        fi
+    done
+    
+    return 0
+} 

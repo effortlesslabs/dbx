@@ -87,7 +87,7 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Environment Variables:"
             echo "  NPM_TOKEN              NPM authentication token"
-            echo "  NPM_PACKAGE_NAME       Package name (default: dbx-sdk)"
+            echo "  NPM_PACKAGE_NAME       Package name (default: dbx-redis-ts-bindings)"
             echo "  DEBUG                  Enable debug mode"
             echo "  VERBOSE                Enable verbose output"
             echo ""
@@ -115,7 +115,7 @@ if ! check_required_tools "npm" "node" "git"; then
 fi
 
 # Check if we're in the right directory
-if [ ! -f "ts/package.json" ]; then
+if [ ! -f "bindings/redis_ts/package.json" ]; then
     log_error "TypeScript package.json not found. Are you in the correct directory?"
     exit 1
 fi
@@ -127,9 +127,9 @@ if [ "$DRY_RUN" = false ] && [ -z "$NPM_TOKEN" ]; then
 fi
 
 # Get current version from package.json
-CURRENT_VERSION=$(get_current_version "ts/package.json")
+CURRENT_VERSION=$(get_current_version "bindings/redis_ts/package.json")
 if [ $? -ne 0 ]; then
-    log_error "Failed to get current version from ts/package.json"
+    log_error "Failed to get current version from bindings/redis_ts/package.json"
     exit 1
 fi
 
@@ -182,12 +182,12 @@ echo ""
 if [ "$UPDATE_VERSION" = true ] && [ -n "$VERSION" ]; then
     log_step "Step 1: Updating version in TypeScript package.json"
     if [ "$DRY_RUN" = true ]; then
-        echo "Would update version to $VERSION in ts/package.json"
+        echo "Would update version to $VERSION in bindings/redis_ts/package.json"
     else
-        if update_version_in_file "ts/package.json" "$VERSION"; then
+        if update_version_in_file "bindings/redis_ts/package.json" "$VERSION"; then
             log_success "Updated TypeScript SDK version to $VERSION"
         else
-            log_error "Failed to update version in ts/package.json"
+            log_error "Failed to update version in bindings/redis_ts/package.json"
             exit 1
         fi
     fi

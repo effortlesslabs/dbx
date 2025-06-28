@@ -5,6 +5,9 @@ use dbx_api::{ config::{ Config, DatabaseType }, server::Server, constants::defa
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    // Load environment variables from .env file
+    dotenv::dotenv().ok();
+
     // Initialize tracing
     tracing_subscriber::fmt::init();
 

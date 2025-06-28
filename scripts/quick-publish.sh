@@ -42,9 +42,9 @@ if ! check_required_tools "git"; then
 fi
 
 # Check if we're in the right directory
-if [ ! -f "Cargo.toml" ] || [ ! -f "ts/package.json" ] || [ ! -f "Dockerfile" ]; then
+if [ ! -f "Cargo.toml" ] || [ ! -f "bindings/redis_ts/package.json" ] || [ ! -f "Dockerfile" ]; then
     log_error "Required files not found. Are you in the correct directory?"
-    log_error "Expected: Cargo.toml, ts/package.json, Dockerfile"
+    log_error "Expected: Cargo.toml, bindings/redis_ts/package.json, Dockerfile"
     exit 1
 fi
 
