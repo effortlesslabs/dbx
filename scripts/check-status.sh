@@ -39,8 +39,8 @@ log_info "Current Versions:"
 WORKSPACE_VERSION=$(grep '^version = ' Cargo.toml | cut -d'"' -f2)
 echo "   • Workspace (Cargo.toml): $WORKSPACE_VERSION"
 
-# TypeScript SDK version
-TS_VERSION=$(grep '"version"' ts/package.json | cut -d'"' -f4)
+# Get TypeScript version
+TS_VERSION=$(grep '"version"' bindings/redis_ts/package.json | cut -d'"' -f4)
 echo "   • TypeScript SDK: $TS_VERSION"
 
 # Dockerfile version
@@ -85,15 +85,15 @@ echo ""
 
 # Check NPM status
 log_info "NPM Status:"
-echo "   • Package: dbx-sdk"
-echo "   • Registry: https://www.npmjs.com/package/dbx-sdk"
+echo "   • Package: dbx-redis-ts-bindings"
+echo "   • Registry: https://www.npmjs.com/package/dbx-redis-ts-bindings"
 
 # Check if npm is available
 if command -v npm &> /dev/null; then
     echo "   • NPM: Available"
     
     # Check if package is installed locally
-    if [ -d "ts/node_modules" ]; then
+    if [ -d "bindings/redis_ts/node_modules" ]; then
         echo "   • Local package: Installed"
     else
         echo "   • Local package: Not installed"
@@ -142,11 +142,20 @@ else
     echo "   • Rust build: Not built"
 fi
 
-# Check TypeScript build
-if [ -d "ts/dist" ]; then
-    echo "   • TypeScript build: Available"
+# Check TypeScript dependencies
+if [ -d "bindings/redis_ts/node_modules" ]; then
+    echo "   ✅ TypeScript dependencies installed"
 else
-    echo "   • TypeScript build: Not built"
+    echo "   ❌ TypeScript dependencies missing"
+    echo "      Run: cd bindings/redis_ts && npm install"
+fi
+
+# Check TypeScript build
+if [ -d "bindings/redis_ts/dist" ]; then
+    echo "   ✅ TypeScript build exists"
+else
+    echo "   ❌ TypeScript build missing"
+    echo "      Run: cd bindings/redis_ts && npm run build"
 fi
 
 echo ""
@@ -154,7 +163,7 @@ echo ""
 # Check test status
 log_info "Test Status:"
 echo "   • Rust tests: Run with 'cargo test'"
-echo "   • TypeScript tests: Run with 'cd ts && npm test'"
+echo "   • TypeScript tests: Run with 'cd bindings/redis_ts && npm test'"
 
 echo ""
 
@@ -169,8 +178,8 @@ echo "   • Docker only: ./scripts/publish.sh --tag <tag> --push"
 echo ""
 echo "🔧 Development:"
 echo "   • Build Rust: cargo build --release"
-echo "   • Build TypeScript: cd ts && npm run build"
-echo "   • Run tests: cargo test && cd ts && npm test"
+echo "   • Build TypeScript: cd bindings/redis_ts && npm run build"
+echo "   • Run tests: cargo test && cd bindings/redis_ts && npm test"
 echo "   • Run locally: cargo run --bin api"
 
 echo ""
@@ -181,14 +190,14 @@ echo "   • Multi-platform: ./scripts/publish.sh --tag <tag> --push"
 
 echo ""
 echo "📚 Documentation:"
-echo "   • Publishing Guide: PUBLISHING.md"
-echo "   • API Documentation: docs/"
-echo "   • TypeScript SDK: ts/README.md"
+echo "   • API docs: docs/pages/docs/api/"
+echo "   • TypeScript bindings: bindings/redis_ts/README.md"
+echo "   • Rust client: crates/redis_client/README.md"
 
 echo ""
 log_info "Next Steps:"
 echo "1. Ensure all versions are consistent"
-echo "2. Run tests: cargo test && cd ts && npm test"
+echo "2. Run tests: cargo test && cd bindings/redis_ts && npm test"
 echo "3. Choose publishing method:"
 echo "   • GitHub Actions (recommended): Create git tag"
 echo "   • Quick publish: ./scripts/quick-publish.sh"

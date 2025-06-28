@@ -1,7 +1,9 @@
 [workspace]
 members = [
-    "crates",
-    "api"
+    "crates/adapter",
+    "crates/redis_client",
+    "crates/redis_api",
+    "bindings/redis_ts"
 ]
 resolver = "2"
 

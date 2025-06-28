@@ -28,7 +28,7 @@ DOCKER_RAILWAY_TAG_SUFFIX="${DOCKER_RAILWAY_TAG_SUFFIX:-amd64-only}"
 # =============================================================================
 
 # NPM package settings
-NPM_PACKAGE_NAME="${NPM_PACKAGE_NAME:-dbx-sdk}"
+NPM_PACKAGE_NAME="${NPM_PACKAGE_NAME:-dbx-redis-ts-bindings}"
 NPM_PACKAGE_ACCESS="${NPM_PACKAGE_ACCESS:-public}"
 NPM_REGISTRY="${NPM_REGISTRY:-https://registry.npmjs.org/}"
 
@@ -39,7 +39,7 @@ NPM_REGISTRY="${NPM_REGISTRY:-https://registry.npmjs.org/}"
 # Version files to update
 VERSION_FILES=(
     "Cargo.toml"
-    "ts/package.json"
+    "bindings/redis_ts/package.json"
     "Dockerfile"
 )
 
@@ -63,7 +63,7 @@ ENABLE_PARALLEL_TESTS="${ENABLE_PARALLEL_TESTS:-true}"
 # =============================================================================
 
 # Build directories
-TYPESCRIPT_BUILD_DIR="${TYPESCRIPT_BUILD_DIR:-ts}"
+TYPESCRIPT_BUILD_DIR="${TYPESCRIPT_BUILD_DIR:-bindings/redis_ts}"
 RUST_BUILD_DIR="${RUST_BUILD_DIR:-.}"
 
 # =============================================================================

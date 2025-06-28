@@ -146,3 +146,11 @@ temp/
 .pnp.* 
 .zed
 @internals
+
+# Redis TS bindings
+bindings/redis_ts/index.js
+bindings/redis_ts/index.d.ts
+bindings/redis_ts/index.js.map
+bindings/redis_ts/index.d.ts.map
+bindings/redis_ts/index.js.map.gz
+bindings/redis_ts/index.d.ts.map.gz

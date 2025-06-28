@@ -8,7 +8,7 @@ This directory contains optimized publishing scripts for the DBX project. All sc
 
 - **`publish-release.sh`** - Complete release automation (Docker + NPM + Git)
 - **`publish-docker.sh`** - Docker-only image building and publishing
-- **`publish-npm.sh`** - NPM-only TypeScript SDK publishing
+- **`publish-npm.sh`** - NPM-only TypeScript bindings publishing
 - **`quick-publish.sh`** - Interactive release helper
 
 ### Shared Files
@@ -32,7 +32,7 @@ export NPM_TOKEN="your-npm-token"
 
 # Optional: Customize defaults
 export DOCKER_REPO="your-repo-name"
-export NPM_PACKAGE_NAME="your-package-name"
+export NPM_PACKAGE_NAME="dbx-redis-ts-bindings"
 ```
 
 ### Basic Usage
@@ -135,11 +135,11 @@ DOCKER_PLATFORMS="linux/amd64,linux/arm64"  # Target platforms
 
 # NPM Configuration
 NPM_TOKEN=""                       # NPM authentication token
-NPM_PACKAGE_NAME="dbx-sdk"         # NPM package name
+NPM_PACKAGE_NAME="dbx-redis-ts-bindings"         # NPM package name
 NPM_PACKAGE_ACCESS="public"        # Package access level
 
 # Build Configuration
-TYPESCRIPT_BUILD_DIR="ts"          # TypeScript build directory
+TYPESCRIPT_BUILD_DIR="bindings/redis_ts"          # TypeScript build directory
 RUST_BUILD_DIR="."                 # Rust build directory
 
 # Testing Configuration
@@ -179,7 +179,7 @@ VERBOSE=false
 ```bash
 # 1. Test changes
 cargo test --all
-cd ts && npm run test:run && cd ..
+cd bindings/redis_ts && npm run test:run && cd ..
 
 # 2. Quick NPM publish for testing
 ./scripts/publish-npm.sh --version 0.1.6 --npm-token $NPM_TOKEN --update-version
@@ -237,7 +237,7 @@ cd ts && npm run test:run && cd ..
 4. **Version Conflicts**
    ```bash
    # Check existing versions
-   npm view dbx-sdk versions
+   npm view dbx-redis-ts-bindings versions
    git tag -l
    ```
 

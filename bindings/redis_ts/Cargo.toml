@@ -1,0 +1,30 @@
+[package]
+name = "dbx-redis-ts-bindings"
+version = "0.1.0"
+edition = "2021"
+description = "NAPI bindings for DBX Redis SDK"
+license = "MIT"
+repository = "https://github.com/effortlesslabs/dbx"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+napi = { version = "2.15", default-features = false, features = ["napi4"] }
+napi-derive = "2.15"
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+redis_client = { path = "../../crates/redis_client", features = ["websocket"] }
+
+[build-dependencies]
+napi-build = "2.2"
+
+[features]
+default = ["napi4"]
+napi4 = ["napi/napi4"]
+napi5 = ["napi/napi5"]
+napi6 = ["napi/napi6"]
+napi7 = ["napi/napi7"]
+napi8 = ["napi/napi8"] 

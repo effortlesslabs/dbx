@@ -125,9 +125,9 @@ if ! check_required_tools "docker" "cargo" "npm" "node" "git"; then
 fi
 
 # Check if we're in the right directory
-if [ ! -f "Cargo.toml" ] || [ ! -f "ts/package.json" ] || [ ! -f "Dockerfile" ]; then
+if [ ! -f "Cargo.toml" ] || [ ! -f "bindings/redis_ts/package.json" ] || [ ! -f "Dockerfile" ]; then
     log_error "Required files not found. Are you in the correct directory?"
-    log_error "Expected: Cargo.toml, ts/package.json, Dockerfile"
+    log_error "Expected: Cargo.toml, bindings/redis_ts/package.json, Dockerfile"
     exit 1
 fi
 
@@ -160,7 +160,7 @@ fi
 
 # Get current versions for comparison
 CURRENT_CARGO_VERSION=$(get_current_version "Cargo.toml")
-CURRENT_NPM_VERSION=$(get_current_version "ts/package.json")
+CURRENT_NPM_VERSION=$(get_current_version "bindings/redis_ts/package.json")
 
 log_info "🚀 Starting DBX release process for version $VERSION"
 log_info "📦 Docker Hub: $DOCKER_USERNAME/$DOCKER_REPO"
@@ -189,12 +189,12 @@ fi
 # Step 2: Update version in TypeScript package.json
 log_step "Step 2: Updating version in TypeScript package.json"
 if [ "$DRY_RUN" = true ]; then
-    echo "Would update version to $VERSION in ts/package.json"
+    echo "Would update version to $VERSION in bindings/redis_ts/package.json"
 else
-    if update_version_in_file "ts/package.json" "$VERSION"; then
+    if update_version_in_file "bindings/redis_ts/package.json" "$VERSION"; then
         log_success "Updated TypeScript SDK version to $VERSION"
     else
-        log_error "Failed to update version in ts/package.json"
+        log_error "Failed to update version in bindings/redis_ts/package.json"
         exit 1
     fi
 fi
