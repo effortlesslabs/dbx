@@ -49,15 +49,11 @@ impl StringOperations for WsStringClient {
         let response = self.send_message(message).await?;
 
         // Parse the response according to the server's format
-        if let Some(result) = response.get("data") {
-            if let Some(value) = result.get("value") {
-                if value.is_null() {
-                    Ok(None)
-                } else {
-                    Ok(Some(value.as_str().unwrap_or("").to_string()))
-                }
-            } else {
+        if let Some(value) = response.get("value") {
+            if value.is_null() {
                 Ok(None)
+            } else {
+                Ok(Some(value.as_str().unwrap_or("").to_string()))
             }
         } else {
             Ok(None)
@@ -88,12 +84,8 @@ impl StringOperations for WsStringClient {
         let response = self.send_message(message).await?;
 
         // Parse the response according to the server's format
-        if let Some(result) = response.get("data") {
-            if let Some(deleted) = result.get("deleted") {
-                Ok(deleted.as_bool().unwrap_or(false))
-            } else {
-                Ok(false)
-            }
+        if let Some(deleted) = response.get("deleted") {
+            Ok(deleted.as_bool().unwrap_or(false))
         } else {
             Ok(false)
         }
@@ -108,16 +100,12 @@ impl StringOperations for WsStringClient {
 
         let response = self.send_message(message).await?;
 
-        if let Some(result) = response.get("data") {
-            if let Some(info) = result.get("info") {
-                if info.is_null() {
-                    Ok(None)
-                } else {
-                    let string_info: StringInfo = serde_json::from_value(info.clone())?;
-                    Ok(Some(string_info))
-                }
-            } else {
+        if let Some(info) = response.get("info") {
+            if info.is_null() {
                 Ok(None)
+            } else {
+                let string_info: StringInfo = serde_json::from_value(info.clone())?;
+                Ok(Some(string_info))
             }
         } else {
             Ok(None)
@@ -133,22 +121,18 @@ impl StringOperations for WsStringClient {
 
         let response = self.send_message(message).await?;
 
-        if let Some(result) = response.get("data") {
-            if let Some(values) = result.get("values") {
-                let empty_vec = Vec::new();
-                let values_array = values.as_array().unwrap_or(&empty_vec);
-                let mut result_vec = Vec::new();
-                for value in values_array {
-                    if value.is_null() {
-                        result_vec.push(None);
-                    } else {
-                        result_vec.push(Some(value.as_str().unwrap_or("").to_string()));
-                    }
+        if let Some(values) = response.get("values") {
+            let empty_vec = Vec::new();
+            let values_array = values.as_array().unwrap_or(&empty_vec);
+            let mut result_vec = Vec::new();
+            for value in values_array {
+                if value.is_null() {
+                    result_vec.push(None);
+                } else {
+                    result_vec.push(Some(value.as_str().unwrap_or("").to_string()));
                 }
-                Ok(result_vec)
-            } else {
-                Ok(Vec::new())
             }
+            Ok(result_vec)
         } else {
             Ok(Vec::new())
         }

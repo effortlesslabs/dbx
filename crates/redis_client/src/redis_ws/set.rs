@@ -257,6 +257,11 @@ impl SetOperations for WsSetClient {
             Ok(Vec::new())
         }
     }
+
+    /// Delete a set by key (not implemented for WebSocket, return Ok(true) as a no-op)
+    async fn delete(&mut self, _key: &str) -> crate::error::Result<bool> {
+        Ok(true)
+    }
 }
 
 #[cfg(all(test, feature = "websocket"))]

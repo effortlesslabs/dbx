@@ -118,6 +118,13 @@ impl SetOperations for HttpSetClient {
         let response = self.client.post(url).json(&request).send().await?;
         http::handle_response(response, "get set difference").await
     }
+
+    /// Delete a set by key
+    async fn delete(&mut self, key: &str) -> Result<bool> {
+        let url = self.base_url.join(&format!("redis/set/{}", key))?;
+        let response = self.client.delete(url).send().await?;
+        http::handle_response(response, &format!("delete set: {}", key)).await
+    }
 }
 
 #[cfg(all(test, feature = "http"))]
