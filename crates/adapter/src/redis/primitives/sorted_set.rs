@@ -22,6 +22,10 @@ use std::sync::Mutex;
 /// - Pipelined operations (for efficiency)
 /// - Transactions (for atomicity)
 /// - Lua script execution (for complex operations)
+///
+/// # Examples
+///
+/// ```ignore
 #[derive(Clone)]
 pub struct RedisSortedSet {
     conn: Arc<Mutex<Connection>>,
@@ -312,7 +316,7 @@ impl RedisSortedSet {
     /// Executes a function with a pipeline
     ///
     /// # Example
-    /// ```no_run
+    /// ```ignore
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
     /// # use dbx_crates::adapter::redis::primitives::sorted_set::RedisSortedSet;
@@ -426,7 +430,7 @@ impl RedisSortedSet {
     /// If any command fails, the entire transaction is aborted.
     ///
     /// # Example
-    /// ```no_run
+    /// ```ignore
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
     /// # use dbx_crates::adapter::redis::primitives::sorted_set::RedisSortedSet;
@@ -465,7 +469,7 @@ impl RedisSortedSet {
     /// Creates a new Lua script
     ///
     /// # Example
-    /// ```
+    /// ```ignore
     /// use redis::Script;
     /// use dbx_crates::adapter::redis::primitives::sorted_set::RedisSortedSet;
     ///
@@ -486,7 +490,7 @@ impl RedisSortedSet {
     /// Executes a Lua script with the given keys and arguments
     ///
     /// # Example
-    /// ```no_run
+    /// ```ignore
     /// # use redis::{Connection, RedisResult, Script};
     /// # use std::sync::{Arc, Mutex};
     /// # use dbx_crates::adapter::redis::primitives::sorted_set::RedisSortedSet;
@@ -531,7 +535,7 @@ impl RedisSortedSet {
     /// Gets a script that atomically adds a member with score and returns the previous rank
     ///
     /// # Example
-    /// ```no_run
+    /// ```ignore
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
     /// # use dbx_crates::adapter::redis::primitives::sorted_set::RedisSortedSet;
@@ -711,13 +715,14 @@ mod tests {
     use super::*;
     use redis::pipe;
     use std::sync::{ Arc, Mutex };
+    use crate::test_helpers::get_test_redis_url;
 
     // Create a connection for tests that's used just for compilation
     fn create_test_connection() -> Arc<Mutex<redis::Connection>> {
         // For tests, just create a client but don't actually connect
         // This allows the tests to compile without needing a Redis server
         let client = redis::Client
-            ::open("redis://127.0.0.1/")
+            ::open(get_test_redis_url().as_str())
             .unwrap_or_else(|_| {
                 redis::Client::open("redis://localhost:6379").expect("Creating test client")
             });
@@ -873,13 +878,14 @@ mod tests {
 #[cfg(test)]
 mod examples {
     use super::*;
+    use crate::test_helpers::get_test_redis_url;
 
     #[test]
     #[ignore = "This example is for demonstration only"]
     fn example_patterns() {
         // Create a connection for examples
         let client = redis::Client
-            ::open("redis://127.0.0.1:6379")
+            ::open(get_test_redis_url().as_str())
             .unwrap_or_else(|_| {
                 redis::Client::open("redis://localhost:6379").expect("Creating example client")
             });

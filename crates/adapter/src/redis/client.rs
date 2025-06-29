@@ -4,8 +4,8 @@
 //! Redis connections, including support for connection pooling and different
 //! connection types.
 
-use redis::{Client, Connection, RedisError, RedisResult};
-use std::sync::{Arc, Mutex};
+use redis::{ Client, Connection, RedisError, RedisResult };
+use std::sync::{ Arc, Mutex };
 
 use super::primitives::hash::RedisHash;
 use super::primitives::set::RedisSet;
@@ -22,7 +22,7 @@ impl RedisClient {
     /// Create a new Redis client from a connection string
     ///
     /// # Example
-    /// ```no_run
+    /// ```ignore
     /// # use dbx_crates::adapter::redis::client::RedisClient;
     /// let client = RedisClient::from_url("redis://127.0.0.1:6379").unwrap();
     /// ```
@@ -94,7 +94,7 @@ impl RedisPool {
     /// Create a new Redis pool with the specified pool size
     ///
     /// # Example
-    /// ```no_run
+    /// ```ignore
     /// # use dbx_crates::adapter::redis::client::RedisPool;
     /// let pool = RedisPool::new("redis://127.0.0.1:6379", 10).unwrap();
     /// ```

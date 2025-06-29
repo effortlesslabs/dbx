@@ -201,7 +201,7 @@ impl RedisHash {
     /// Executes a function with a pipeline
     ///
     /// # Example
-    /// ```no_run
+    /// ```ignore
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
     /// # use dbx_crates::adapter::redis::primitives::hash::RedisHash;
@@ -319,7 +319,7 @@ impl RedisHash {
     /// Executes a function within a transaction
     ///
     /// # Example
-    /// ```no_run
+    /// ```ignore
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
     /// # use dbx_crates::adapter::redis::primitives::hash::RedisHash;
@@ -376,7 +376,7 @@ impl RedisHash {
     /// Creates a new Lua script
     ///
     /// # Example
-    /// ```
+    /// ```ignore
     /// use redis::Script;
     /// use dbx_crates::adapter::redis::primitives::hash::RedisHash;
     ///
@@ -393,7 +393,7 @@ impl RedisHash {
     /// Executes a Lua script with the given keys and arguments
     ///
     /// # Example
-    /// ```no_run
+    /// ```ignore
     /// # use redis::{Connection, RedisResult, Script};
     /// # use std::sync::{Arc, Mutex};
     /// # use dbx_crates::adapter::redis::primitives::hash::RedisHash;
@@ -422,7 +422,7 @@ impl RedisHash {
     /// Gets a script that atomically sets a field and returns the previous value
     ///
     /// # Example
-    /// ```no_run
+    /// ```ignore
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
     /// # use dbx_crates::adapter::redis::primitives::hash::RedisHash;

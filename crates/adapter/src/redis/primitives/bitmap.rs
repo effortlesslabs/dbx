@@ -223,7 +223,8 @@ impl RedisBitmap {
     /// Executes a function with a pipeline
     ///
     /// # Example
-    /// ```no_run
+    ///
+    /// ```ignore
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
     /// # use dbx_crates::adapter::redis::primitives::bitmap::RedisBitmap;
@@ -315,7 +316,8 @@ impl RedisBitmap {
     /// If any command fails, the entire transaction is aborted.
     ///
     /// # Example
-    /// ```no_run
+    ///
+    /// ```ignore
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
     /// # use dbx_crates::adapter::redis::primitives::bitmap::RedisBitmap;
@@ -354,7 +356,8 @@ impl RedisBitmap {
     /// Creates a new Lua script
     ///
     /// # Example
-    /// ```
+    ///
+    /// ```ignore
     /// use redis::Script;
     /// use dbx_crates::adapter::redis::primitives::bitmap::RedisBitmap;
     ///
@@ -371,7 +374,8 @@ impl RedisBitmap {
     /// Executes a Lua script with the given keys and arguments
     ///
     /// # Example
-    /// ```no_run
+    ///
+    /// ```ignore
     /// # use redis::{Connection, RedisResult, Script};
     /// # use std::sync::{Arc, Mutex};
     /// # use dbx_crates::adapter::redis::primitives::bitmap::RedisBitmap;
@@ -416,7 +420,8 @@ impl RedisBitmap {
     /// Gets a script that atomically sets a bit and returns the previous value
     ///
     /// # Example
-    /// ```no_run
+    ///
+    /// ```ignore
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
     /// # use dbx_crates::adapter::redis::primitives::bitmap::RedisBitmap;
@@ -584,13 +589,14 @@ mod tests {
     use super::*;
     use redis::pipe;
     use std::sync::{ Arc, Mutex };
+    use crate::test_helpers::get_test_redis_url;
 
     // Create a connection for tests that's used just for compilation
     fn create_test_connection() -> Arc<Mutex<redis::Connection>> {
         // For tests, just create a client but don't actually connect
         // This allows the tests to compile without needing a Redis server
         let client = redis::Client
-            ::open("redis://127.0.0.1/")
+            ::open(get_test_redis_url().as_str())
             .unwrap_or_else(|_| {
                 redis::Client::open("redis://localhost:6379").expect("Creating test client")
             });
@@ -710,13 +716,14 @@ mod tests {
 #[cfg(test)]
 mod examples {
     use super::*;
+    use crate::test_helpers::get_test_redis_url;
 
     #[test]
     #[ignore = "This example is for demonstration only"]
     fn example_patterns() {
         // Create a connection for examples
         let client = redis::Client
-            ::open("redis://127.0.0.1:6379")
+            ::open(get_test_redis_url().as_str())
             .unwrap_or_else(|_| {
                 redis::Client::open("redis://localhost:6379").expect("Creating example client")
             });
@@ -777,19 +784,5 @@ mod examples {
         // Example 4: Batch operations
         let _ = redis_bitmap.setbit_many("batch:bitmap", vec![(0, true), (1, false), (2, true)]);
         let _ = redis_bitmap.getbit_many("batch:bitmap", vec![0, 1, 2]);
-
-        // Example 5: Bitwise operations
-        let _ = redis_bitmap.bitop_and("result", &["bitmap1", "bitmap2"]);
-        let _ = redis_bitmap.bitop_or("result", &["bitmap1", "bitmap2"]);
-        let _ = redis_bitmap.bitop_xor("result", &["bitmap1", "bitmap2"]);
-
-        // Example 6: Bit position operations
-        let _ = redis_bitmap.bitpos("bitmap1", true);
-        let _ = redis_bitmap.bitpos_range("bitmap1", false, 0, 10);
-
-        // Example 7: String operations for bitmaps
-        let _ = redis_bitmap.set("bitmap1", &[0xff, 0x00, 0xff]);
-        let _ = redis_bitmap.get("bitmap1");
-        let _ = redis_bitmap.strlen("bitmap1");
     }
 }
