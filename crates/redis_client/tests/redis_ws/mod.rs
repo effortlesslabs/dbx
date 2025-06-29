@@ -256,8 +256,9 @@ async fn test_websocket_connection_reuse() -> Result<()> {
 #[tokio::test]
 async fn test_websocket_error_handling() -> Result<()> {
     // Test with invalid WebSocket URL (should fail gracefully)
-    let invalid_client = WsClient::new("ws://invalid-url-that-does-not-exist.com");
-    assert!(invalid_client.await.is_err());
+    let mut invalid_client = WsClient::new("ws://invalid-url-that-does-not-exist.com").await?;
+    let result = invalid_client.string().await;
+    assert!(result.is_err());
 
     // Test operations on non-existent keys
     let mut client = WsClient::new(&utils::ws_test_url()).await?;

@@ -1,20 +1,30 @@
 version: "3.8"
 
 services:
-  # DBX API service with external Redis
+  # Redis service
+  redis:
+    image: redis:7-alpine
+    container_name: dbx-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - dbx-network
+
+  # DBX API service
   dbx-api:
     # Use published image (replace with your Docker Hub username)
-    image: fnlog0/dbx:latest
+    # image: fnlog0/dbx:latest
     # Or build from local Dockerfile
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: dbx-api
     ports:
       - "3000:3000"
     environment:
-      # Database configuration - pass your Redis URL here
-      - DATABASE_URL=${REDIS_URL:-redis://localhost:6379}
+      # Database configuration - connect to Redis service
+      - DATABASE_URL=redis://redis:6379
       - DATABASE_TYPE=redis
 
       # Server configuration
@@ -22,6 +32,8 @@ services:
       - PORT=3000
       - POOL_SIZE=10
       - LOG_LEVEL=INFO
+    depends_on:
+      - redis
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/redis/admin/ping"]
       interval: 30s

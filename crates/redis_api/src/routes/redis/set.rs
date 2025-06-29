@@ -17,6 +17,7 @@ use crate::routes::common::set::{
     union_sets,
     difference_sets,
     SetOperation,
+    delete_set,
 };
 use dbx_adapter::redis::client::RedisPool;
 
@@ -55,6 +56,11 @@ async fn add_many_to_set_handler(
     Path(key): Path<String>,
     Json(payload): Json<SetMembersRequest>
 ) -> Result<Json<usize>, StatusCode> {
+    // If members array is empty, return 0 (no members added)
+    if payload.members.is_empty() {
+        return Ok(Json(0));
+    }
+
     let conn = pool.get_connection().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let conn_arc = Arc::new(std::sync::Mutex::new(conn));
     let member_refs: Vec<&str> = payload.members
@@ -166,6 +172,17 @@ async fn difference_sets_handler(
     Ok(Json(result))
 }
 
+// Delete entire set
+async fn delete_set_handler(
+    State(pool): State<Arc<RedisPool>>,
+    Path(key): Path<String>
+) -> Result<Json<bool>, StatusCode> {
+    let conn = pool.get_connection().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let conn_arc = Arc::new(std::sync::Mutex::new(conn));
+    let deleted = delete_set(conn_arc, &key).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    Ok(Json(deleted))
+}
+
 async fn method_not_allowed() -> impl IntoResponse {
     (StatusCode::METHOD_NOT_ALLOWED, "Method Not Allowed")
 }
@@ -173,11 +190,12 @@ async fn method_not_allowed() -> impl IntoResponse {
 pub fn create_redis_set_routes(pool: Arc<RedisPool>) -> Router {
     Router::new()
         .route("/set/:key", post(add_to_set_handler))
+        .route("/set/:key", delete(delete_set_handler))
         .route("/set/:key/many", post(add_many_to_set_handler))
-        .route("/set/:key/:member", delete(remove_from_set_handler))
         .route("/set/:key/members", get(get_set_members_handler))
         .route("/set/:key/cardinality", get(get_set_cardinality_handler))
         .route("/set/:key/:member/exists", get(set_exists_handler))
+        .route("/set/:key/:member", delete(remove_from_set_handler))
         .route("/set/intersect", post(intersect_sets_handler))
         .route("/set/union", post(union_sets_handler))
         .route("/set/difference", post(difference_sets_handler))

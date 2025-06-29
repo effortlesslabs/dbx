@@ -154,3 +154,11 @@ bindings/redis_ts/index.js.map
 bindings/redis_ts/index.d.ts.map
 bindings/redis_ts/index.js.map.gz
 bindings/redis_ts/index.d.ts.map.gz
+bindings/redis_ts/dbx-redis-ts-bindings.darwin-arm64.node
+bindings/redis_ts/dbx-redis-ts-bindings.darwin-x64.node
+bindings/redis_ts/dbx-redis-ts-bindings.linux-arm64.node
+bindings/redis_ts/dbx-redis-ts-bindings.linux-x64.node
+bindings/redis_ts/dbx-redis-ts-bindings.win32-arm64.node
+bindings/redis_ts/dbx-redis-ts-bindings.win32-x64.node
+
+

@@ -42,7 +42,7 @@
 //!         let mut ws_client = WsClient::new("ws://localhost:8080/ws").await?;
 //!
 //!         // String operations via WebSocket
-//!         let mut ws_string_client = ws_client.string();
+//!         let mut ws_string_client = ws_client.string().await?;
 //!         ws_string_client.set("ws_key", "ws_value", None).await?;
 //!         let ws_value = ws_string_client.get("ws_key").await?;
 //!         println!("WS Value: {:?}", ws_value);

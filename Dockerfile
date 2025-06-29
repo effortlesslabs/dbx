@@ -4,10 +4,18 @@ FROM --platform=$TARGETPLATFORM rust:1.82-slim as builder
 # Set the working directory
 WORKDIR /usr/src/dbx
 
+# Install build dependencies for Rust crates that need OpenSSL
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    ca-certificates \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy the manifests
 COPY Cargo.toml ./
 COPY crates/ ./crates/
-COPY api/ ./api/
+COPY bindings/ ./bindings/
 
 # Create a dummy main.rs to build dependencies
 RUN mkdir src && echo "fn main() {}" > src/main.rs
@@ -17,7 +25,6 @@ RUN cargo build --release
 
 # Remove the dummy main.rs and copy the real source code
 RUN rm src/main.rs
-COPY api/src/ ./api/src/
 
 # Build the application
 RUN cargo build --release --bin dbx-api

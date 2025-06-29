@@ -123,6 +123,29 @@ async fn batch_get_patterns_handler(
     let conn = pool.get_connection().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let conn_arc = Arc::new(std::sync::Mutex::new(conn));
 
+    if payload.patterns.is_empty() {
+        // Always return an array for results if patterns is empty
+        if payload.grouped.unwrap_or(false) {
+            return Ok(
+                Json(
+                    serde_json::json!({
+                "grouped": true,
+                "results": []
+            })
+                )
+            );
+        } else {
+            return Ok(
+                Json(
+                    serde_json::json!({
+                "grouped": false,
+                "results": []
+            })
+                )
+            );
+        }
+    }
+
     if payload.grouped.unwrap_or(false) {
         let results = get_strings_by_patterns_grouped(conn_arc, &payload.patterns).map_err(
             |_| StatusCode::INTERNAL_SERVER_ERROR

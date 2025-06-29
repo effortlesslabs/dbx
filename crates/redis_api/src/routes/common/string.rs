@@ -22,6 +22,7 @@ pub struct StringInfo {
     pub key: String,
     pub value: String,
     pub ttl: Option<i64>,
+    #[serde(rename = "type")]
     pub type_: String,
     pub encoding: String,
     pub size: usize,
@@ -59,6 +60,7 @@ pub fn delete_string(conn: Arc<Mutex<Connection>>, key: &str) -> redis::RedisRes
         redis_string(conn).del(key)?;
         Ok(true)
     } else {
+        // Return false if key doesn't exist (Redis DEL behavior - returns 0 for non-existent keys)
         Ok(false)
     }
 }
