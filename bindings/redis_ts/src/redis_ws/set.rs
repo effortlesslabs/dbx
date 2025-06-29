@@ -58,7 +58,7 @@ impl WsSetClient {
 
     /// Remove a member from a set via WebSocket
     #[napi]
-    pub fn remove(&self, key: String, member: String) -> Result<bool> {
+    pub fn remove(&self, key: String, member: String) -> Result<u32> {
         let client = self.client.clone();
         self.runtime.block_on(async move {
             let mut ws_client = client.as_ref().clone();
@@ -68,7 +68,7 @@ impl WsSetClient {
 
             set_client
                 .remove(&key, &member).await
-                .map(|_| true)
+                .map(|v| v as u32)
                 .map_err(|e| Error::from_reason(e.to_string()))
         })
     }
