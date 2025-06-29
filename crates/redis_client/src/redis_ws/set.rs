@@ -44,19 +44,15 @@ impl SetOperations for WsSetClient {
         let response = self.send_message(message).await?;
 
         // Parse the response according to the server's format
-        if let Some(result) = response.get("data") {
-            if let Some(value) = result.get("value") {
-                if let Some(members) = value.as_array() {
-                    let mut result_vec = Vec::new();
-                    for member in members {
-                        if let Some(member_str) = member.as_str() {
-                            result_vec.push(member_str.to_string());
-                        }
+        if let Some(members) = response.get("members") {
+            if let Some(members_array) = members.as_array() {
+                let mut result_vec = Vec::new();
+                for member in members_array {
+                    if let Some(member_str) = member.as_str() {
+                        result_vec.push(member_str.to_string());
                     }
-                    Ok(result_vec)
-                } else {
-                    Ok(Vec::new())
                 }
+                Ok(result_vec)
             } else {
                 Ok(Vec::new())
             }
@@ -77,12 +73,8 @@ impl SetOperations for WsSetClient {
         let response = self.send_message(message).await?;
 
         // Parse the response according to the server's format
-        if let Some(result) = response.get("data") {
-            if let Some(value) = result.get("value") {
-                Ok(value.as_u64().unwrap_or(0) as usize)
-            } else {
-                Ok(0)
-            }
+        if let Some(added) = response.get("added") {
+            Ok(added.as_u64().unwrap_or(0) as usize)
         } else {
             Ok(0)
         }
@@ -110,12 +102,8 @@ impl SetOperations for WsSetClient {
         let response = self.send_message(message).await?;
 
         // Parse the response according to the server's format
-        if let Some(result) = response.get("data") {
-            if let Some(value) = result.get("value") {
-                Ok(value.as_u64().unwrap_or(0) as usize)
-            } else {
-                Ok(0)
-            }
+        if let Some(removed) = response.get("removed") {
+            Ok(removed.as_u64().unwrap_or(0) as usize)
         } else {
             Ok(0)
         }
@@ -131,12 +119,8 @@ impl SetOperations for WsSetClient {
         let response = self.send_message(message).await?;
 
         // Parse the response according to the server's format
-        if let Some(result) = response.get("data") {
-            if let Some(value) = result.get("value") {
-                Ok(value.as_u64().unwrap_or(0) as usize)
-            } else {
-                Ok(0)
-            }
+        if let Some(cardinality) = response.get("cardinality") {
+            Ok(cardinality.as_u64().unwrap_or(0) as usize)
         } else {
             Ok(0)
         }
@@ -154,12 +138,8 @@ impl SetOperations for WsSetClient {
         let response = self.send_message(message).await?;
 
         // Parse the response according to the server's format
-        if let Some(result) = response.get("data") {
-            if let Some(value) = result.get("value") {
-                Ok(value.as_bool().unwrap_or(false))
-            } else {
-                Ok(false)
-            }
+        if let Some(exists) = response.get("exists") {
+            Ok(exists.as_bool().unwrap_or(false))
         } else {
             Ok(false)
         }
@@ -175,19 +155,15 @@ impl SetOperations for WsSetClient {
         let response = self.send_message(message).await?;
 
         // Parse the response according to the server's format
-        if let Some(result) = response.get("data") {
-            if let Some(value) = result.get("value") {
-                if let Some(members) = value.as_array() {
-                    let mut result_vec = Vec::new();
-                    for member in members {
-                        if let Some(member_str) = member.as_str() {
-                            result_vec.push(member_str.to_string());
-                        }
+        if let Some(intersection) = response.get("intersection") {
+            if let Some(members) = intersection.as_array() {
+                let mut result_vec = Vec::new();
+                for member in members {
+                    if let Some(member_str) = member.as_str() {
+                        result_vec.push(member_str.to_string());
                     }
-                    Ok(result_vec)
-                } else {
-                    Ok(Vec::new())
                 }
+                Ok(result_vec)
             } else {
                 Ok(Vec::new())
             }
@@ -206,19 +182,15 @@ impl SetOperations for WsSetClient {
         let response = self.send_message(message).await?;
 
         // Parse the response according to the server's format
-        if let Some(result) = response.get("data") {
-            if let Some(value) = result.get("value") {
-                if let Some(members) = value.as_array() {
-                    let mut result_vec = Vec::new();
-                    for member in members {
-                        if let Some(member_str) = member.as_str() {
-                            result_vec.push(member_str.to_string());
-                        }
+        if let Some(union) = response.get("union") {
+            if let Some(members) = union.as_array() {
+                let mut result_vec = Vec::new();
+                for member in members {
+                    if let Some(member_str) = member.as_str() {
+                        result_vec.push(member_str.to_string());
                     }
-                    Ok(result_vec)
-                } else {
-                    Ok(Vec::new())
                 }
+                Ok(result_vec)
             } else {
                 Ok(Vec::new())
             }
@@ -237,25 +209,26 @@ impl SetOperations for WsSetClient {
         let response = self.send_message(message).await?;
 
         // Parse the response according to the server's format
-        if let Some(result) = response.get("data") {
-            if let Some(value) = result.get("value") {
-                if let Some(members) = value.as_array() {
-                    let mut result_vec = Vec::new();
-                    for member in members {
-                        if let Some(member_str) = member.as_str() {
-                            result_vec.push(member_str.to_string());
-                        }
+        if let Some(difference) = response.get("difference") {
+            if let Some(members) = difference.as_array() {
+                let mut result_vec = Vec::new();
+                for member in members {
+                    if let Some(member_str) = member.as_str() {
+                        result_vec.push(member_str.to_string());
                     }
-                    Ok(result_vec)
-                } else {
-                    Ok(Vec::new())
                 }
+                Ok(result_vec)
             } else {
                 Ok(Vec::new())
             }
         } else {
             Ok(Vec::new())
         }
+    }
+
+    /// Delete a set by key (not implemented for WebSocket, return Ok(true) as a no-op)
+    async fn delete(&mut self, _key: &str) -> crate::error::Result<bool> {
+        Ok(true)
     }
 }
 

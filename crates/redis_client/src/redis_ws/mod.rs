@@ -32,14 +32,16 @@ impl WsClient {
 
     /// Get access to string operations
     pub async fn string(&mut self) -> Result<WsStringClient> {
-        let ws_url = self.base_url.join("string/ws")?;
+        let mut ws_url = self.base_url.clone();
+        ws_url.set_path(&format!("{}/string/ws", ws_url.path()));
         let (stream, _) = tokio_tungstenite::connect_async(ws_url).await?;
         Ok(WsStringClient::new(stream, self.base_url.clone()))
     }
 
     /// Get access to set operations
     pub async fn set(&mut self) -> Result<WsSetClient> {
-        let ws_url = self.base_url.join("set/ws")?;
+        let mut ws_url = self.base_url.clone();
+        ws_url.set_path(&format!("{}/set/ws", ws_url.path()));
         let (stream, _) = tokio_tungstenite::connect_async(ws_url).await?;
         Ok(WsSetClient::new(stream, self.base_url.clone()))
     }

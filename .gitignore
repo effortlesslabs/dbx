@@ -154,3 +154,8 @@ bindings/redis_ts/index.js.map
 bindings/redis_ts/index.d.ts.map
 bindings/redis_ts/index.js.map.gz
 bindings/redis_ts/index.d.ts.map.gz
+
+# Redis TS native bindings
+@0dbx
+
+

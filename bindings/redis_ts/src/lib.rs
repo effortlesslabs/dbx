@@ -6,15 +6,10 @@ use std::sync::Arc;
 use tokio::runtime::Runtime;
 
 // Import modules
-pub mod common;
 pub mod redis;
 pub mod redis_ws;
 
-// Re-export common types for convenience
-pub use common::string::{ StringClient, StringInfoJs, StringOperationJs };
-pub use common::set::SetClient;
-
-// Re-export WebSocket types
+// Re-export WebSocket types at crate root for NAPI
 pub use redis_ws::string::WsStringClient;
 pub use redis_ws::set::WsSetClient;
 
@@ -71,13 +66,15 @@ impl DbxRedisClient {
     }
 
     /// Get access to string operations
-    pub fn string(&self) -> StringClient {
-        StringClient::new(self.client.clone(), self.runtime.clone())
+    #[napi]
+    pub fn string(&self) -> redis::string::StringClient {
+        redis::string::StringClient::new(self.client.clone(), self.runtime.clone())
     }
 
     /// Get access to set operations
-    pub fn set(&self) -> SetClient {
-        SetClient::new(self.client.clone(), self.runtime.clone())
+    #[napi]
+    pub fn set(&self) -> redis::set::SetClient {
+        redis::set::SetClient::new(self.client.clone(), self.runtime.clone())
     }
 }
 
@@ -97,17 +94,25 @@ impl DbxWsClient {
         })
     }
 
+    /// Test method for NAPI export
+    #[napi]
+    pub fn test_method(&self) -> String {
+        "hello from napi".to_string()
+    }
+
     /// Get the base URL of the WebSocket client
     pub fn get_base_url(&self) -> String {
         self.client.base_url().to_string()
     }
 
     /// Get access to WebSocket string operations
+    #[napi]
     pub fn string(&self) -> WsStringClient {
         WsStringClient::new(self.client.clone(), self.runtime.clone())
     }
 
     /// Get access to WebSocket set operations
+    #[napi]
     pub fn set(&self) -> WsSetClient {
         WsSetClient::new(self.client.clone(), self.runtime.clone())
     }

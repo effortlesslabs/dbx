@@ -106,11 +106,11 @@ impl Server {
         info!("Redis Admin HTTP API available at http://{}/redis/admin", addr);
         info!("Redis Admin WebSocket API available at ws://{}/redis_ws/admin/ws", addr);
         info!("Redis String HTTP API available at http://{}/redis/string", addr);
-        info!("Redis String WebSocket API available at ws://{}/redis/string/ws", addr);
+        info!("Redis String WebSocket API available at ws://{}/redis_ws/string/ws", addr);
         info!("Redis Hash HTTP API available at http://{}/redis/hash", addr);
-        info!("Redis Hash WebSocket API available at ws://{}/redis/hash/ws", addr);
+        info!("Redis Hash WebSocket API available at ws://{}/redis_ws/hash/ws", addr);
         info!("Redis Set HTTP API available at http://{}/redis/set", addr);
-        info!("Redis Set WebSocket API available at ws://{}/redis/set/ws", addr);
+        info!("Redis Set WebSocket API available at ws://{}/redis_ws/set/ws", addr);
 
         let listener = tokio::net::TcpListener::bind(addr).await?;
         axum::serve(

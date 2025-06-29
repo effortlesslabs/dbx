@@ -1,10 +1,11 @@
 [package]
-name = "dbx-redis-ts-bindings"
-version = "0.1.0"
-edition = "2021"
+name = "dbx-redis-bindings"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
 description = "NAPI bindings for DBX Redis SDK"
-license = "MIT"
-repository = "https://github.com/effortlesslabs/dbx"
 
 [lib]
 crate-type = ["cdylib"]

@@ -85,8 +85,8 @@ echo ""
 
 # Check NPM status
 log_info "NPM Status:"
-echo "   • Package: dbx-redis-ts-bindings"
-echo "   • Registry: https://www.npmjs.com/package/dbx-redis-ts-bindings"
+echo "   • Package: @0dbx/redis"
+echo "   • Registry: https://www.npmjs.com/package/@0dbx/redis"
 
 # Check if npm is available
 if command -v npm &> /dev/null; then

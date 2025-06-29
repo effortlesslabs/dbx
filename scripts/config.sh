@@ -28,7 +28,7 @@ DOCKER_RAILWAY_TAG_SUFFIX="${DOCKER_RAILWAY_TAG_SUFFIX:-amd64-only}"
 # =============================================================================
 
 # NPM package settings
-NPM_PACKAGE_NAME="${NPM_PACKAGE_NAME:-dbx-redis-ts-bindings}"
+NPM_PACKAGE_NAME="${NPM_PACKAGE_NAME:-@0dbx/redis}"
 NPM_PACKAGE_ACCESS="${NPM_PACKAGE_ACCESS:-public}"
 NPM_REGISTRY="${NPM_REGISTRY:-https://registry.npmjs.org/}"
 

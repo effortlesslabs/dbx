@@ -508,7 +508,7 @@ checksum = "2a2330da5de22e8a3cb63252ce2abb30116bf5265e89c0e01bc17015ce30a476"
 
 [[package]]
 name = "dbx-adapter"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "async-trait",
  "mockall",
@@ -521,7 +521,7 @@ dependencies = [
 
 [[package]]
 name = "dbx-api"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -553,8 +553,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "dbx-redis-ts-bindings"
-version = "0.1.0"
+name = "dbx-redis-bindings"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "napi",

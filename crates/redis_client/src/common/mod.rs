@@ -99,6 +99,9 @@ pub trait SetOperations {
     async fn size(&mut self, key: &str) -> Result<usize> {
         self.cardinality(key).await
     }
+
+    /// Delete a set by key
+    async fn delete(&mut self, key: &str) -> Result<bool>;
 }
 
 /// Common client trait

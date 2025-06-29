@@ -1,11 +1,11 @@
 {
-  "name": "dbx-redis-ts-bindings",
-  "version": "0.1.0",
+  "name": "@0dbx/redis",
+  "version": "0.1.6",
   "description": "NAPI bindings for DBX Redis SDK",
   "main": "index.js",
   "types": "index.d.ts",
   "napi": {
-    "name": "dbx-redis-ts-bindings",
+    "name": "@0dbx/redis",
     "triples": {
       "defaults": true,
       "additional": [
@@ -53,13 +53,14 @@
   },
   "devDependencies": {
     "@napi-rs/cli": "^2.16.0",
-    "vitest": "^1.0.0",
+    "@types/node": "^20.0.0",
     "@vitest/ui": "^1.0.0",
-    "@types/node": "^20.0.0"
+    "typescript": "^5.8.3",
+    "vitest": "^1.0.0"
   },
   "files": [
     "index.js",
     "index.d.ts",
-    "*.node"
+    "@0dbx/*.node"
   ]
 }

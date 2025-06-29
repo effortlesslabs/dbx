@@ -1,284 +1,217 @@
-# Redis RS SDK
+# Redis Client SDK
 
-A Rust SDK for interacting with the DBX Redis API. This SDK provides a high-level, idiomatic Rust interface for Redis operations through the DBX API.
+A comprehensive Rust SDK for interacting with the DBX Redis API. This SDK provides a high-level, idiomatic Rust interface for Redis operations through both HTTP and WebSocket protocols.
+
+## Overview
+
+The Redis Client SDK offers a modern, async-first approach to Redis operations with strong type safety and comprehensive error handling. It supports both HTTP REST API and WebSocket real-time communication, making it suitable for various use cases from simple caching to real-time applications.
 
 ## Features
 
-- **String Operations**: Get, set, delete, and batch operations for Redis strings
-- **Set Operations**: Add, remove, check membership, and set operations (intersect, union, difference)
-- **Async/Await**: Full async support with Tokio
-- **Error Handling**: Comprehensive error types with detailed error messages
+### Core Capabilities
+
+- **Dual Protocol Support**: HTTP REST API and WebSocket real-time communication
+- **String Operations**: Complete CRUD operations for Redis strings with TTL support
+- **Set Operations**: Full set manipulation including membership, cardinality, and set algebra
+- **Batch Operations**: Efficient bulk operations for improved performance
+- **Pattern Matching**: Advanced pattern-based retrieval for complex queries
+
+### Technical Features
+
+- **Async/Await**: Built on Tokio for high-performance async operations
 - **Type Safety**: Strongly typed API with compile-time guarantees
-- **Batch Operations**: Efficient batch operations for multiple keys
-
-## Installation
-
-Add this to your `Cargo.toml`:
-
-```toml
-[dependencies]
-redis_rs = { path = "../crates/redis_rs" }
-tokio = { version = "1.0", features = ["full"] }
-```
-
-## Quick Start
-
-```rust
-use redis_rs::DbxClient;
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Create a client
-    let client = DbxClient::new("http://localhost:8080")?;
-
-    // String operations
-    client.string().set_simple("my_key", "my_value").await?;
-    let value = client.string().get("my_key").await?;
-    println!("Value: {:?}", value);
-
-    // Set operations
-    client.set().add_one("my_set", "member1").await?;
-    let members = client.set().members("my_set").await?;
-    println!("Members: {:?}", members);
-
-    Ok(())
-}
-```
-
-## API Reference
-
-### Client Creation
-
-```rust
-// Basic client
-let client = DbxClient::new("http://localhost:8080")?;
-
-// Client with custom timeout
-let client = DbxClient::with_timeout("http://localhost:8080", Duration::from_secs(60))?;
-```
+- **Error Handling**: Comprehensive error types with detailed context
+- **Connection Management**: Automatic connection pooling and reuse
+- **Timeout Support**: Configurable timeouts for all operations
 
 ### String Operations
 
-#### Basic Operations
-
-```rust
-let string_client = client.string();
-
-// Set a string value
-string_client.set_simple("key", "value").await?;
-
-// Set with TTL (time to live in seconds)
-string_client.set_with_ttl("key", "value", 3600).await?;
-
-// Get a string value
-let value = string_client.get("key").await?;
-// Returns Option<String> - None if key doesn't exist
-
-// Delete a string
-let deleted = string_client.delete("key").await?;
-// Returns bool indicating if key was deleted
-
-// Get string information
-let info = string_client.info("key").await?;
-// Returns Option<StringInfo> with metadata
-```
-
-#### Batch Operations
-
-```rust
-// Batch get multiple strings
-let keys = vec!["key1".to_string(), "key2".to_string(), "key3".to_string()];
-let values = string_client.batch_get(&keys).await?;
-// Returns Vec<Option<String>>
-
-// Batch set multiple strings
-let operations = vec![
-    StringOperation {
-        key: "key1".to_string(),
-        value: Some("value1".to_string()),
-        ttl: None,
-    },
-    StringOperation {
-        key: "key2".to_string(),
-        value: Some("value2".to_string()),
-        ttl: Some(3600),
-    },
-];
-string_client.batch_set(&operations).await?;
-
-// Get strings by patterns
-let patterns = vec!["user:*".to_string(), "session:*".to_string()];
-let results = string_client.get_by_patterns(&patterns, Some(true)).await?;
-// Returns serde_json::Value with grouped results
-```
+- Get, set, and delete individual string values
+- Set values with configurable time-to-live (TTL)
+- Batch operations for multiple keys
+- Pattern-based retrieval with wildcard support
+- String metadata and information retrieval
 
 ### Set Operations
 
-#### Basic Operations
+- Add and remove individual or multiple members
+- Check membership and retrieve cardinality
+- Get all members of a set
+- Set algebra operations: intersection, union, and difference
+- Efficient batch operations for large datasets
 
-```rust
-let set_client = client.set();
+## Architecture
 
-// Add a single member
-let added = set_client.add_one("set_key", "member1").await?;
-// Returns usize (number of new members added)
+### Client Types
 
-// Add multiple members
-let added = set_client.add_many("set_key", &["member1", "member2", "member3"]).await?;
+- **HttpClient**: Traditional REST API client for standard operations
+- **WsClient**: WebSocket client for real-time, bidirectional communication
 
-// Remove a member
-let removed = set_client.remove("set_key", "member1").await?;
-// Returns usize (number of members removed)
+### Error Handling
 
-// Get all members
-let members = set_client.members("set_key").await?;
-// Returns Vec<String>
+The SDK provides a unified error handling system with detailed error types:
 
-// Check if member exists
-let exists = set_client.contains("set_key", "member1").await?;
-// Returns bool
+- API errors with HTTP status codes and messages
+- Network and connection errors
+- Serialization and parsing errors
+- Timeout and configuration errors
 
-// Get set size (cardinality)
-let size = set_client.size("set_key").await?;
-// Returns usize
+### Connection Management
+
+- Automatic connection establishment and cleanup
+- Connection pooling for HTTP clients
+- Persistent WebSocket connections with automatic reconnection
+- Configurable timeouts and retry logic
+
+## Installation
+
+Add the SDK to your project dependencies:
+
+```toml
+[dependencies]
+redis_client = { path = "../crates/redis_client" }
+tokio = { version = "1.0", features = ["full"] }
 ```
 
-#### Set Operations
+## Usage Overview
 
-```rust
-// Intersect multiple sets
-let keys = vec!["set1".to_string(), "set2".to_string(), "set3".to_string()];
-let intersection = set_client.intersect(&keys).await?;
-// Returns Vec<String> of common members
+### HTTP Client
 
-// Union multiple sets
-let union = set_client.union(&keys).await?;
-// Returns Vec<String> of all unique members
+The HTTP client provides traditional REST API access with automatic connection management and efficient request handling. It's ideal for standard Redis operations where real-time communication isn't required.
 
-// Difference of sets (first set minus others)
-let difference = set_client.difference(&keys).await?;
-// Returns Vec<String> of members in first set but not in others
-```
+### WebSocket Client
 
-## Error Handling
+The WebSocket client enables real-time, bidirectional communication with the Redis API. It's perfect for applications requiring live updates, event-driven architectures, or low-latency operations.
 
-The SDK uses a custom `DbxError` type that provides detailed error information:
+### Error Handling
 
-```rust
-use redis_rs::{DbxError, Result};
+All operations return a `Result` type that provides detailed error information, allowing for robust error handling and recovery strategies.
 
-async fn handle_errors() -> Result<()> {
-    let client = DbxClient::new("http://localhost:8080")?;
+### Batch Operations
 
-    match client.string().get("nonexistent_key").await {
-        Ok(value) => println!("Value: {:?}", value),
-        Err(DbxError::Api { status, message }) => {
-            println!("API Error {}: {}", status, message);
-        }
-        Err(DbxError::Request(e)) => {
-            println!("Network error: {}", e);
-        }
-        Err(e) => {
-            println!("Other error: {}", e);
-        }
-    }
+The SDK supports efficient batch operations for both strings and sets, reducing network overhead and improving performance for bulk operations.
 
-    Ok(())
-}
-```
+## Performance Considerations
 
-## Types
-
-### String Types
-
-- `StringOperation`: Represents a string operation for batch operations
-- `StringInfo`: Contains metadata about a string value
-- `SetStringRequest`: Request payload for setting strings
-- `BatchGetRequest`: Request payload for batch getting
-- `BatchSetRequest`: Request payload for batch setting
-- `BatchGetPatternsRequest`: Request payload for pattern-based getting
-
-### Set Types
-
-- `SetOperation`: Represents a set operation for batch operations
-- `SetInfo`: Contains metadata about a set
-- `SetMemberRequest`: Request payload for adding a member
-- `SetMembersRequest`: Request payload for adding multiple members
-- `SetKeysRequest`: Request payload for set operations
-
-## Examples
-
-### Complete Example
-
-```rust
-use redis_rs::{DbxClient, StringOperation};
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client = DbxClient::new("http://localhost:8080")?;
-
-    // String operations
-    println!("=== String Operations ===");
-
-    // Set some values
-    client.string().set_simple("user:1:name", "Alice").await?;
-    client.string().set_with_ttl("user:1:session", "abc123", 3600).await?;
-
-    // Get values
-    let name = client.string().get("user:1:name").await?;
-    println!("User name: {:?}", name);
-
-    let session = client.string().get("user:1:session").await?;
-    println!("Session: {:?}", session);
-
-    // Batch operations
-    let operations = vec![
-        StringOperation {
-            key: "user:2:name".to_string(),
-            value: Some("Bob".to_string()),
-            ttl: None,
-        },
-        StringOperation {
-            key: "user:2:email".to_string(),
-            value: Some("bob@example.com".to_string()),
-            ttl: None,
-        },
-    ];
-    client.string().batch_set(&operations).await?;
-
-    // Set operations
-    println!("\n=== Set Operations ===");
-
-    // Create sets
-    client.set().add_many("users:online", &["user:1", "user:2", "user:3"]).await?;
-    client.set().add_many("users:premium", &["user:1", "user:4"]).await?;
-
-    // Get members
-    let online_users = client.set().members("users:online").await?;
-    println!("Online users: {:?}", online_users);
-
-    // Check membership
-    let is_premium = client.set().contains("users:premium", "user:1").await?;
-    println!("User 1 is premium: {}", is_premium);
-
-    // Set operations
-    let premium_online = client.set().intersect(&[
-        "users:online".to_string(),
-        "users:premium".to_string(),
-    ]).await?;
-    println!("Premium online users: {:?}", premium_online);
-
-    Ok(())
-}
-```
+- **Connection Reuse**: Both client types efficiently reuse connections
+- **Batch Operations**: Use batch operations for multiple related operations
+- **Async Operations**: All operations are async for optimal resource utilization
+- **Memory Efficiency**: Streaming responses for large datasets
 
 ## Testing
 
-The SDK includes comprehensive tests. Run them with:
+The SDK includes comprehensive test suites covering both HTTP and WebSocket protocols. The tests are organized by protocol and operation type to ensure complete coverage.
+
+### Running All Tests
+
+To run the complete test suite for both HTTP and WebSocket clients:
 
 ```bash
-cd crates/redis_rs
+# From the redis_client directory
+cd crates/redis_client
 cargo test
+
+# Or from the project root
+cargo test -p redis_client
+```
+
+### Testing HTTP Client
+
+The HTTP client tests cover all REST API operations:
+
+```bash
+# Test only HTTP operations
+cargo test --features http
+
+# Test specific HTTP string operations
+cargo test redis::string
+
+# Test specific HTTP set operations
+cargo test redis::set
+
+# Test HTTP client creation and configuration
+cargo test redis::test_http_client
+```
+
+### Testing WebSocket Client
+
+The WebSocket client tests require the Redis API server to be running:
+
+```bash
+# Start the Redis API server first
+cd crates/redis_api
+cargo run
+
+# In another terminal, test WebSocket operations
+cd crates/redis_client
+cargo test --features websocket
+
+# Test specific WebSocket string operations
+cargo test redis_ws::string
+
+# Test specific WebSocket set operations
+cargo test redis_ws::set
+
+# Test WebSocket client creation and connection
+cargo test redis_ws::test_websocket_client
+```
+
+### Testing Specific Features
+
+```bash
+# Test only string operations (both HTTP and WebSocket)
+cargo test --features string
+
+# Test only set operations (both HTTP and WebSocket)
+cargo test --features set
+
+# Test with all features enabled
+cargo test --features http,websocket,string,set
+
+# Test with verbose output
+cargo test -- --nocapture
+
+# Test with specific test pattern
+cargo test test_websocket_string_operations
+```
+
+### Integration Testing
+
+For integration tests that verify end-to-end functionality:
+
+```bash
+# Run integration tests with server
+cd crates/redis_client
+cargo test --test integration
+
+# Run tests with specific server URL
+RUST_LOG=debug cargo test -- --nocapture
+```
+
+### Test Coverage
+
+The test suite includes:
+
+- **Unit Tests**: Individual function and method testing
+- **Integration Tests**: End-to-end API interaction testing
+- **WebSocket Tests**: Connection, message handling, and real-time communication
+- **Error Handling**: Comprehensive error scenario testing
+- **Performance Tests**: Large payload and concurrent operation testing
+- **Edge Cases**: Boundary conditions and error recovery testing
+
+### Debugging Tests
+
+For debugging test failures:
+
+```bash
+# Run with debug logging
+RUST_LOG=debug cargo test -- --nocapture
+
+# Run specific failing test
+cargo test test_websocket_error_handling -- --nocapture
+
+# Run tests with timeout
+cargo test -- --timeout 30
 ```
 
 ## License
