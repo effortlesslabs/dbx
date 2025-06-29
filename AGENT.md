@@ -9,7 +9,7 @@ DBX is a lightweight API proxy for edge and embedded systems that exposes Redis,
 ## Helpful Links
 
 - [DBX Repository](https://github.com/effortlesslabs/dbx)
-- [Docker Hub](https://hub.docker.com/r/fnlog0/dbx)
+- [Docker Hub](https://hub.docker.com/r/effortlesslabs/0dbx_redis)
 - [NPM Package](https://www.npmjs.com/package/dbx-sdk)
 
 ## Binaries
@@ -74,7 +74,7 @@ npm run format
 
 ```bash
 # Build Docker image
-docker build -t fnlog0/dbx .
+docker build -t effortlesslabs/0dbx_redis .
 
 # Run with convenience script
 ./scripts/run.sh --redis-url redis://localhost:6379
@@ -84,7 +84,7 @@ docker run -d --name dbx -p 3000:3000 \
   -e DATABASE_URL=redis://localhost:6379 \
   -e PORT=3000 \
   -e LOG_LEVEL=DEBUG \
-  fnlog0/dbx:latest
+  effortlesslabs/0dbx_redis:latest
 ```
 
 ### Development Workflow
@@ -284,7 +284,7 @@ Example:
 version: '3.8'
 services:
   dbx:
-    image: fnlog0/dbx:latest
+    image: effortlesslabs/0dbx_redis:latest
     ports:
       - "3000:3000"
     environment:

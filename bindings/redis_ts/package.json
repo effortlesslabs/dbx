@@ -1,6 +1,6 @@
 {
   "name": "@0dbx/redis",
-  "version": "0.1.0",
+  "version": "0.1.6",
   "description": "NAPI bindings for DBX Redis SDK",
   "main": "index.js",
   "types": "index.d.ts",
@@ -61,6 +61,6 @@
   "files": [
     "index.js",
     "index.d.ts",
-    "*.node"
+    "@0dbx/*.node"
   ]
 }

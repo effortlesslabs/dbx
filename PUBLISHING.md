@@ -23,7 +23,7 @@ Before publishing, ensure you have:
 
 ### Docker Hub
 
-- **Username**: Your Docker Hub username (default: `fnlog0`)
+- **Username**: Your Docker Hub username (default: `effortlesslabs`)
 - **Password/Token**: Docker Hub access token (preferred over password)
 
 ### NPM
@@ -48,7 +48,7 @@ The easiest way to publish is using GitHub Actions:
    - Click "Run workflow"
    - Fill in the required parameters:
      - Version: `1.0.0`
-     - Docker username: `fnlog0` (or your username)
+     - Docker username: `effortlesslabs` (or your username)
      - NPM token: Your NPM token
 
 ### Method 2: Quick Publishing Script
@@ -74,7 +74,7 @@ For more control, use the manual script:
 ```bash
 ./scripts/publish-release.sh \
   --version 1.0.0 \
-  --docker-username fnlog0 \
+  --docker-username effortlesslabs \
   --docker-password $DOCKER_TOKEN \
   --npm-token $NPM_TOKEN
 ```
@@ -164,21 +164,21 @@ The Docker image is built for multiple platforms by default:
 
 Each release creates multiple tags:
 
-- `fnlog0/dbx:1.0.0` - Specific version
-- `fnlog0/dbx:latest` - Latest version
-- `fnlog0/dbx:1.0` - Major.minor version
-- `fnlog0/dbx:1` - Major version
+- `effortlesslabs/0dbx_redis:1.0.0` - Specific version
+- `effortlesslabs/0dbx_redis:latest` - Latest version
+- `effortlesslabs/0dbx_redis:1.0` - Major.minor version
+- `effortlesslabs/0dbx_redis:1` - Major version
 
 ### Usage
 
 ```bash
 # Pull specific version
-docker pull fnlog0/dbx:1.0.0
+docker pull effortlesslabs/0dbx_redis:1.0.0
 
 # Run with Redis
 docker run -d --name dbx-api -p 3000:3000 \
   -e DATABASE_URL=redis://localhost:6379 \
-  fnlog0/dbx:1.0.0
+  effortlesslabs/0dbx_redis:1.0.0
 
 # Using docker-compose
 docker-compose up -d
@@ -188,7 +188,7 @@ docker-compose up -d
 
 ### Package Information
 
-- **Name**: `dbx-sdk`
+- **Name**: `@0dbx/redis`
 - **Registry**: NPM
 - **Access**: Public
 
@@ -196,31 +196,25 @@ docker-compose up -d
 
 ```bash
 # Install specific version
-npm install dbx-sdk@1.0.0
+npm install @0dbx/redis@1.0.0
 
 # Install latest
-npm install dbx-sdk
+npm install @0dbx/redis
 ```
 
 ### Usage
 
 ```typescript
-import { DBX } from "dbx-sdk";
+import { createClient } from "@0dbx/redis";
 
-const dbx = new DBX({
+const client = createClient({
   baseUrl: "http://localhost:3000",
-  databaseUrl: "redis://localhost:6379",
+  timeout: 5000,
 });
 
 // String operations
-const stringOps = dbx.string();
-await stringOps.set("key", "value");
-const value = await stringOps.get("key");
-
-// Hash operations
-const hashOps = dbx.hash();
-await hashOps.hset("user:1", "name", "Alice");
-const name = await hashOps.hget("user:1", "name");
+await client.string.set("key", "value");
+const value = await client.string.get("key");
 ```
 
 ## Verification
@@ -231,10 +225,10 @@ After publishing, verify the release:
 
 ```bash
 # Check image exists
-docker pull fnlog0/dbx:1.0.0
+docker pull effortlesslabs/0dbx_redis:1.0.0
 
 # Test the image
-docker run --rm -p 3000:3000 fnlog0/dbx:1.0.0
+docker run --rm -p 3000:3000 effortlesslabs/0dbx_redis:1.0.0
 ```
 
 ### TypeScript SDK

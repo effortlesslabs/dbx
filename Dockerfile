@@ -73,7 +73,7 @@ ENV LOG_LEVEL=INFO
 # Add labels for better image metadata
 LABEL maintainer="DBX Team"
 LABEL description="High-performance Redis API Gateway with HTTP and WebSocket interfaces"
-LABEL version="0.1.5"
+LABEL version="0.1.6"
 LABEL org.opencontainers.image.source="https://github.com/your-org/dbx"
 
 # Run the binary

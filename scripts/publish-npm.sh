@@ -87,7 +87,7 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Environment Variables:"
             echo "  NPM_TOKEN              NPM authentication token"
-            echo "  NPM_PACKAGE_NAME       Package name (default: dbx-redis-ts-bindings)"
+            echo "  NPM_PACKAGE_NAME       Package name (default: @0dbx/redis)"
             echo "  DEBUG                  Enable debug mode"
             echo "  VERBOSE                Enable verbose output"
             echo ""
