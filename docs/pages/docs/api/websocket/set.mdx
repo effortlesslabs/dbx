@@ -1,6 +1,25 @@
 # WebSocket Set Operations
 
-DBX provides real-time set operations through WebSocket connections, allowing you to work with Redis set data structures efficiently.
+The DBX WebSocket API provides real-time set operations for Redis. This guide covers all available set methods and their usage patterns.
+
+## Installation
+
+```bash
+npm install @0dbx/redis
+```
+
+## Basic Usage
+
+```typescript
+import { DbxWsClient } from "@0dbx/redis";
+
+// Create WebSocket client
+const wsClient = new DbxWsClient("ws://localhost:3000/redis_ws");
+
+// Set operations
+await wsClient.set.addMember("tags", "redis");
+const members = await wsClient.set.getMembers("tags");
+```
 
 ## Connection Setup
 
@@ -460,55 +479,18 @@ Common error codes:
 - `AUTHENTICATION_FAILED`: Invalid or missing authentication token
 - `RATE_LIMITED`: Request rate limit exceeded
 
-## TypeScript SDK Usage
+## TypeScript SDK Example
 
 ```typescript
-import { DBXWebSocketClient } from "@effortlesslabs/dbx";
+import { DbxWsClient } from "@0dbx/redis";
 
-const client = new DBXWebSocketClient({
-  url: "ws://localhost:8080/ws",
-  token: "your-jwt-token",
-});
+const wsClient = new DbxWsClient("ws://localhost:3000/redis_ws");
 
-await client.connect();
-
-// Add members to set
-const added = await client.set.sadd("users:online", ["user:123", "user:456"]);
-
-// Remove members from set
-const removed = await client.set.srem("users:online", ["user:123"]);
-
-// Get all members
-const members = await client.set.smembers("users:online");
-
-// Check if member exists
-const exists = await client.set.sismember("users:online", "user:123");
-
-// Get set size
-const size = await client.set.scard("users:online");
-
-// Get random member
-const randomMember = await client.set.srandmember("users:online", 1);
-
-// Remove random member
-const popped = await client.set.spop("users:online", 1);
-
-// Move member between sets
-const moved = await client.set.smove("users:online", "users:away", "user:123");
-
-// Set intersection
-const intersection = await client.set.sinter(["users:online", "users:premium"]);
-
-// Set union
-const union = await client.set.sunion(["users:online", "users:away"]);
-
-// Set difference
-const difference = await client.set.sdiff(["users:online", "users:premium"]);
-
-// Store operations
-const cardinality = await client.set.sinterstore("result", ["set1", "set2"]);
-
-await client.disconnect();
+// Set operations
+await wsClient.set.addMember("user:1:tags", "admin");
+await wsClient.set.addMember("user:1:tags", "moderator");
+const tags = await wsClient.set.getMembers("user:1:tags");
+console.log(tags); // ["admin", "moderator"]
 ```
 
 ## Best Practices

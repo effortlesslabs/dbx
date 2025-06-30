@@ -11,7 +11,7 @@ import { HomePage } from "vocs/components";
   <HomePage.Tagline>
     Minimal, blazing-fast API proxy for edge and embedded systems.
   </HomePage.Tagline>
-  <HomePage.InstallPackage name="dbx-sdk" type="install" />
+  <HomePage.InstallPackage name="@0dbx/redis" type="install" />
   <HomePage.Description>
     DBX is a minimal, blazing-fast Redis API proxy designed for edge and embedded systems. Built in
     Rust with TypeScript SDK support, providing REST and WebSocket APIs for Redis operations.
@@ -187,11 +187,11 @@ REST API and WebSocket connections with a full-featured TypeScript SDK.
 ```bash
 # Run with Docker
 docker run -d --name dbx -p 3000:3000 \
-  -e DATABASE_URL=redis://localhost:6379 \
-  fnlog0/dbx:latest
+  -e REDIS_URL=redis://localhost:6379 \
+  effortlesslabs/0dbx_redis:latest
 
 # Use the TypeScript SDK
-npm install dbx-sdk
+npm install @0dbx/redis
 ```
 
 # Community

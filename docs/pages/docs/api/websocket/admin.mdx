@@ -1,6 +1,25 @@
 # WebSocket Admin Operations
 
-DBX provides administrative operations through WebSocket connections, allowing you to manage the database, monitor performance, and perform maintenance tasks.
+The DBX WebSocket API provides admin operations for server management and monitoring.
+
+## Installation
+
+```bash
+npm install @0dbx/redis
+```
+
+## Basic Usage
+
+```typescript
+import { DbxWsClient } from "@0dbx/redis";
+
+// Create WebSocket client
+const wsClient = new DbxWsClient("ws://localhost:3000/redis_ws");
+
+// Admin operations
+const health = await wsClient.admin.health();
+const ping = await wsClient.admin.ping();
+```
 
 ## Connection Setup
 
@@ -568,67 +587,19 @@ Common error codes:
 - `RATE_LIMITED`: Request rate limit exceeded
 - `OPERATION_FAILED`: The operation failed to complete
 
-## TypeScript SDK Usage
+## TypeScript SDK Example
 
 ```typescript
-import { DBXWebSocketClient } from "@effortlesslabs/dbx";
+import { DbxWsClient } from "@0dbx/redis";
 
-const client = new DBXWebSocketClient({
-  url: "ws://localhost:8080/ws",
-  token: "your-admin-jwt-token",
-});
+const wsClient = new DbxWsClient("ws://localhost:3000/redis_ws");
 
-await client.connect();
+// Admin operations
+const health = await wsClient.admin.health();
+console.log(health); // { status: "ok", timestamp: "..." }
 
-// Get server information
-const info = await client.admin.info("all");
-
-// Test connection
-const pong = await client.admin.ping("Hello DBX");
-
-// Clear database
-await client.admin.flushdb();
-
-// Find keys by pattern
-const keys = await client.admin.keys("user:*");
-
-// Scan keys
-const scanResult = await client.admin.scan(0, { count: 10, match: "user:*" });
-
-// Delete keys
-const deleted = await client.admin.del(["key1", "key2", "key3"]);
-
-// Check if keys exist
-const exists = await client.admin.exists(["key1", "key2"]);
-
-// Get key type
-const type = await client.admin.type("user:123");
-
-// Get key TTL
-const ttl = await client.admin.ttl("session:123");
-
-// Set key expiration
-await client.admin.expire("session:123", 3600);
-
-// Remove expiration
-await client.admin.persist("session:123");
-
-// Rename key
-await client.admin.rename("old:key", "new:key");
-
-// Get database size
-const size = await client.admin.dbsize();
-
-// Get slow query log
-const slowlog = await client.admin.slowlog(10);
-
-// Get configuration
-const config = await client.admin.configGet("maxmemory");
-
-// Set configuration
-await client.admin.configSet("maxmemory", "1gb");
-
-await client.disconnect();
+const ping = await wsClient.admin.ping();
+console.log(ping); // "pong"
 ```
 
 ## Best Practices

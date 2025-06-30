@@ -5,7 +5,7 @@ The DBX TypeScript SDK provides a set client for working with Redis set data str
 ## Installation
 
 ```bash
-npm install @effortlesslabs/dbx
+npm install @0dbx/redis
 ```
 
 ## Basic Usage
@@ -123,7 +123,39 @@ All methods throw `DBXError` on failure. See [String Client](./string) for error
 
 # Set Operations
 
-The DBX TypeScript SDK provides comprehensive set operations for Redis. This guide covers all available set methods and their usage patterns.
+The DBX TypeScript SDK provides comprehensive set operations with full TypeScript support and high-performance NAPI bindings.
+
+## Installation
+
+```bash
+npm install @0dbx/redis
+```
+
+## Basic Usage
+
+```typescript
+import { DbxRedisClient } from "@0dbx/redis";
+
+// Create client
+const client = new DbxRedisClient("http://localhost:3000");
+
+// Set operations
+await client.set.addMember("tags", "redis");
+const members = await client.set.getMembers("tags");
+```
+
+## WebSocket Client
+
+```typescript
+import { DbxWsClient } from "@0dbx/redis";
+
+// Create WebSocket client
+const wsClient = new DbxWsClient("ws://localhost:3000/redis_ws");
+
+// Set operations via WebSocket
+await wsClient.set.addMember("tags", "redis");
+const members = await wsClient.set.getMembers("tags");
+```
 
 ## Overview
 
@@ -347,7 +379,7 @@ const members = await safeSetOperation(() => setClient.getMembers("my-set"));
 
 ### Connection Reuse
 
-```typescript
+```typitten
 // Create a singleton client for your application
 class SetService {
   private static instance: DbxRedisClient;

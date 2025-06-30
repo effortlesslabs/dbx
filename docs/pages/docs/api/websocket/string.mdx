@@ -1,18 +1,34 @@
 # WebSocket String Operations
 
-DBX provides real-time string operations through WebSocket connections, allowing for efficient bidirectional communication with your Redis database.
+The DBX WebSocket API provides real-time string operations for Redis. This guide covers all available string methods and their usage patterns.
+
+## Installation
+
+```bash
+npm install @0dbx/redis
+```
+
+## Basic Usage
+
+```typescript
+import { DbxWsClient } from "@0dbx/redis";
+
+// Create WebSocket client
+const wsClient = new DbxWsClient("ws://localhost:3000/redis_ws");
+
+// String operations
+await wsClient.string.set("my-key", "hello world");
+const value = await wsClient.string.get("my-key");
+```
 
 ## Connection Setup
 
 Before using string operations, establish a WebSocket connection:
 
 ```typescript
-import { DBXWebSocketClient } from "@effortlesslabs/dbx";
+import { DbxWsClient } from "@0dbx/redis";
 
-const client = new DBXWebSocketClient({
-  url: "ws://localhost:8080/ws",
-  token: "your-jwt-token",
-});
+const client = new DbxWsClient("ws://localhost:8080/ws");
 
 await client.connect();
 ```
@@ -419,37 +435,17 @@ Common error codes:
 - `AUTHENTICATION_FAILED`: Invalid or missing authentication token
 - `RATE_LIMITED`: Request rate limit exceeded
 
-## TypeScript SDK Usage
+## TypeScript SDK Example
 
 ```typescript
-import { DBXWebSocketClient } from "@effortlesslabs/dbx";
+import { DbxWsClient } from "@0dbx/redis";
 
-const client = new DBXWebSocketClient({
-  url: "ws://localhost:8080/ws",
-  token: "your-jwt-token",
-});
+const wsClient = new DbxWsClient("ws://localhost:3000/redis_ws");
 
-await client.connect();
-
-// Set a value
-await client.string.set("user:123:name", "John Doe", { expire: 3600 });
-
-// Get a value
-const name = await client.string.get("user:123:name");
-
-// Increment a counter
-const newValue = await client.string.incr("counter:visits");
-
-// Set multiple values
-await client.string.mset({
-  "user:123:name": "John Doe",
-  "user:123:email": "john@example.com",
-});
-
-// Get multiple values
-const values = await client.string.mget(["user:123:name", "user:123:email"]);
-
-await client.disconnect();
+// String operations
+await wsClient.string.set("user:1:name", "John Doe");
+const name = await wsClient.string.get("user:1:name");
+console.log(name); // "John Doe"
 ```
 
 ## Best Practices

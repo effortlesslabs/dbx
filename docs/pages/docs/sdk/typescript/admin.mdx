@@ -1,33 +1,37 @@
-# TypeScript SDK - Admin Client
+# Admin Operations
 
-The DBX TypeScript SDK provides an admin client for performing administrative operations on the database. This client offers type-safe methods for all admin operations with full TypeScript support.
+The DBX TypeScript SDK provides admin operations for server management and monitoring.
 
 ## Installation
 
 ```bash
-npm install @effortlesslabs/dbx
+npm install @0dbx/redis
 ```
 
 ## Basic Usage
 
-### REST Client
-
 ```typescript
-import { DBXClient } from "@effortlesslabs/dbx";
-const client = new DBXClient({ baseUrl: "http://localhost:8080", token: "your-admin-jwt-token" });
-const adminClient = client.admin;
+import { DbxRedisClient } from "@0dbx/redis";
+
+// Create client
+const client = new DbxRedisClient("http://localhost:3000");
+
+// Admin operations
+const health = await client.admin.health();
+const ping = await client.admin.ping();
 ```
 
-### WebSocket Client
+## WebSocket Client
 
 ```typescript
-import { DBXWebSocketClient } from "@effortlesslabs/dbx";
-const client = new DBXWebSocketClient({
-  url: "ws://localhost:8080/ws",
-  token: "your-admin-jwt-token",
-});
-await client.connect();
-const adminClient = client.admin;
+import { DbxWsClient } from "@0dbx/redis";
+
+// Create WebSocket client
+const wsClient = new DbxWsClient("ws://localhost:3000/redis_ws");
+
+// Admin operations via WebSocket
+const health = await wsClient.admin.health();
+const ping = await wsClient.admin.ping();
 ```
 
 ## Admin Operations

@@ -1,0 +1,271 @@
+---
+title: Contributing to DBX
+description: How to contribute to the DBX project
+---
+
+# Contributing to DBX
+
+Thank you for your interest in contributing to DBX! This guide will help you get started with contributing to the project.
+
+## Getting Started
+
+### 1. Fork the Repository
+
+1. Go to [https://github.com/effortlesslabs/dbx](https://github.com/effortlesslabs/dbx)
+2. Click the "Fork" button in the top right
+3. Clone your forked repository
+
+```bash
+git clone https://github.com/YOUR_USERNAME/dbx.git
+cd dbx
+```
+
+### 2. Set Up Development Environment
+
+Follow the [Development Setup Guide](/docs/development) to get your environment ready.
+
+### 3. Create a Branch
+
+```bash
+git checkout -b feature/your-feature-name
+# or
+git checkout -b fix/your-bug-fix
+```
+
+## Development Guidelines
+
+### Code Style
+
+#### Rust Code
+
+- Follow the [Rust Style Guide](https://doc.rust-lang.org/1.0.0/style/style/naming/README.html)
+- Use `cargo fmt` to format code
+- Use `cargo clippy` to check for common issues
+
+```bash
+# Format code
+cargo fmt
+
+# Run clippy
+cargo clippy -- -D warnings
+```
+
+#### TypeScript Code
+
+- Follow the [TypeScript Style Guide](https://google.github.io/styleguide/tsguide.html)
+- Use Prettier for formatting
+- Use ESLint for linting
+
+```bash
+cd bindings/redis_ts
+npm run format
+npm run lint
+```
+
+### Testing
+
+Always write tests for your changes:
+
+#### Rust Tests
+
+```bash
+# Run all tests
+cargo test
+
+# Run specific test
+cargo test test_name
+
+# Run with output
+cargo test -- --nocapture
+```
+
+#### TypeScript Tests
+
+```bash
+cd bindings/redis_ts
+npm test
+```
+
+#### Integration Tests
+
+```bash
+# Run full integration tests
+./scripts/test-with-server.sh
+
+# Run simple tests
+./scripts/test-simple.sh
+```
+
+### Documentation
+
+- Update documentation for any API changes
+- Add examples for new features
+- Keep the README up to date
+
+## Types of Contributions
+
+### Bug Reports
+
+When reporting bugs, please include:
+
+1. **Clear description** of the bug
+2. **Steps to reproduce**
+3. **Expected behavior**
+4. **Actual behavior**
+5. **Environment details** (OS, Rust version, etc.)
+6. **Minimal reproduction case** (if possible)
+
+### Feature Requests
+
+When requesting features, please include:
+
+1. **Clear description** of the feature
+2. **Use case** and motivation
+3. **Proposed implementation** (if you have ideas)
+4. **Alternative solutions** you've considered
+
+### Code Contributions
+
+#### Small Changes
+
+For small changes (typos, documentation, etc.):
+
+1. Make your changes
+2. Run tests to ensure nothing breaks
+3. Submit a pull request
+
+#### Larger Changes
+
+For larger changes:
+
+1. **Open an issue first** to discuss the change
+2. **Create a design document** for complex features
+3. **Implement incrementally** with multiple PRs if needed
+4. **Add comprehensive tests**
+5. **Update documentation**
+
+## Pull Request Process
+
+### Before Submitting
+
+1. **Ensure tests pass**
+
+   ```bash
+   cargo test
+   cd bindings/redis_ts && npm test && cd ../..
+   ./scripts/test-with-server.sh
+   ```
+
+2. **Check code style**
+
+   ```bash
+   cargo fmt
+   cargo clippy -- -D warnings
+   cd bindings/redis_ts && npm run lint && cd ../..
+   ```
+
+3. **Update documentation**
+   - Update relevant docs
+   - Add examples if needed
+   - Update README if necessary
+
+### Pull Request Template
+
+Use this template for your PR:
+
+```markdown
+## Description
+
+Brief description of the changes.
+
+## Type of Change
+
+- [ ] Bug fix (non-breaking change which fixes an issue)
+- [ ] New feature (non-breaking change which adds functionality)
+- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] Documentation update
+
+## Testing
+
+- [ ] Unit tests pass
+- [ ] Integration tests pass
+- [ ] TypeScript tests pass
+- [ ] Manual testing completed
+
+## Checklist
+
+- [ ] My code follows the style guidelines of this project
+- [ ] I have performed a self-review of my own code
+- [ ] I have commented my code, particularly in hard-to-understand areas
+- [ ] I have made corresponding changes to the documentation
+- [ ] My changes generate no new warnings
+- [ ] I have added tests that prove my fix is effective or that my feature works
+- [ ] New and existing unit tests pass locally with my changes
+```
+
+### Review Process
+
+1. **Automated checks** must pass
+2. **Code review** by maintainers
+3. **Approval** from at least one maintainer
+4. **Merge** by maintainers
+
+## Release Process
+
+### Versioning
+
+We follow [Semantic Versioning](https://semver.org/):
+
+- **MAJOR** version for incompatible API changes
+- **MINOR** version for backwards-compatible functionality
+- **PATCH** version for backwards-compatible bug fixes
+
+### Publishing
+
+Releases are published using our automated scripts:
+
+```bash
+# Full release (Docker + NPM)
+./scripts/publish-release.sh --version 1.0.0
+
+# Docker only
+./scripts/publish-docker.sh --tag 1.0.0 --push
+```
+
+## Community Guidelines
+
+### Code of Conduct
+
+- Be respectful and inclusive
+- Focus on the code, not the person
+- Help others learn and grow
+- Be patient with newcomers
+
+### Communication
+
+- **GitHub Issues**: For bugs and feature requests
+- **GitHub Discussions**: For questions and general discussion
+- **Pull Requests**: For code contributions
+
+## Getting Help
+
+### Questions and Discussion
+
+- [GitHub Discussions](https://github.com/effortlesslabs/dbx/discussions)
+- [GitHub Issues](https://github.com/effortlesslabs/dbx/issues)
+
+### Development Help
+
+- [Development Setup Guide](/docs/development)
+- [API Documentation](/docs/api/rest/string)
+- [TypeScript SDK Documentation](/docs/sdk/typescript/installation)
+
+## Recognition
+
+Contributors are recognized in:
+
+- [GitHub Contributors](https://github.com/effortlesslabs/dbx/graphs/contributors)
+- [Release Notes](https://github.com/effortlesslabs/dbx/releases)
+- [Documentation](/docs/development/contributing)
+
+Thank you for contributing to DBX! 🚀

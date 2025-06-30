@@ -1,6 +1,25 @@
 # WebSocket Hash Operations
 
-DBX provides real-time hash operations through WebSocket connections, allowing you to work with Redis hash data structures efficiently.
+The DBX WebSocket API provides real-time hash operations for Redis. This guide covers all available hash methods and their usage patterns.
+
+## Installation
+
+```bash
+npm install @0dbx/redis
+```
+
+## Basic Usage
+
+```typescript
+import { DbxWsClient } from "@0dbx/redis";
+
+// Create WebSocket client
+const wsClient = new DbxWsClient("ws://localhost:3000/redis_ws");
+
+// Hash operations
+await wsClient.hash.setField("user:1", "name", "John Doe");
+const name = await wsClient.hash.getField("user:1", "name");
+```
 
 ## Connection Setup
 
@@ -490,59 +509,18 @@ Common error codes:
 - `AUTHENTICATION_FAILED`: Invalid or missing authentication token
 - `RATE_LIMITED`: Request rate limit exceeded
 
-## TypeScript SDK Usage
+## TypeScript SDK Example
 
 ```typescript
-import { DBXWebSocketClient } from "@effortlesslabs/dbx";
+import { DbxWsClient } from "@0dbx/redis";
 
-const client = new DBXWebSocketClient({
-  url: "ws://localhost:8080/ws",
-  token: "your-jwt-token",
-});
+const wsClient = new DbxWsClient("ws://localhost:3000/redis_ws");
 
-await client.connect();
-
-// Set a single field
-await client.hash.hset("user:123", "name", "John Doe");
-
-// Set multiple fields
-await client.hash.hmset("user:123", {
-  name: "John Doe",
-  email: "john@example.com",
-  age: "30",
-});
-
-// Get a field
-const name = await client.hash.hget("user:123", "name");
-
-// Get multiple fields
-const values = await client.hash.hmget("user:123", ["name", "email"]);
-
-// Get all fields
-const allFields = await client.hash.hgetall("user:123");
-
-// Delete fields
-const deleted = await client.hash.hdel("user:123", ["age", "city"]);
-
-// Check if field exists
-const exists = await client.hash.hexists("user:123", "name");
-
-// Get all field names
-const keys = await client.hash.hkeys("user:123");
-
-// Get all values
-const values = await client.hash.hvals("user:123");
-
-// Get hash length
-const length = await client.hash.hlen("user:123");
-
-// Increment a field
-const newValue = await client.hash.hincrby("user:123", "visits", 1);
-
-// Increment by float
-const score = await client.hash.hincrbyfloat("user:123", "score", 0.5);
-
-await client.disconnect();
+// Hash operations
+await wsClient.hash.setField("user:1", "name", "John Doe");
+await wsClient.hash.setField("user:1", "email", "john@example.com");
+const name = await wsClient.hash.getField("user:1", "name");
+console.log(name); // "John Doe"
 ```
 
 ## Best Practices

@@ -5,7 +5,7 @@ The DBX TypeScript SDK provides a hash client for working with Redis hash data s
 ## Installation
 
 ```bash
-npm install @effortlesslabs/dbx
+npm install @0dbx/redis
 ```
 
 ## Basic Usage
@@ -13,16 +13,16 @@ npm install @effortlesslabs/dbx
 ### REST Client
 
 ```typescript
-import { DBXClient } from "@effortlesslabs/dbx";
-const client = new DBXClient({ baseUrl: "http://localhost:8080", token: "your-jwt-token" });
+import { DbxRedisClient } from "@0dbx/redis";
+const client = new DbxRedisClient("http://localhost:3000");
 const hashClient = client.hash;
 ```
 
 ### WebSocket Client
 
 ```typescript
-import { DBXWebSocketClient } from "@effortlesslabs/dbx";
-const client = new DBXWebSocketClient({ url: "ws://localhost:8080/ws", token: "your-jwt-token" });
+import { DbxWsClient } from "@0dbx/redis";
+const client = new DbxWsClient("ws://localhost:3000/redis_ws");
 await client.connect();
 const hashClient = client.hash;
 ```

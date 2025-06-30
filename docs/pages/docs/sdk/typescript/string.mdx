@@ -1,45 +1,38 @@
-# TypeScript SDK - String Client
+# String Operations
 
-The DBX TypeScript SDK provides a comprehensive string client for working with Redis string operations. This client offers type-safe methods for all string operations with full TypeScript support.
+The DBX TypeScript SDK provides comprehensive string operations with full TypeScript support and high-performance NAPI bindings.
 
 ## Installation
 
-First, install the DBX TypeScript SDK:
-
 ```bash
-npm install @effortlesslabs/dbx
+npm install @0dbx/redis
 ```
 
 ## Basic Usage
 
-### REST Client
-
 ```typescript
-import { DBXClient } from "@effortlesslabs/dbx";
+import { DbxRedisClient } from "@0dbx/redis";
 
-const client = new DBXClient({
-  baseUrl: "http://localhost:8080",
-  token: "your-jwt-token",
-});
+// Create client
+const client = new DbxRedisClient("http://localhost:3000");
 
 // String operations
-const stringClient = client.string;
+await client.string.set("my-key", "hello world", 3600); // with TTL
+const value = await client.string.get("my-key");
+console.log(value); // "hello world"
 ```
 
-### WebSocket Client
+## WebSocket Client
 
 ```typescript
-import { DBXWebSocketClient } from "@effortlesslabs/dbx";
+import { DbxWsClient } from "@0dbx/redis";
 
-const client = new DBXWebSocketClient({
-  url: "ws://localhost:8080/ws",
-  token: "your-jwt-token",
-});
+// Create WebSocket client
+const wsClient = new DbxWsClient("ws://localhost:3000/redis_ws");
 
-await client.connect();
-
-// String operations
-const stringClient = client.string;
+// String operations via WebSocket
+await wsClient.string.set("my-key", "hello world");
+const value = await wsClient.string.get("my-key");
 ```
 
 ## String Operations

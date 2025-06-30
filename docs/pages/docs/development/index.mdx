@@ -1,0 +1,232 @@
+---
+title: Development Setup
+description: Set up your development environment for DBX
+---
+
+# Development Setup
+
+This guide will help you set up a development environment for DBX, the high-performance Redis API server.
+
+## Prerequisites
+
+Before you begin, make sure you have the following installed:
+
+- **Rust** (1.70+) - [Install Rust](https://rustup.rs/)
+- **Node.js** (18+) - [Install Node.js](https://nodejs.org/)
+- **Docker** (optional) - [Install Docker](https://docs.docker.com/get-docker/)
+- **Redis** (for testing) - [Install Redis](https://redis.io/download)
+
+## Quick Start
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/effortlesslabs/dbx.git
+cd dbx
+```
+
+### 2. Build the Project
+
+```bash
+# Build the Rust components
+cargo build --release
+
+# Build the TypeScript SDK
+cd bindings/redis_ts
+npm install
+npm run build
+cd ../..
+```
+
+### 3. Run the Development Server
+
+```bash
+# Run with default configuration
+cargo run --bin dbx-redis-api
+
+# Run with custom Redis URL
+cargo run --bin dbx-redis-api -- --redis-url redis://localhost:6379
+```
+
+## Development Workflow
+
+### Running Tests
+
+```bash
+# Run all Rust tests
+cargo test
+
+# Run TypeScript tests
+cd bindings/redis_ts
+npm test
+cd ../..
+
+# Run integration tests
+./scripts/test-with-server.sh
+```
+
+### Building Docker Image
+
+```bash
+# Build development image
+docker build -t effortlesslabs/0dbx_redis:dev .
+
+# Run development container
+docker run -p 3000:3000 -e REDIS_URL=redis://host.docker.internal:6379 effortlesslabs/0dbx_redis:dev
+```
+
+### TypeScript SDK Development
+
+```bash
+# Navigate to TypeScript bindings
+cd bindings/redis_ts
+
+# Install dependencies
+npm install
+
+# Build the SDK
+npm run build
+
+# Run tests
+npm test
+
+# Watch for changes
+npm run dev
+```
+
+## Project Structure
+
+```
+dbx/
+├── crates/
+│   ├── adapter/          # Database adapter layer
+│   ├── redis_api/        # HTTP/WebSocket API server
+│   └── redis_client/     # Redis client implementation
+├── bindings/
+│   └── redis_ts/         # TypeScript SDK (NAPI bindings)
+├── scripts/              # Development and deployment scripts
+├── docs/                 # Documentation
+└── tests/                # Integration tests
+```
+
+## Configuration
+
+### Environment Variables
+
+| Variable    | Default                  | Description             |
+| ----------- | ------------------------ | ----------------------- |
+| `REDIS_URL` | `redis://localhost:6379` | Redis connection string |
+| `PORT`      | `3000`                   | Server port             |
+| `LOG_LEVEL` | `INFO`                   | Logging level           |
+| `POOL_SIZE` | `10`                     | Connection pool size    |
+
+### Development Configuration
+
+Create a `.env` file for local development:
+
+```bash
+REDIS_URL=redis://localhost:6379
+PORT=3000
+LOG_LEVEL=DEBUG
+POOL_SIZE=5
+```
+
+## Testing
+
+### Unit Tests
+
+```bash
+# Test specific crate
+cargo test -p redis_api
+
+# Test with output
+cargo test -- --nocapture
+```
+
+### Integration Tests
+
+```bash
+# Run integration tests with Redis server
+./scripts/test-with-server.sh
+
+# Run simple tests
+./scripts/test-simple.sh
+```
+
+### TypeScript SDK Tests
+
+```bash
+cd bindings/redis_ts
+npm run test:run
+```
+
+## Debugging
+
+### Rust Debugging
+
+```bash
+# Run with debug logging
+RUST_LOG=debug cargo run --bin dbx-redis-api
+
+# Run with specific log level
+RUST_LOG=redis_api=debug cargo run --bin dbx-redis-api
+```
+
+### Docker Debugging
+
+```bash
+# Run with debug mode
+docker run -p 3000:3000 \
+  -e LOG_LEVEL=DEBUG \
+  -e REDIS_URL=redis://host.docker.internal:6379 \
+  effortlesslabs/0dbx_redis:dev
+```
+
+## Performance Testing
+
+```bash
+# Run benchmarks
+cargo bench
+
+# Load testing with wrk
+wrk -t12 -c400 -d30s http://localhost:3000/redis/admin/health
+```
+
+## Common Issues
+
+### Redis Connection Issues
+
+```bash
+# Check Redis is running
+redis-cli ping
+
+# Test connection
+redis-cli -h localhost -p 6379 ping
+```
+
+### Port Conflicts
+
+```bash
+# Check what's using port 3000
+lsof -i :3000
+
+# Use different port
+PORT=3001 cargo run --bin dbx-redis-api
+```
+
+### Build Issues
+
+```bash
+# Clean and rebuild
+cargo clean
+cargo build --release
+
+# Update dependencies
+cargo update
+```
+
+## Next Steps
+
+- **[Contributing Guide](/docs/development/contributing)** - Learn how to contribute to DBX
+- **[API Documentation](/docs/api/rest/string)** - Explore the API endpoints
+- **[TypeScript SDK](/docs/sdk/typescript/installation)** - Use the TypeScript client
