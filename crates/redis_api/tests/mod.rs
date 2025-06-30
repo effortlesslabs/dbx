@@ -14,7 +14,6 @@ pub struct TestServer {
 impl TestServer {
     pub async fn new() -> anyhow::Result<Self> {
         let config = Config {
-            database_type: DatabaseType::Redis,
             database_url: std::env
                 ::var("REDIS_URL")
                 .unwrap_or_else(|_| Defaults::REDIS_URL.to_string()),

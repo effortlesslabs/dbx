@@ -4,7 +4,7 @@ use std::fs;
 use tracing::info;
 use std::sync::Arc;
 
-use crate::{ config::{ Config, DatabaseType }, constants::errors::ErrorMessages };
+use crate::{ config::Config, constants::errors::ErrorMessages };
 
 use dbx_adapter::redis::{ RedisPoolAdapter, client::RedisPool };
 
@@ -15,32 +15,24 @@ pub struct Server {
 
 impl Server {
     pub async fn new(config: Config) -> anyhow::Result<Self> {
-        info!("Connecting to {} at {}", config.database_type, config.database_url);
+        info!("Connecting to Redis at {}", config.database_url);
 
-        let redis_pool = match config.database_type {
-            DatabaseType::Redis => {
-                let pool = RedisPool::new(&config.database_url, config.pool_size)?;
-                let pool_adapter = RedisPoolAdapter::new(pool.clone());
-                let redis = pool_adapter.get_instance()?;
-                let ping_result = redis.ping();
-                match ping_result {
-                    Ok(true) => {
-                        info!("Successfully connected to Redis with connection pool");
-                        Some(Arc::new(pool))
-                    }
-                    Ok(false) => {
-                        return Err(anyhow::anyhow!(ErrorMessages::REDIS_PING_FAILED));
-                    }
-                    Err(e) => {
-                        return Err(
-                            anyhow::anyhow!("{}{}", ErrorMessages::REDIS_CONNECTION_FAILED, e)
-                        );
-                    }
-                }
-            } // Future database types
-            // DatabaseType::Postgres => { /* PostgreSQL connection test */ }
-            // DatabaseType::MongoDB => { /* MongoDB connection test */ }
-            // DatabaseType::MySQL => { /* MySQL connection test */ }
+        let pool = RedisPool::new(&config.database_url, config.pool_size)?;
+        let pool_adapter = RedisPoolAdapter::new(pool.clone());
+        let redis = pool_adapter.get_instance()?;
+        let ping_result = redis.ping();
+
+        let redis_pool = match ping_result {
+            Ok(true) => {
+                info!("Successfully connected to Redis with connection pool");
+                Some(Arc::new(pool))
+            }
+            Ok(false) => {
+                return Err(anyhow::anyhow!(ErrorMessages::REDIS_PING_FAILED));
+            }
+            Err(e) => {
+                return Err(anyhow::anyhow!("{}{}", ErrorMessages::REDIS_CONNECTION_FAILED, e));
+            }
         };
 
         Ok(Self {
@@ -100,7 +92,7 @@ impl Server {
     pub async fn run(self, addr: std::net::SocketAddr) -> anyhow::Result<()> {
         let app = self.create_router();
 
-        info!("Starting {} API server on {}", self.config.database_type, addr);
+        info!("Starting Redis API server on {}", addr);
         info!("HTTP API available at http://{}", addr);
         info!("RedisWs API available at ws://{}/redis_ws", addr);
         info!("Redis Admin HTTP API available at http://{}/redis/admin", addr);
