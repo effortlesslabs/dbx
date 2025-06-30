@@ -315,7 +315,7 @@ impl RedisSortedSet {
     /// ```no_run
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::sorted_set::RedisSortedSet;
+    /// # use dbx_adapter::redis::primitives::sorted_set::RedisSortedSet;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_sorted_set = RedisSortedSet::new(Arc::new(Mutex::new(conn)));
     /// let results: (usize, Vec<String>) = redis_sorted_set.with_pipeline(|pipe| {
@@ -429,7 +429,7 @@ impl RedisSortedSet {
     /// ```no_run
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::sorted_set::RedisSortedSet;
+    /// # use dbx_adapter::redis::primitives::sorted_set::RedisSortedSet;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_sorted_set = RedisSortedSet::new(Arc::new(Mutex::new(conn)));
     /// let _: () = redis_sorted_set.transaction(|pipe| {
@@ -467,7 +467,7 @@ impl RedisSortedSet {
     /// # Example
     /// ```
     /// use redis::Script;
-    /// use dbx_crates::adapter::redis::primitives::sorted_set::RedisSortedSet;
+    /// use dbx_adapter::redis::primitives::sorted_set::RedisSortedSet;
     ///
     /// let script = RedisSortedSet::create_script(r#"
     ///     local score = redis.call('ZSCORE', KEYS[1], ARGV[1])
@@ -489,7 +489,7 @@ impl RedisSortedSet {
     /// ```no_run
     /// # use redis::{Connection, RedisResult, Script};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::sorted_set::RedisSortedSet;
+    /// # use dbx_adapter::redis::primitives::sorted_set::RedisSortedSet;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_sorted_set = RedisSortedSet::new(Arc::new(Mutex::new(conn)));
     /// let script = RedisSortedSet::create_script("return redis.call('ZCARD', KEYS[1])");
@@ -534,7 +534,7 @@ impl RedisSortedSet {
     /// ```no_run
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::sorted_set::RedisSortedSet;
+    /// # use dbx_adapter::redis::primitives::sorted_set::RedisSortedSet;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_sorted_set = RedisSortedSet::new(Arc::new(Mutex::new(conn)));
     /// let script = RedisSortedSet::add_and_get_rank_script();

@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 use tracing_subscriber;
 
-use dbx_api::{ config::Config, server::Server, constants::defaults::Defaults };
+use dbx_redis_api::{ config::Config, server::Server, constants::defaults::Defaults };
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

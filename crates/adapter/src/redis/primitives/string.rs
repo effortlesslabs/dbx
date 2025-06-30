@@ -128,7 +128,7 @@ impl RedisString {
     /// ```no_run
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::string::RedisString;
+    /// # use dbx_adapter::redis::primitives::string::RedisString;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_string = RedisString::new(Arc::new(Mutex::new(conn)));
     /// let results: (String, i64) = redis_string.with_pipeline(|pipe| {
@@ -223,7 +223,7 @@ impl RedisString {
     /// ```no_run
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::string::RedisString;
+    /// # use dbx_adapter::redis::primitives::string::RedisString;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_string = RedisString::new(Arc::new(Mutex::new(conn)));
     /// let _: () = redis_string.transaction(|pipe| {
@@ -261,7 +261,7 @@ impl RedisString {
     /// # Example
     /// ```
     /// use redis::Script;
-    /// use dbx_crates::adapter::redis::primitives::string::RedisString;
+    /// use dbx_adapter::redis::primitives::string::RedisString;
     ///
     /// let script = RedisString::create_script(r#"
     ///     local current = redis.call('GET', KEYS[1])
@@ -279,7 +279,7 @@ impl RedisString {
     /// ```no_run
     /// # use redis::{Connection, RedisResult, Script};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::string::RedisString;
+    /// # use dbx_adapter::redis::primitives::string::RedisString;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_string = RedisString::new(Arc::new(Mutex::new(conn)));
     /// let script = RedisString::create_script("return redis.call('GET', KEYS[1])");
@@ -324,7 +324,7 @@ impl RedisString {
     /// ```no_run
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::string::RedisString;
+    /// # use dbx_adapter::redis::primitives::string::RedisString;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_string = RedisString::new(Arc::new(Mutex::new(conn)));
     /// let script = RedisString::get_set_script();

@@ -61,7 +61,7 @@ echo ""
 
 # Check Docker Hub status
 log_info "Docker Hub Status:"
-DOCKER_USERNAME="fnlog0"
+DOCKER_USERNAME="effortlesslabs"
 DOCKER_REPO="dbx"
 
 # Check if docker is available
@@ -162,8 +162,8 @@ echo ""
 
 # Check test status
 log_info "Test Status:"
-echo "   • Rust tests: Run with 'cargo test'"
-echo "   • TypeScript tests: Run with 'cd bindings/redis_ts && npm test'"
+echo "   • Rust tests (sequential): adapter → api → client"
+echo "   • TypeScript tests: cd bindings/redis_ts && npm test"
 
 echo ""
 
@@ -179,13 +179,14 @@ echo ""
 echo "🔧 Development:"
 echo "   • Build Rust: cargo build --release"
 echo "   • Build TypeScript: cd bindings/redis_ts && npm run build"
-echo "   • Run tests: cargo test && cd bindings/redis_ts && npm test"
+echo "   • Run tests (sequential): cd crates/adapter && cargo test && cd ../redis_api && cargo test && cd ../redis_client && cargo test"
+echo "   • Run TypeScript tests: cd bindings/redis_ts && npm test"
 echo "   • Run locally: cargo run --bin api"
 
 echo ""
 echo "🐳 Docker:"
-echo "   • Build image: docker build -t fnlog0/dbx ."
-echo "   • Run container: docker run -p 3000:3000 fnlog0/dbx"
+echo "   • Build image: docker build -t effortlesslabs/dbx ."
+echo "   • Run container: docker run -p 3000:3000 effortlesslabs/dbx"
 echo "   • Multi-platform: ./scripts/publish.sh --tag <tag> --push"
 
 echo ""
@@ -197,8 +198,9 @@ echo "   • Rust client: crates/redis_client/README.md"
 echo ""
 log_info "Next Steps:"
 echo "1. Ensure all versions are consistent"
-echo "2. Run tests: cargo test && cd bindings/redis_ts && npm test"
-echo "3. Choose publishing method:"
+echo "2. Run tests (sequential): cd crates/adapter && cargo test && cd ../redis_api && cargo test && cd ../redis_client && cargo test"
+echo "3. Run TypeScript tests: cd bindings/redis_ts && npm test"
+echo "4. Choose publishing method:"
 echo "   • GitHub Actions (recommended): Create git tag"
 echo "   • Quick publish: ./scripts/quick-publish.sh"
 echo "   • Manual: ./scripts/publish-release.sh" 

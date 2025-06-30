@@ -14,7 +14,7 @@ set -e
 # =============================================================================
 
 # Default values (can be overridden by environment variables)
-DEFAULT_DOCKER_USERNAME=${DOCKER_USERNAME:-"fnlog0"}
+DEFAULT_DOCKER_USERNAME=${DOCKER_USERNAME:-"effortlesslabs"}
 DEFAULT_REPO=${DOCKER_REPO:-"dbx"}
 DEFAULT_NPM_PACKAGE=${NPM_PACKAGE:-"dbx-sdk"}
 DEFAULT_PLATFORMS=${DOCKER_PLATFORMS:-"linux/amd64,linux/arm64"}
@@ -200,13 +200,45 @@ load_environment() {
 # TESTING FUNCTIONS
 # =============================================================================
 
-run_rust_tests() {
-    log_step "Running Rust tests..."
-    if ! cargo test --all; then
-        log_error "Rust tests failed"
+run_adapter_tests() {
+    log_step "Running adapter tests..."
+    if ! (cd "crates/adapter" && cargo test); then
+        log_error "Adapter tests failed"
         return 1
     fi
-    log_success "Rust tests passed"
+    log_success "Adapter tests passed"
+    return 0
+}
+
+run_api_tests() {
+    log_step "Running API tests..."
+    if ! (cd "crates/redis_api" && cargo test); then
+        log_error "API tests failed"
+        return 1
+    fi
+    log_success "API tests passed"
+    return 0
+}
+
+run_client_tests() {
+    log_step "Running client tests..."
+    if ! (cd "crates/redis_client" && cargo test); then
+        log_error "Client tests failed"
+        return 1
+    fi
+    log_success "Client tests passed"
+    return 0
+}
+
+run_rust_tests() {
+    log_step "Running Rust tests sequentially (adapter → api → client)..."
+    
+    # Run tests in the specified order
+    run_adapter_tests || return 1
+    run_api_tests || return 1
+    run_client_tests || return 1
+    
+    log_success "All Rust tests passed"
     return 0
 }
 
@@ -223,17 +255,11 @@ run_typescript_tests() {
 run_all_tests() {
     log_info "Running comprehensive test suite..."
     
-    # Run tests in parallel if possible
-    if command -v parallel > /dev/null 2>&1; then
-        log_debug "Running tests in parallel"
-        parallel --jobs 2 ::: \
-            "cargo test --all" \
-            "cd $TYPESCRIPT_BUILD_DIR && npm run test:run"
-    else
-        log_debug "Running tests sequentially"
-        run_rust_tests || return 1
-        run_typescript_tests || return 1
-    fi
+    # Run Rust tests first (sequentially)
+    run_rust_tests || return 1
+    
+    # Then run TypeScript tests
+    run_typescript_tests || return 1
     
     log_success "All tests passed"
     return 0

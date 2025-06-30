@@ -16,7 +16,7 @@ The fastest way to get started is using Docker:
 # Run DBX with Redis
 docker run -d --name dbx -p 3000:3000 \
   -e DATABASE_URL=redis://localhost:6379 \
-  fnlog0/dbx:latest
+  effortlesslabs/dbx:latest
 
 # Or use the convenience script
 ./scripts/run.sh --redis-url redis://localhost:6379
@@ -28,14 +28,14 @@ docker run -d --name dbx -p 3000:3000 \
 
 ```bash
 # Pull the latest image
-docker pull fnlog0/dbx:latest
+docker pull effortlesslabs/dbx:latest
 
 # Run with custom configuration
 docker run -d --name dbx -p 8080:3000 \
   -e DATABASE_URL=redis://user:pass@redis.com:6379 \
   -e PORT=3000 \
   -e LOG_LEVEL=DEBUG \
-  fnlog0/dbx:latest
+  effortlesslabs/dbx:latest
 ```
 
 ### Binary Installation
@@ -210,7 +210,7 @@ redis-cli ping
 lsof -i :3000
 
 # Use a different port
-docker run -p 3001:3000 fnlog0/dbx:latest
+docker run -p 3001:3000 effortlesslabs/dbx:latest
 ```
 
 **Authentication failed**

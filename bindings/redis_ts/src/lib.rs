@@ -1,7 +1,7 @@
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
-use redis_client::HttpClient;
-use redis_client::redis_ws::WsClient;
+use dbx_redis_client::HttpClient;
+use dbx_redis_client::redis_ws::WsClient;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 

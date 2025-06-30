@@ -9,10 +9,10 @@ Lightweight API Proxy for Edge & Embedded Systems.
       <img src="https://img.shields.io/npm/v/dbx-sdk?colorA=f6f8fa&colorB=f6f8fa&style=flat" alt="Version">
     </picture>
   </a>
-  <a href="https://hub.docker.com/r/fnlog0/dbx">
+  <a href="https://hub.docker.com/r/effortlesslabs/dbx">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/docker/v/fnlog0/dbx?colorA=21262d&colorB=21262d&style=flat">
-      <img src="https://img.shields.io/docker/v/fnlog0/dbx?colorA=f6f8fa&colorB=f6f8fa&style=flat" alt="Docker Version">
+      <source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/docker/v/effortlesslabs/dbx?colorA=21262d&colorB=21262d&style=flat">
+      <img src="https://img.shields.io/docker/v/effortlesslabs/dbx?colorA=f6f8fa&colorB=f6f8fa&style=flat" alt="Docker Version">
     </picture>
   </a>
   <a href="LICENSE">
@@ -115,14 +115,14 @@ cargo test
 
 ```bash
 # Build image
-docker build -t fnlog0/dbx .
+docker build -t effortlesslabs/dbx .
 
 # Run with custom config
 docker run -d --name dbx -p 8080:3000 \
   -e DATABASE_URL=redis://user:pass@redis.com:6379 \
   -e PORT=3000 \
   -e LOG_LEVEL=DEBUG \
-  fnlog0/dbx:latest
+  effortlesslabs/dbx:latest
 ```
 
 ## Deployment
@@ -133,21 +133,14 @@ For Railway deployment, use the AMD64-only Docker image tags to avoid "exec form
 
 ```bash
 # Use AMD64-only tag for Railway
-fnlog0/dbx:latest-amd64-only
-fnlog0/dbx:0.1.4-amd64-only
+effortlesslabs/dbx:latest-amd64-only
+effortlesslabs/dbx:0.1.4-amd64-only
 ```
 
-📖 **See our [Railway Deployment Guide](docs/deployment/railway.md) for detailed instructions.**
-
-### Other Platforms
-
-For other platforms (local development, other cloud providers), use the multi-arch tags:
-
-```bash
 # Multi-arch (AMD64 + ARM64)
-fnlog0/dbx:latest
-fnlog0/dbx:0.1.4
-```
+
+effortlesslabs/dbx:latest
+effortlesslabs/dbx:0.1.4
 
 ### Docker Compose
 
@@ -155,7 +148,7 @@ fnlog0/dbx:0.1.4
 version: "3.8"
 services:
   dbx-api:
-    image: fnlog0/dbx:latest
+    image: effortlesslabs/dbx:latest
     ports:
       - "3000:3000"
     environment:
@@ -183,7 +176,7 @@ To publish new versions of DBX (Docker image and TypeScript SDK), see our compre
 
 # Manual publishing
 ./scripts/publish-release.sh --version 1.0.0 \
-  --docker-username fnlog0 \
+  --docker-username effortlesslabs \
   --docker-password $DOCKER_TOKEN \
   --npm-token $NPM_TOKEN
 ```
@@ -215,4 +208,4 @@ licensed as above, without any additional terms or conditions.
 
 ---
 
-**🔗 Docker Hub**: [https://hub.docker.com/r/fnlog0/dbx](https://hub.docker.com/r/fnlog0/dbx)
+**🔗 Docker Hub**: [https://hub.docker.com/r/effortlesslabs/dbx](https://hub.docker.com/r/effortlesslabs/dbx)

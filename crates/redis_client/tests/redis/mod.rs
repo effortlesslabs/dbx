@@ -1,6 +1,6 @@
 //! Tests for HTTP Redis client functionality
 
-use redis_client::{ HttpClient, error::Result, StringOperations };
+use dbx_redis_client::{ HttpClient, error::Result, StringOperations };
 use crate::utils;
 
 // Import string and set test modules

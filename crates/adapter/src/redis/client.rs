@@ -23,7 +23,7 @@ impl RedisClient {
     ///
     /// # Example
     /// ```no_run
-    /// # use dbx_crates::adapter::redis::client::RedisClient;
+    /// # use dbx_adapter::redis::client::RedisClient;
     /// let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
     /// let client = RedisClient::from_url(&redis_url).unwrap();
     /// ```
@@ -96,7 +96,7 @@ impl RedisPool {
     ///
     /// # Example
     /// ```no_run
-    /// # use dbx_crates::adapter::redis::client::RedisPool;
+    /// # use dbx_adapter::redis::client::RedisPool;
     /// let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
     /// let pool = RedisPool::new(&redis_url, 10).unwrap();
     /// ```

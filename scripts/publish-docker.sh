@@ -29,7 +29,7 @@
 #   --tag <tag>             Image tag (default: latest)
 #   --push                  Push to Docker Hub after building
 #   --platforms <platforms> Comma-separated list of platforms (default: linux/amd64,linux/arm64)
-#   --username <username>   Docker Hub username (default: fnlog0)
+#   --username <username>   Docker Hub username (default: effortlesslabs)
 #   --password <password>   Docker Hub password/token
 #   --verbose              Enable verbose output
 #   --debug                Enable debug mode

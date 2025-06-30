@@ -31,7 +31,7 @@ docker buildx create --name multiarch-builder --use
 # Build and push multi-platform image
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
-  --tag fnlog0/dbx:latest \
+  --tag effortlesslabs/dbx:latest \
   --push \
   .
 ```
@@ -44,7 +44,7 @@ docker buildx build \
 # Explicitly specify ARM64 platform
 docker run --platform linux/arm64 -d --name dbx-api -p 3000:3000 \
   -e DATABASE_URL=redis://localhost:6379 \
-  fnlog0/dbx:latest
+  effortlesslabs/dbx:latest
 ```
 
 ### AMD64 (Intel/AMD)
@@ -53,7 +53,7 @@ docker run --platform linux/arm64 -d --name dbx-api -p 3000:3000 \
 # Explicitly specify AMD64 platform
 docker run --platform linux/amd64 -d --name dbx-api -p 3000:3000 \
   -e DATABASE_URL=redis://localhost:6379 \
-  fnlog0/dbx:latest
+  effortlesslabs/dbx:latest
 ```
 
 ### Auto-Detection (Recommended)
@@ -62,7 +62,7 @@ docker run --platform linux/amd64 -d --name dbx-api -p 3000:3000 \
 # Docker will automatically select the correct platform
 docker run -d --name dbx-api -p 3000:3000 \
   -e DATABASE_URL=redis://localhost:6379 \
-  fnlog0/dbx:latest
+  effortlesslabs/dbx:latest
 ```
 
 ## Using with Docker Compose
@@ -79,7 +79,7 @@ docker-compose up -d
 To see which platforms are available for an image:
 
 ```bash
-docker buildx imagetools inspect fnlog0/dbx:latest
+docker buildx imagetools inspect effortlesslabs/dbx:latest
 ```
 
 ## GitHub Actions
@@ -153,7 +153,7 @@ For large builds, you may need to increase Docker's memory limit:
 docker run -d --name dbx-api -p 3000:3000 \
   -e DATABASE_URL=redis://192.168.1.100:6379 \
   -e LOG_LEVEL=INFO \
-  fnlog0/dbx:latest
+  effortlesslabs/dbx:latest
 ```
 
 ### Apple Silicon Mac
@@ -163,7 +163,7 @@ docker run -d --name dbx-api -p 3000:3000 \
 docker run -d --name dbx-api -p 3000:3000 \
   -e DATABASE_URL=redis://localhost:6379 \
   -e POOL_SIZE=20 \
-  fnlog0/dbx:latest
+  effortlesslabs/dbx:latest
 ```
 
 ### Production Deployment
@@ -176,5 +176,5 @@ docker run -d --name dbx-api \
   -e DATABASE_URL=redis://user:pass@redis.example.com:6379 \
   -e POOL_SIZE=50 \
   -e LOG_LEVEL=WARN \
-  fnlog0/dbx:latest
+  effortlesslabs/dbx:latest
 ```

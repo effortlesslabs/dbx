@@ -1,14 +1,14 @@
 [package]
-name = "dbx-api"
+name = "dbx-redis-api"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "REST API server for DBX database operations"
+description = "REST API server for DBX Redis operations"
 
 [[bin]]
-name = "dbx-api"
+name = "dbx-redis-api"
 path = "src/main.rs"
 
 [dependencies]

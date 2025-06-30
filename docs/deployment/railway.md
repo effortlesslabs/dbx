@@ -22,10 +22,10 @@ Use the AMD64-only tags to avoid architecture issues:
 
 ```bash
 # Latest version (AMD64-only)
-fnlog0/dbx:latest-amd64-only
+effortlesslabs/dbx:latest-amd64-only
 
 # Specific version (AMD64-only)
-fnlog0/dbx:0.1.4-amd64-only
+effortlesslabs/dbx:0.1.4-amd64-only
 ```
 
 ### For Other Platforms
@@ -34,8 +34,8 @@ Use the multi-arch tags for local development and other platforms:
 
 ```bash
 # Multi-arch (AMD64 + ARM64)
-fnlog0/dbx:latest
-fnlog0/dbx:0.1.4
+effortlesslabs/dbx:latest
+effortlesslabs/dbx:0.1.4
 ```
 
 ## Railway Deployment Steps
@@ -48,7 +48,7 @@ fnlog0/dbx:0.1.4
 
 ### 2. Configure the Service
 
-**Image Name**: `fnlog0/dbx:latest-amd64-only`
+**Image Name**: `effortlesslabs/dbx:latest-amd64-only`
 
 **Environment Variables**:
 
@@ -102,8 +102,8 @@ exec container process `/app/./dbx-api`: Exec format error
 
 **Solution**: Use the AMD64-only image tag:
 
-- Change from: `fnlog0/dbx:latest`
-- Change to: `fnlog0/dbx:latest-amd64-only`
+- Change from: `effortlesslabs/dbx:latest`
+- Change to: `effortlesslabs/dbx:latest-amd64-only`
 
 ### Connection Refused
 
@@ -148,7 +148,7 @@ healthcheckTimeout = 300
 
 [[services]]
 name = "dbx-api"
-image = "fnlog0/dbx:latest-amd64-only"
+image = "effortlesslabs/dbx:latest-amd64-only"
 env = [
   "DATABASE_URL=redis://your-redis-url:6379",
   "PORT=3000",
@@ -163,7 +163,7 @@ When updating your deployment:
 1. **Use the new AMD64-only tag**:
 
    ```bash
-   fnlog0/dbx:0.1.5-amd64-only
+   effortlesslabs/dbx:0.1.5-amd64-only
    ```
 
 2. **Update via Railway Dashboard**:
@@ -175,7 +175,7 @@ When updating your deployment:
 
 3. **Or via Railway CLI**:
    ```bash
-   railway service update --image fnlog0/dbx:0.1.5-amd64-only
+   railway service update --image effortlesslabs/dbx:0.1.5-amd64-only
    ```
 
 ## Best Practices

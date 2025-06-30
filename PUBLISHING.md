@@ -243,7 +243,7 @@ npm install dbx-sdk@1.0.0
 
 ### Online Verification
 
-- **Docker Hub**: https://hub.docker.com/r/fnlog0/dbx
+- **Docker Hub**: https://hub.docker.com/r/effortlesslabs/dbx
 - **NPM**: https://www.npmjs.com/package/dbx-sdk
 
 ## Troubleshooting
@@ -288,46 +288,8 @@ Test the publishing process without actually publishing:
 ```bash
 ./scripts/publish-release.sh \
   --version 1.0.0 \
-  --docker-username fnlog0 \
+  --docker-username effortlesslabs \
   --docker-password $DOCKER_TOKEN \
   --npm-token $NPM_TOKEN \
   --dry-run
 ```
-
-## Script Optimizations
-
-The publishing scripts have been optimized with:
-
-- **Shared Functions**: Common utilities in `scripts/common.sh`
-- **Centralized Config**: Configuration management in `scripts/config.sh`
-- **Better Error Handling**: Comprehensive error checking and recovery
-- **Progress Indicators**: Visual feedback during long operations
-- **Parallel Processing**: Concurrent operations where possible
-- **Caching**: Build artifact caching for faster rebuilds
-- **Validation**: Input validation and pre-flight checks
-- **Enhanced Logging**: Detailed logging with different verbosity levels
-
-## Security Considerations
-
-1. **Tokens**: Use access tokens instead of passwords
-2. **Scope**: Use minimal required permissions for tokens
-3. **Rotation**: Regularly rotate access tokens
-4. **Secrets**: Store tokens securely (use GitHub Secrets for CI/CD)
-
-## Release Notes
-
-After publishing, consider:
-
-1. **GitHub Release**: Create a release with notes
-2. **Documentation**: Update documentation if needed
-3. **Announcement**: Announce the release to users
-4. **Monitoring**: Monitor for any issues
-
-## Support
-
-For publishing issues:
-
-1. Check the troubleshooting section
-2. Review GitHub Actions logs
-3. Verify credentials and permissions
-4. Contact the maintainers if needed

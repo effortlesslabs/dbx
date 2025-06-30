@@ -3,7 +3,11 @@ pub mod redis;
 pub mod redis_ws;
 
 use std::sync::Arc;
-use dbx_api::{ config::{ Config, DatabaseType }, server::Server, constants::defaults::Defaults };
+use dbx_redis_api::{
+    config::{ Config, DatabaseType },
+    server::Server,
+    constants::defaults::Defaults,
+};
 use std::net::SocketAddr;
 
 // Load environment variables from .env file for tests

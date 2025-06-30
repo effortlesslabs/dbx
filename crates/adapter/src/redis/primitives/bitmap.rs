@@ -226,7 +226,7 @@ impl RedisBitmap {
     /// ```no_run
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::bitmap::RedisBitmap;
+    /// # use dbx_adapter::redis::primitives::bitmap::RedisBitmap;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_bitmap = RedisBitmap::new(Arc::new(Mutex::new(conn)));
     /// let results: (bool, u64) = redis_bitmap.with_pipeline(|pipe| {
@@ -318,7 +318,7 @@ impl RedisBitmap {
     /// ```no_run
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::bitmap::RedisBitmap;
+    /// # use dbx_adapter::redis::primitives::bitmap::RedisBitmap;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_bitmap = RedisBitmap::new(Arc::new(Mutex::new(conn)));
     /// let _: () = redis_bitmap.transaction(|pipe| {
@@ -356,7 +356,7 @@ impl RedisBitmap {
     /// # Example
     /// ```
     /// use redis::Script;
-    /// use dbx_crates::adapter::redis::primitives::bitmap::RedisBitmap;
+    /// use dbx_adapter::redis::primitives::bitmap::RedisBitmap;
     ///
     /// let script = RedisBitmap::create_script(r#"
     ///     local count = redis.call('BITCOUNT', KEYS[1])
@@ -374,7 +374,7 @@ impl RedisBitmap {
     /// ```no_run
     /// # use redis::{Connection, RedisResult, Script};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::bitmap::RedisBitmap;
+    /// # use dbx_adapter::redis::primitives::bitmap::RedisBitmap;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_bitmap = RedisBitmap::new(Arc::new(Mutex::new(conn)));
     /// let script = RedisBitmap::create_script("return redis.call('BITCOUNT', KEYS[1])");
@@ -419,7 +419,7 @@ impl RedisBitmap {
     /// ```no_run
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::bitmap::RedisBitmap;
+    /// # use dbx_adapter::redis::primitives::bitmap::RedisBitmap;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_bitmap = RedisBitmap::new(Arc::new(Mutex::new(conn)));
     /// let script = RedisBitmap::setbit_and_get_previous_script();

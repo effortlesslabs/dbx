@@ -189,7 +189,7 @@ impl RedisSet {
     /// ```no_run
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::set::RedisSet;
+    /// # use dbx_adapter::redis::primitives::set::RedisSet;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_set = RedisSet::new(Arc::new(Mutex::new(conn)));
     /// let results: (usize, Vec<String>) = redis_set.with_pipeline(|pipe| {
@@ -290,7 +290,7 @@ impl RedisSet {
     /// ```no_run
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::set::RedisSet;
+    /// # use dbx_adapter::redis::primitives::set::RedisSet;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_set = RedisSet::new(Arc::new(Mutex::new(conn)));
     /// let _: () = redis_set.transaction(|pipe| {
@@ -328,7 +328,7 @@ impl RedisSet {
     /// # Example
     /// ```
     /// use redis::Script;
-    /// use dbx_crates::adapter::redis::primitives::set::RedisSet;
+    /// use dbx_adapter::redis::primitives::set::RedisSet;
     ///
     /// let script = RedisSet::create_script(r#"
     ///     local members = redis.call('SMEMBERS', KEYS[1])
@@ -346,7 +346,7 @@ impl RedisSet {
     /// ```no_run
     /// # use redis::{Connection, RedisResult, Script};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::set::RedisSet;
+    /// # use dbx_adapter::redis::primitives::set::RedisSet;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_set = RedisSet::new(Arc::new(Mutex::new(conn)));
     /// let script = RedisSet::create_script("return redis.call('SCARD', KEYS[1])");
@@ -391,7 +391,7 @@ impl RedisSet {
     /// ```no_run
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::set::RedisSet;
+    /// # use dbx_adapter::redis::primitives::set::RedisSet;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_set = RedisSet::new(Arc::new(Mutex::new(conn)));
     /// let script = RedisSet::add_and_get_cardinality_script();

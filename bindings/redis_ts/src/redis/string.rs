@@ -1,8 +1,8 @@
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
-use redis_client::HttpClient;
-use redis_client::StringOperations;
-use redis_client::common::string::StringOperation;
+use dbx_redis_client::HttpClient;
+use dbx_redis_client::StringOperations;
+use dbx_redis_client::common::string::StringOperation;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 
