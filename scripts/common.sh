@@ -300,7 +300,7 @@ build_typescript_sdk() {
     fi
     
     # Build the TypeScript SDK
-    if ! (cd "$TYPESCRIPT_BUILD_DIR" && npm run build); then
+    if ! (cd "$build_dir" && npm run build); then
         log_error "TypeScript SDK build failed"
         return 1
     fi
@@ -341,7 +341,7 @@ build_docker_image() {
     local push="$3"
     local additional_tags="$4"
     
-    local build_args="--platform $platforms --tag $image_name"
+    local build_args="--tag $image_name"
     
     # Add additional tags
     if [ -n "$additional_tags" ]; then
@@ -350,11 +350,15 @@ build_docker_image() {
         done
     fi
     
-    # Add push or load flag
+    # Handle platform and push/load flags
     if [ "$push" = "true" ]; then
-        build_args="$build_args --push"
+        # For pushing, we can use multi-platform builds
+        build_args="--platform $platforms $build_args --push"
     else
-        build_args="$build_args --load"
+        # For local builds, we need to use a single platform to avoid manifest list issues
+        # Use the first platform from the list or default to linux/amd64
+        local single_platform=$(echo "$platforms" | cut -d',' -f1)
+        build_args="--platform $single_platform $build_args --load"
     fi
     
     log_step "Building Docker image: $image_name"
