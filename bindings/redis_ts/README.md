@@ -1,42 +1,77 @@
-# DBX Redis TypeScript Bindings
+# @0dbx/redis – TypeScript SDK for DBX Redis API
 
-High-performance TypeScript bindings for the DBX Redis API using NAPI-rs. This package provides native Rust performance with TypeScript/JavaScript ease of use.
+High-performance TypeScript/JavaScript SDK for the DBX Redis API, powered by native Rust (NAPI) bindings. Provides modern, type-safe, and efficient access to Redis via HTTP and WebSocket APIs.
 
 ## Features
 
-- **Native Performance**: Built with Rust and NAPI-rs for maximum performance
-- **TypeScript Support**: Full TypeScript definitions included
+- **Native Performance**: Built with Rust and NAPI-rs for maximum speed
+- **TypeScript Support**: Full type definitions and type safety
 - **Async/Await**: Modern async/await API
-- **String Operations**: Get, set, delete, batch operations, pattern search
-- **Set Operations**: Add, remove, membership checks, set operations (intersect, union, difference)
-- **Error Handling**: Comprehensive error handling with detailed messages
-- **Cross-Platform**: Pre-built binaries for multiple platforms
+- **REST & WebSocket**: Unified API for both HTTP and WebSocket
+- **String, Set, Hash, Admin**: Full Redis data type support
+- **Comprehensive Error Handling**
+- **Cross-Platform**: Pre-built binaries for major platforms
 
 ## Installation
 
 ```bash
-npm install dbx-redis-ts-bindings
+npm install @0dbx/redis
+# or
+yarn add @0dbx/redis
+# or
+pnpm add @0dbx/redis
 ```
 
 ## Quick Start
 
+### REST Client Example
+
 ```typescript
-import { createClient } from "dbx-redis-ts-bindings";
+import { DbxRedisClient } from "@0dbx/redis";
 
-async function example() {
-  // Create a client
-  const client = createClient("http://localhost:8080");
+const client = new DbxRedisClient("http://localhost:3000");
 
-  // String operations
-  await client.string().setSimple("my_key", "my_value");
-  const value = await client.string().get("my_key");
-  console.log("Value:", value); // "my_value"
+// String operations
+await client.string.set("my-key", "hello world", 3600); // with TTL
+const value = await client.string.get("my-key");
+console.log(value); // "hello world"
 
-  // Set operations
-  await client.set().addMany("my_set", ["member1", "member2"]);
-  const members = await client.set().members("my_set");
-  console.log("Members:", members); // ["member1", "member2"]
-}
+// Set operations
+await client.set.addMember("tags", "redis");
+const members = await client.set.getMembers("tags");
+console.log(members); // ["redis"]
+
+// Hash operations
+await client.hash.setField("user:1", "name", "Alice");
+const name = await client.hash.getField("user:1", "name");
+console.log(name); // "Alice"
+
+// Admin operations
+const health = await client.admin.health();
+console.log(health); // { status: "ok", ... }
+```
+
+### WebSocket Client Example
+
+```typescript
+import { DbxWsClient } from "@0dbx/redis";
+
+const wsClient = new DbxWsClient("ws://localhost:3000/redis_ws");
+
+// String operations
+await wsClient.string.set("my-key", "hello world");
+const value = await wsClient.string.get("my-key");
+
+// Set operations
+await wsClient.set.addMember("tags", "redis");
+const members = await wsClient.set.getMembers("tags");
+
+// Hash operations
+await wsClient.hash.setField("user:1", "name", "Alice");
+const name = await wsClient.hash.getField("user:1", "name");
+
+// Admin operations
+const health = await wsClient.admin.health();
 ```
 
 ## API Reference
@@ -44,160 +79,79 @@ async function example() {
 ### Client Creation
 
 ```typescript
-import { createClient, createClientWithTimeout } from "dbx-redis-ts-bindings";
+import { DbxRedisClient, DbxWsClient } from "@0dbx/redis";
 
-// Basic client
-const client = createClient("http://localhost:8080");
+// REST client
+const client = new DbxRedisClient("http://localhost:3000");
 
-// Client with custom timeout (in milliseconds)
-const client = createClientWithTimeout("http://localhost:8080", 30000);
+// WebSocket client
+const wsClient = new DbxWsClient("ws://localhost:3000/redis_ws");
 ```
 
 ### String Operations
 
-#### Basic Operations
-
 ```typescript
-const stringClient = client.string();
-
-// Set a string value
-await stringClient.setSimple("key", "value");
-
-// Set with TTL (time to live in seconds)
-await stringClient.set("key", "value", 3600);
+// Set a string value (with optional TTL in seconds)
+await client.string.set("key", "value", 3600);
 
 // Get a string value
-const value = await stringClient.get("key");
-// Returns string | null - null if key doesn't exist
+const value = await client.string.get("key");
 
 // Delete a string
-const deleted = await stringClient.delete("key");
-// Returns boolean indicating if key was deleted
-
-// Get string information
-const info = await stringClient.info("key");
-// Returns StringInfo | null with metadata
-```
-
-#### Batch Operations
-
-```typescript
-// Batch get multiple strings
-const keys = ["key1", "key2", "key3"];
-const values = await stringClient.batchGet(keys);
-// Returns (string | null)[]
-
-// Batch set multiple strings
-const operations = [
-  { key: "key1", value: "value1" },
-  { key: "key2", value: "value2", ttl: 3600 },
-];
-await stringClient.batchSet(operations);
-
-// Get strings by patterns
-const patterns = ["user:*", "session:*"];
-const results = await stringClient.getByPatterns(patterns, true);
-// Returns JSON string with grouped results
+await client.string.delete("key");
 ```
 
 ### Set Operations
 
-#### Basic Operations
-
 ```typescript
-const setClient = client.set();
-
-// Add a single member
-const added = await setClient.addOne("set_key", "member1");
-// Returns number (number of new members added)
-
-// Add multiple members
-const added = await setClient.addMany("set_key", ["member1", "member2", "member3"]);
-
-// Remove a member
-const removed = await setClient.remove("set_key", "member1");
-// Returns number (number of members removed)
+// Add a member to a set
+await client.set.addMember("set_key", "member1");
 
 // Get all members
-const members = await setClient.members("set_key");
-// Returns string[]
+const members = await client.set.getMembers("set_key");
 
-// Check if member exists
-const exists = await setClient.contains("set_key", "member1");
-// Returns boolean
-
-// Get set size (cardinality)
-const size = await setClient.size("set_key");
-// Returns number
+// Remove a member
+await client.set.removeMember("set_key", "member1");
 ```
 
-#### Set Operations
+### Hash Operations
 
 ```typescript
-// Intersect multiple sets
-const keys = ["set1", "set2", "set3"];
-const intersection = await setClient.intersect(keys);
-// Returns string[] of common members
+// Set a field in a hash
+await client.hash.setField("user:1", "name", "Alice");
 
-// Union multiple sets
-const union = await setClient.union(keys);
-// Returns string[] of all unique members
+// Get a field
+const name = await client.hash.getField("user:1", "name");
 
-// Difference of sets (first set minus others)
-const difference = await setClient.difference(keys);
-// Returns string[] of members in first set but not in others
+// Delete a field
+await client.hash.deleteField("user:1", "name");
 ```
 
-## Types
-
-### StringInfo
+### Admin Operations
 
 ```typescript
-interface StringInfo {
-  key: string;
-  value: string;
-  ttl?: number;
-  type: string;
-  encoding: string;
-  size: number;
-}
-```
+// Health check
+const health = await client.admin.health();
 
-### StringOperation
-
-```typescript
-interface StringOperation {
-  key: string;
-  value?: string;
-  ttl?: number;
-}
+// Ping
+const ping = await client.admin.ping();
 ```
 
 ## Error Handling
 
-The bindings provide detailed error messages:
+All methods throw errors with descriptive messages if something goes wrong:
 
 ```typescript
 try {
-  await client.string().get("nonexistent_key");
+  await client.string.get("nonexistent_key");
 } catch (error) {
   console.error("Error:", error.message);
-  // Error messages include details about what went wrong
 }
 ```
 
-## Performance
-
-This package provides significant performance improvements over HTTP-based clients:
-
-- **Native Speed**: Direct Rust execution without HTTP overhead
-- **Efficient Memory Usage**: Optimized memory management
-- **Reduced Latency**: No network round-trips for local operations
-- **Batch Operations**: Efficient batch processing
-
 ## Building from Source
 
-If you need to build from source:
+If you want to build the SDK from source:
 
 ```bash
 git clone https://github.com/effortlesslabs/dbx.git
@@ -227,10 +181,10 @@ npm run build:debug
 # Build for release
 npm run build
 
-# Test the bindings
+# Test the SDK
 npm test
 ```
 
 ## License
 
-MIT License - see the main project license for details.
+MIT License – see the main project license for details.
