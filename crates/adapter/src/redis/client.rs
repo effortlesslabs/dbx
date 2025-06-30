@@ -4,8 +4,8 @@
 //! Redis connections, including support for connection pooling and different
 //! connection types.
 
-use redis::{ Client, Connection, RedisError, RedisResult };
-use std::sync::{ Arc, Mutex };
+use redis::{Client, Connection, RedisError, RedisResult};
+use std::sync::{Arc, Mutex};
 
 use super::primitives::hash::RedisHash;
 use super::primitives::set::RedisSet;

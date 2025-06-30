@@ -1,4 +1,4 @@
-use serde::{ Deserialize, Serialize };
+use serde::{Deserialize, Serialize};
 
 /// Request for adding a member to a set
 #[derive(Debug, Serialize, Deserialize, Clone)]

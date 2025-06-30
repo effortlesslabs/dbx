@@ -70,17 +70,17 @@ jobs:
       - name: Run clippy
         run: |
           if [ "${{ matrix.features }}" = "all" ]; then
-            cargo clippy -p dbx-crates --features "async,connection-pool" -- -D warnings
+            cargo clippy --workspace --features "async,connection-pool" -- -D warnings
           else
-            cargo clippy -p dbx-crates --features "${{ matrix.features }}" -- -D warnings
+            cargo clippy --workspace --features "${{ matrix.features }}" -- -D warnings
           fi
 
       - name: Build crates package
         run: |
           if [ "${{ matrix.features }}" = "all" ]; then
-            cargo build -p dbx-crates --features "async,connection-pool" --verbose
+            cargo build --workspace --features "async,connection-pool" --verbose
           else
-            cargo build -p dbx-crates --features "${{ matrix.features }}" --verbose
+            cargo build --workspace --features "${{ matrix.features }}" --verbose
           fi
 
       - name: Make script executable
@@ -113,10 +113,10 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Check if crates compile
-        run: cargo check -p dbx-crates --all-features
+        run: cargo check --workspace --all-features
 
       - name: Build crates documentation
-        run: cargo doc -p dbx-crates --all-features --no-deps
+        run: cargo doc --workspace --all-features --no-deps
 
       - name: Check crates package
-        run: cargo package -p dbx-crates --allow-dirty
+        run: cargo package --workspace --allow-dirty

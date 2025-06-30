@@ -1,4 +1,4 @@
-use serde::{ Deserialize, Serialize };
+use serde::{Deserialize, Serialize};
 
 /// Request for setting a string value
 #[derive(Debug, Serialize, Deserialize, Clone)]

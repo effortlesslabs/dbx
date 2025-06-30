@@ -1,7 +1,7 @@
-use serde::{ Serialize, Deserialize };
-use std::sync::{ Arc, Mutex };
 use dbx_adapter::redis::primitives::set::RedisSet;
 use redis::Connection;
+use serde::{Deserialize, Serialize};
+use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SetOperation {
@@ -41,7 +41,7 @@ fn redis_set(conn: Arc<Mutex<Connection>>) -> RedisSet {
 pub fn add_to_set(
     conn: Arc<Mutex<Connection>>,
     key: &str,
-    members: &[&str]
+    members: &[&str],
 ) -> redis::RedisResult<usize> {
     redis_set(conn).sadd(key, members)
 }
@@ -49,7 +49,7 @@ pub fn add_to_set(
 pub fn remove_from_set(
     conn: Arc<Mutex<Connection>>,
     key: &str,
-    members: &[&str]
+    members: &[&str],
 ) -> redis::RedisResult<usize> {
     redis_set(conn).srem(key, members)
 }
@@ -61,7 +61,7 @@ pub fn get_set_members(conn: Arc<Mutex<Connection>>, key: &str) -> redis::RedisR
 pub fn set_exists(
     conn: Arc<Mutex<Connection>>,
     key: &str,
-    member: &str
+    member: &str,
 ) -> redis::RedisResult<bool> {
     redis_set(conn).sismember(key, member)
 }
@@ -72,7 +72,7 @@ pub fn get_set_cardinality(conn: Arc<Mutex<Connection>>, key: &str) -> redis::Re
 
 pub fn get_random_set_member(
     conn: Arc<Mutex<Connection>>,
-    key: &str
+    key: &str,
 ) -> redis::RedisResult<Option<String>> {
     redis_set(conn).srandmember(key)
 }
@@ -80,14 +80,14 @@ pub fn get_random_set_member(
 pub fn get_random_set_members(
     conn: Arc<Mutex<Connection>>,
     key: &str,
-    count: usize
+    count: usize,
 ) -> redis::RedisResult<Vec<String>> {
     redis_set(conn).srandmember_count(key, count)
 }
 
 pub fn pop_set_member(
     conn: Arc<Mutex<Connection>>,
-    key: &str
+    key: &str,
 ) -> redis::RedisResult<Option<String>> {
     redis_set(conn).spop(key)
 }
@@ -95,7 +95,7 @@ pub fn pop_set_member(
 pub fn pop_set_members(
     conn: Arc<Mutex<Connection>>,
     key: &str,
-    count: usize
+    count: usize,
 ) -> redis::RedisResult<Vec<String>> {
     redis_set(conn).spop_count(key, count)
 }
@@ -104,7 +104,7 @@ pub fn move_set_member(
     conn: Arc<Mutex<Connection>>,
     source: &str,
     destination: &str,
-    member: &str
+    member: &str,
 ) -> redis::RedisResult<bool> {
     redis_set(conn).smove(source, destination, member)
 }
@@ -115,7 +115,7 @@ pub fn move_set_member(
 
 pub fn intersect_sets(
     conn: Arc<Mutex<Connection>>,
-    keys: &[&str]
+    keys: &[&str],
 ) -> redis::RedisResult<Vec<String>> {
     redis_set(conn).sinter(keys)
 }
@@ -126,7 +126,7 @@ pub fn union_sets(conn: Arc<Mutex<Connection>>, keys: &[&str]) -> redis::RedisRe
 
 pub fn difference_sets(
     conn: Arc<Mutex<Connection>>,
-    keys: &[&str]
+    keys: &[&str],
 ) -> redis::RedisResult<Vec<String>> {
     redis_set(conn).sdiff(keys)
 }
@@ -134,7 +134,7 @@ pub fn difference_sets(
 pub fn intersect_sets_store(
     conn: Arc<Mutex<Connection>>,
     destination: &str,
-    keys: &[&str]
+    keys: &[&str],
 ) -> redis::RedisResult<usize> {
     redis_set(conn).sinterstore(destination, keys)
 }
@@ -142,7 +142,7 @@ pub fn intersect_sets_store(
 pub fn union_sets_store(
     conn: Arc<Mutex<Connection>>,
     destination: &str,
-    keys: &[&str]
+    keys: &[&str],
 ) -> redis::RedisResult<usize> {
     redis_set(conn).sunionstore(destination, keys)
 }
@@ -150,7 +150,7 @@ pub fn union_sets_store(
 pub fn difference_sets_store(
     conn: Arc<Mutex<Connection>>,
     destination: &str,
-    keys: &[&str]
+    keys: &[&str],
 ) -> redis::RedisResult<usize> {
     redis_set(conn).sdiffstore(destination, keys)
 }
@@ -187,42 +187,42 @@ pub fn set_set_ttl(conn: Arc<Mutex<Connection>>, key: &str, ttl: u64) -> redis::
 
 pub fn add_to_multiple_sets(
     conn: Arc<Mutex<Connection>>,
-    set_members: Vec<(&str, Vec<&str>)>
+    set_members: Vec<(&str, Vec<&str>)>,
 ) -> redis::RedisResult<Vec<usize>> {
     redis_set(conn).sadd_many(set_members)
 }
 
 pub fn remove_from_multiple_sets(
     conn: Arc<Mutex<Connection>>,
-    set_members: Vec<(&str, Vec<&str>)>
+    set_members: Vec<(&str, Vec<&str>)>,
 ) -> redis::RedisResult<Vec<usize>> {
     redis_set(conn).srem_many(set_members)
 }
 
 pub fn get_multiple_set_members(
     conn: Arc<Mutex<Connection>>,
-    keys: Vec<&str>
+    keys: Vec<&str>,
 ) -> redis::RedisResult<Vec<Vec<String>>> {
     redis_set(conn).smembers_many(keys)
 }
 
 pub fn check_multiple_set_members(
     conn: Arc<Mutex<Connection>>,
-    key_members: Vec<(&str, &str)>
+    key_members: Vec<(&str, &str)>,
 ) -> redis::RedisResult<Vec<bool>> {
     redis_set(conn).sismember_many(key_members)
 }
 
 pub fn get_multiple_set_cardinalities(
     conn: Arc<Mutex<Connection>>,
-    keys: Vec<&str>
+    keys: Vec<&str>,
 ) -> redis::RedisResult<Vec<usize>> {
     redis_set(conn).scard_many(keys)
 }
 
 pub fn delete_multiple_sets(
     conn: Arc<Mutex<Connection>>,
-    keys: Vec<&str>
+    keys: Vec<&str>,
 ) -> redis::RedisResult<()> {
     redis_set(conn).del_many(keys)
 }

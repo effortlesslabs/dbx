@@ -1,13 +1,12 @@
 use crate::{
+    common::{client::websocket, StringOperations, WebSocketClientBase},
     error::Result,
-    common::{ StringOperations, WebSocketClientBase, client::websocket },
-    StringOperation,
-    StringInfo,
+    StringInfo, StringOperation,
 };
-use tokio_tungstenite::WebSocketStream;
-use serde_json::{ json, Value };
+use serde_json::{json, Value};
 use tokio::net::TcpStream;
 use tokio_tungstenite::MaybeTlsStream;
+use tokio_tungstenite::WebSocketStream;
 use url::Url;
 
 /// WebSocket client for string operations
@@ -41,8 +40,7 @@ impl WebSocketClientBase for WsStringClient {
 impl StringOperations for WsStringClient {
     /// Get a string value by key
     async fn get(&mut self, key: &str) -> Result<Option<String>> {
-        let message =
-            json!({
+        let message = json!({
             "type": "get",
             "data": {
                 "key": key
@@ -69,8 +67,7 @@ impl StringOperations for WsStringClient {
 
     /// Set a string value
     async fn set(&mut self, key: &str, value: &str, ttl: Option<u64>) -> Result<()> {
-        let message =
-            json!({
+        let message = json!({
             "type": "set",
             "data": {
                 "key": key,
@@ -85,8 +82,7 @@ impl StringOperations for WsStringClient {
 
     /// Delete a string value
     async fn delete(&mut self, key: &str) -> Result<bool> {
-        let message =
-            json!({
+        let message = json!({
             "type": "del",
             "data": {
                 "key": key
@@ -109,8 +105,7 @@ impl StringOperations for WsStringClient {
 
     /// Get string information
     async fn info(&mut self, key: &str) -> Result<Option<StringInfo>> {
-        let message =
-            json!({
+        let message = json!({
             "type": "info",
             "data": {
                 "key": key
@@ -137,8 +132,7 @@ impl StringOperations for WsStringClient {
 
     /// Batch get multiple strings
     async fn batch_get(&mut self, keys: &[String]) -> Result<Vec<Option<String>>> {
-        let message =
-            json!({
+        let message = json!({
             "type": "batch_get",
             "data": {
                 "keys": keys
@@ -170,8 +164,7 @@ impl StringOperations for WsStringClient {
 
     /// Batch set multiple strings
     async fn batch_set(&mut self, operations: &[StringOperation]) -> Result<()> {
-        let message =
-            json!({
+        let message = json!({
             "type": "batch_set",
             "data": {
                 "operations": operations
@@ -186,7 +179,7 @@ impl StringOperations for WsStringClient {
     async fn get_by_patterns(
         &mut self,
         _patterns: &[String],
-        _grouped: Option<bool>
+        _grouped: Option<bool>,
     ) -> Result<Value> {
         // Note: This operation might not be implemented in the WebSocket server
         // For now, return an empty result

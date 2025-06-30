@@ -1,6 +1,6 @@
-use crate::error::{ DbxError, Result };
-use url::Url;
+use crate::error::{DbxError, Result};
 use serde_json;
+use url::Url;
 
 /// Common trait for HTTP clients
 pub trait HttpClientBase {
@@ -25,7 +25,8 @@ pub mod http {
 
     /// Handle HTTP response and extract JSON data
     pub async fn handle_response<T>(response: Response, operation: &str) -> Result<T>
-        where T: serde::de::DeserializeOwned
+    where
+        T: serde::de::DeserializeOwned,
     {
         if response.status().is_success() {
             let data: T = response.json().await?;
@@ -55,18 +56,20 @@ pub mod http {
 #[cfg(feature = "websocket")]
 pub mod websocket {
     use super::*;
-    use tokio_tungstenite::WebSocketStream;
-    use tokio_tungstenite::MaybeTlsStream;
+    use futures_util::{SinkExt, StreamExt};
     use tokio::net::TcpStream;
-    use futures_util::{ SinkExt, StreamExt };
+    use tokio_tungstenite::MaybeTlsStream;
+    use tokio_tungstenite::WebSocketStream;
 
     /// Send a WebSocket message and get response
     pub async fn send_message(
         stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
-        message: serde_json::Value
+        message: serde_json::Value,
     ) -> Result<serde_json::Value> {
         let message_str = serde_json::to_string(&message)?;
-        stream.send(tokio_tungstenite::tungstenite::Message::Text(message_str)).await?;
+        stream
+            .send(tokio_tungstenite::tungstenite::Message::Text(message_str))
+            .await?;
 
         if let Some(response) = stream.next().await {
             match response? {
@@ -74,11 +77,10 @@ pub mod websocket {
                     let value: serde_json::Value = serde_json::from_str(&text)?;
                     Ok(value)
                 }
-                _ =>
-                    Err(DbxError::Api {
-                        status: 0,
-                        message: "Unexpected WebSocket message type".to_string(),
-                    }),
+                _ => Err(DbxError::Api {
+                    status: 0,
+                    message: "Unexpected WebSocket message type".to_string(),
+                }),
             }
         } else {
             Err(DbxError::Api {
@@ -106,10 +108,7 @@ pub mod websocket {
 
     /// Extract usize value from WebSocket response
     pub fn extract_usize_value(response: &serde_json::Value, field: &str) -> usize {
-        response
-            .get(field)
-            .and_then(|v| v.as_u64())
-            .unwrap_or(0) as usize
+        response.get(field).and_then(|v| v.as_u64()).unwrap_or(0) as usize
     }
 
     /// Extract string array from WebSocket response

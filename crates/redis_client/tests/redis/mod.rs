@@ -1,16 +1,19 @@
 //! Tests for HTTP Redis client functionality
 
-use dbx_redis_client::{ HttpClient, error::Result, StringOperations };
 use crate::utils;
+use dbx_redis_client::{error::Result, HttpClient, StringOperations};
 
 // Import string and set test modules
-pub mod string;
 pub mod set;
+pub mod string;
 
 #[tokio::test]
 async fn test_http_client_creation() -> Result<()> {
     let client = HttpClient::new(&utils::http_test_url())?;
-    assert_eq!(client.base_url().as_str(), &format!("{}/", utils::http_test_url()));
+    assert_eq!(
+        client.base_url().as_str(),
+        &format!("{}/", utils::http_test_url())
+    );
     Ok(())
 }
 
@@ -18,7 +21,10 @@ async fn test_http_client_creation() -> Result<()> {
 async fn test_http_client_with_timeout() -> Result<()> {
     let timeout = std::time::Duration::from_secs(60);
     let client = HttpClient::with_timeout(&utils::http_test_url(), timeout)?;
-    assert_eq!(client.base_url().as_str(), &format!("{}/", utils::http_test_url()));
+    assert_eq!(
+        client.base_url().as_str(),
+        &format!("{}/", utils::http_test_url())
+    );
     Ok(())
 }
 

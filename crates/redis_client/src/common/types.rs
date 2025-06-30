@@ -1,4 +1,4 @@
-use serde::{ Deserialize, Serialize };
+use serde::{Deserialize, Serialize};
 
 /// Generic API response wrapper
 #[derive(Debug, Serialize, Deserialize, Clone)]

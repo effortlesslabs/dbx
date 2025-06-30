@@ -6,15 +6,15 @@ use reqwest::Client;
 use std::time::Duration;
 use url::Url;
 
-#[cfg(feature = "string")]
-pub mod string;
 #[cfg(feature = "set")]
 pub mod set;
-
 #[cfg(feature = "string")]
-pub use string::HttpStringClient;
+pub mod string;
+
 #[cfg(feature = "set")]
 pub use set::HttpSetClient;
+#[cfg(feature = "string")]
+pub use string::HttpStringClient;
 
 /// HTTP client for interacting with the DBX Redis API
 #[cfg(feature = "http")]

@@ -34,7 +34,7 @@ pub trait KeyValueAdapter: AsyncDatabaseAdapter {
     async fn set<K: AsRef<str> + Send, V: AsRef<str> + Send>(
         &self,
         key: K,
-        value: V
+        value: V,
     ) -> Result<(), Self::Error>;
 
     /// Set a key-value pair with expiration
@@ -42,7 +42,7 @@ pub trait KeyValueAdapter: AsyncDatabaseAdapter {
         &self,
         key: K,
         value: V,
-        expiry_seconds: u64
+        expiry_seconds: u64,
     ) -> Result<(), Self::Error>;
 
     /// Delete a key
@@ -59,7 +59,7 @@ pub trait HashAdapter: AsyncDatabaseAdapter {
     async fn hget<K: AsRef<str> + Send, F: AsRef<str> + Send>(
         &self,
         key: K,
-        field: F
+        field: F,
     ) -> Result<Option<String>, Self::Error>;
 
     /// Set a field in a hash
@@ -67,20 +67,20 @@ pub trait HashAdapter: AsyncDatabaseAdapter {
         &self,
         key: K,
         field: F,
-        value: V
+        value: V,
     ) -> Result<(), Self::Error>;
 
     /// Get all fields from a hash
     async fn hgetall<K: AsRef<str> + Send>(
         &self,
-        key: K
+        key: K,
     ) -> Result<std::collections::HashMap<String, String>, Self::Error>;
 
     /// Delete a field from a hash
     async fn hdel<K: AsRef<str> + Send, F: AsRef<str> + Send>(
         &self,
         key: K,
-        field: F
+        field: F,
     ) -> Result<bool, Self::Error>;
 }
 
@@ -91,21 +91,21 @@ pub trait SetAdapter: AsyncDatabaseAdapter {
     async fn sadd<K: AsRef<str> + Send, M: AsRef<str> + Send>(
         &self,
         key: K,
-        member: M
+        member: M,
     ) -> Result<bool, Self::Error>;
 
     /// Remove a member from a set
     async fn srem<K: AsRef<str> + Send, M: AsRef<str> + Send>(
         &self,
         key: K,
-        member: M
+        member: M,
     ) -> Result<bool, Self::Error>;
 
     /// Check if a member exists in a set
     async fn sismember<K: AsRef<str> + Send, M: AsRef<str> + Send>(
         &self,
         key: K,
-        member: M
+        member: M,
     ) -> Result<bool, Self::Error>;
 
     /// Get all members of a set
@@ -117,12 +117,12 @@ pub trait SetAdapter: AsyncDatabaseAdapter {
 pub trait PooledAdapter: AsyncDatabaseAdapter {
     /// Get a connection from the pool
     async fn get_connection(
-        &self
+        &self,
     ) -> Result<Box<dyn AsyncDatabaseAdapter<Error = Self::Error>>, Self::Error>;
 
     /// Return a connection to the pool
     async fn return_connection(
         &self,
-        connection: Box<dyn AsyncDatabaseAdapter<Error = Self::Error>>
+        connection: Box<dyn AsyncDatabaseAdapter<Error = Self::Error>>,
     ) -> Result<(), Self::Error>;
 }

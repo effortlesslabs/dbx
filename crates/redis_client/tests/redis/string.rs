@@ -1,7 +1,7 @@
 //! Tests for HTTP Redis string operations
 
-use dbx_redis_client::{ HttpClient, error::Result, StringOperations };
 use crate::utils;
+use dbx_redis_client::{error::Result, HttpClient, StringOperations};
 
 #[tokio::test]
 async fn test_string_operations() -> Result<()> {
@@ -19,7 +19,9 @@ async fn test_string_operations() -> Result<()> {
 
     // Test set with TTL
     let ttl_key = utils::unique_key("test_string_ttl");
-    string_client.set_with_ttl(&ttl_key, test_value, 3600).await?;
+    string_client
+        .set_with_ttl(&ttl_key, test_value, 3600)
+        .await?;
 
     // Test delete operation
     let deleted = string_client.delete(&test_key).await?;
@@ -40,7 +42,7 @@ async fn test_string_batch_operations() -> Result<()> {
     let keys = vec![
         utils::unique_key("batch_key1"),
         utils::unique_key("batch_key2"),
-        utils::unique_key("batch_key3")
+        utils::unique_key("batch_key3"),
     ];
 
     let operations = vec![
@@ -58,7 +60,7 @@ async fn test_string_batch_operations() -> Result<()> {
             key: keys[2].clone(),
             value: Some("value3".to_string()),
             ttl: Some(1800),
-        }
+        },
     ];
 
     // Test batch set
@@ -88,7 +90,7 @@ async fn test_string_pattern_operations() -> Result<()> {
     let keys = vec![
         format!("{}_key1", prefix),
         format!("{}_key2", prefix),
-        format!("{}_key3", prefix)
+        format!("{}_key3", prefix),
     ];
 
     // Set some test data
@@ -138,7 +140,9 @@ async fn test_string_concurrent_operations() -> Result<()> {
 
     // Wait for all operations to complete
     for handle in handles {
-        handle.await.map_err(|e| dbx_redis_client::error::DbxError::Other(anyhow::anyhow!("{}", e)))??;
+        handle
+            .await
+            .map_err(|e| dbx_redis_client::error::DbxError::Other(anyhow::anyhow!("{}", e)))??;
     }
 
     Ok(())

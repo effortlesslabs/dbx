@@ -59,7 +59,7 @@ async fn test_batch_set_request() -> Result<()> {
             key: "key2".to_string(),
             value: Some("value2".to_string()),
             ttl: None,
-        }
+        },
     ];
 
     let batch_request = BatchSetRequest { operations };
@@ -67,7 +67,10 @@ async fn test_batch_set_request() -> Result<()> {
     let json = serde_json::to_string(&batch_request)?;
     let deserialized: BatchSetRequest = serde_json::from_str(&json)?;
 
-    assert_eq!(batch_request.operations.len(), deserialized.operations.len());
+    assert_eq!(
+        batch_request.operations.len(),
+        deserialized.operations.len()
+    );
 
     Ok(())
 }

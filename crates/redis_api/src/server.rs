@@ -1,12 +1,12 @@
-use axum::{ Router, routing::get, response::Html };
 use axum::http::StatusCode;
+use axum::{response::Html, routing::get, Router};
 use std::fs;
-use tracing::info;
 use std::sync::Arc;
+use tracing::info;
 
-use crate::{ config::Config, constants::errors::ErrorMessages };
+use crate::{config::Config, constants::errors::ErrorMessages};
 
-use dbx_adapter::redis::{ RedisPoolAdapter, client::RedisPool };
+use dbx_adapter::redis::{client::RedisPool, RedisPoolAdapter};
 
 pub struct Server {
     config: Config,
@@ -31,14 +31,15 @@ impl Server {
                 return Err(anyhow::anyhow!(ErrorMessages::REDIS_PING_FAILED));
             }
             Err(e) => {
-                return Err(anyhow::anyhow!("{}{}", ErrorMessages::REDIS_CONNECTION_FAILED, e));
+                return Err(anyhow::anyhow!(
+                    "{}{}",
+                    ErrorMessages::REDIS_CONNECTION_FAILED,
+                    e
+                ));
             }
         };
 
-        Ok(Self {
-            config,
-            redis_pool,
-        })
+        Ok(Self { config, redis_pool })
     }
 
     pub fn config(&self) -> &Config {
@@ -53,24 +54,19 @@ impl Server {
 
         // Add Redis admin routes if Redis pool is available
         if let Some(pool) = &self.redis_pool {
-            let redis_string_routes = crate::routes::redis::string::create_redis_string_routes(
-                pool.clone()
-            );
-            let redis_hash_routes = crate::routes::redis::hash::create_redis_hash_routes(
-                pool.clone()
-            );
+            let redis_string_routes =
+                crate::routes::redis::string::create_redis_string_routes(pool.clone());
+            let redis_hash_routes =
+                crate::routes::redis::hash::create_redis_hash_routes(pool.clone());
             let redis_set_routes = crate::routes::redis::set::create_redis_set_routes(pool.clone());
-            let redis_admin_routes = crate::routes::redis::admin::create_redis_admin_routes(
-                pool.clone()
-            );
+            let redis_admin_routes =
+                crate::routes::redis::admin::create_redis_admin_routes(pool.clone());
             let redis_ws_string_routes =
                 crate::routes::redis_ws::string::create_redis_ws_string_routes(pool.clone());
-            let redis_ws_hash_routes = crate::routes::redis_ws::hash::create_redis_ws_hash_routes(
-                pool.clone()
-            );
-            let redis_ws_set_routes = crate::routes::redis_ws::set::create_redis_ws_set_routes(
-                pool.clone()
-            );
+            let redis_ws_hash_routes =
+                crate::routes::redis_ws::hash::create_redis_ws_hash_routes(pool.clone());
+            let redis_ws_set_routes =
+                crate::routes::redis_ws::set::create_redis_ws_set_routes(pool.clone());
             let redis_ws_admin_routes =
                 crate::routes::redis_ws::admin::create_redis_ws_admin_routes(pool.clone());
 
@@ -95,20 +91,42 @@ impl Server {
         info!("Starting Redis API server on {}", addr);
         info!("HTTP API available at http://{}", addr);
         info!("RedisWs API available at ws://{}/redis_ws", addr);
-        info!("Redis Admin HTTP API available at http://{}/redis/admin", addr);
-        info!("Redis Admin WebSocket API available at ws://{}/redis_ws/admin/ws", addr);
-        info!("Redis String HTTP API available at http://{}/redis/string", addr);
-        info!("Redis String WebSocket API available at ws://{}/redis_ws/string/ws", addr);
-        info!("Redis Hash HTTP API available at http://{}/redis/hash", addr);
-        info!("Redis Hash WebSocket API available at ws://{}/redis_ws/hash/ws", addr);
+        info!(
+            "Redis Admin HTTP API available at http://{}/redis/admin",
+            addr
+        );
+        info!(
+            "Redis Admin WebSocket API available at ws://{}/redis_ws/admin/ws",
+            addr
+        );
+        info!(
+            "Redis String HTTP API available at http://{}/redis/string",
+            addr
+        );
+        info!(
+            "Redis String WebSocket API available at ws://{}/redis_ws/string/ws",
+            addr
+        );
+        info!(
+            "Redis Hash HTTP API available at http://{}/redis/hash",
+            addr
+        );
+        info!(
+            "Redis Hash WebSocket API available at ws://{}/redis_ws/hash/ws",
+            addr
+        );
         info!("Redis Set HTTP API available at http://{}/redis/set", addr);
-        info!("Redis Set WebSocket API available at ws://{}/redis_ws/set/ws", addr);
+        info!(
+            "Redis Set WebSocket API available at ws://{}/redis_ws/set/ws",
+            addr
+        );
 
         let listener = tokio::net::TcpListener::bind(addr).await?;
         axum::serve(
             listener,
-            app.into_make_service_with_connect_info::<std::net::SocketAddr>()
-        ).await?;
+            app.into_make_service_with_connect_info::<std::net::SocketAddr>(),
+        )
+        .await?;
 
         Ok(())
     }
@@ -129,8 +147,7 @@ async fn serve_landing_page() -> Result<Html<String>, StatusCode> {
         Ok(content) => Ok(Html(content)),
         Err(_) => {
             // Fallback to a simple HTML if file not found
-            let fallback_html =
-                r#"
+            let fallback_html = r#"
 <!DOCTYPE html>
 <html lang="en">
 <head>

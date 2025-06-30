@@ -1,8 +1,11 @@
-use crate::{ error::Result, common::{ SetOperations, WebSocketClientBase, client::websocket } };
-use tokio_tungstenite::WebSocketStream;
-use serde_json::{ json, Value };
+use crate::{
+    common::{client::websocket, SetOperations, WebSocketClientBase},
+    error::Result,
+};
+use serde_json::{json, Value};
 use tokio::net::TcpStream;
 use tokio_tungstenite::MaybeTlsStream;
+use tokio_tungstenite::WebSocketStream;
 use url::Url;
 
 /// WebSocket client for set operations
@@ -36,8 +39,7 @@ impl WebSocketClientBase for WsSetClient {
 impl SetOperations for WsSetClient {
     /// Get all members of a set
     async fn members(&mut self, key: &str) -> Result<Vec<String>> {
-        let message =
-            json!({
+        let message = json!({
             "type": "members",
             "data": {
                 "key": key
@@ -70,8 +72,7 @@ impl SetOperations for WsSetClient {
 
     /// Add a member to a set
     async fn add(&mut self, key: &str, member: &str) -> Result<usize> {
-        let message =
-            json!({
+        let message = json!({
             "type": "add",
             "data": {
                 "key": key,
@@ -105,8 +106,7 @@ impl SetOperations for WsSetClient {
 
     /// Remove a member from a set
     async fn remove(&mut self, key: &str, member: &str) -> Result<usize> {
-        let message =
-            json!({
+        let message = json!({
             "type": "remove",
             "data": {
                 "key": key,
@@ -130,8 +130,7 @@ impl SetOperations for WsSetClient {
 
     /// Get the cardinality (number of members) of a set
     async fn cardinality(&mut self, key: &str) -> Result<usize> {
-        let message =
-            json!({
+        let message = json!({
             "type": "cardinality",
             "data": {
                 "key": key
@@ -154,8 +153,7 @@ impl SetOperations for WsSetClient {
 
     /// Check if a member exists in a set
     async fn exists(&mut self, key: &str, member: &str) -> Result<bool> {
-        let message =
-            json!({
+        let message = json!({
             "type": "exists",
             "data": {
                 "key": key,
@@ -179,8 +177,7 @@ impl SetOperations for WsSetClient {
 
     /// Get the intersection of multiple sets
     async fn intersect(&mut self, keys: &[String]) -> Result<Vec<String>> {
-        let message =
-            json!({
+        let message = json!({
             "type": "intersect",
             "data": {
                 "keys": keys
@@ -213,8 +210,7 @@ impl SetOperations for WsSetClient {
 
     /// Get the union of multiple sets
     async fn union(&mut self, keys: &[String]) -> Result<Vec<String>> {
-        let message =
-            json!({
+        let message = json!({
             "type": "union",
             "data": {
                 "keys": keys
@@ -247,8 +243,7 @@ impl SetOperations for WsSetClient {
 
     /// Get the difference of multiple sets
     async fn difference(&mut self, keys: &[String]) -> Result<Vec<String>> {
-        let message =
-            json!({
+        let message = json!({
             "type": "difference",
             "data": {
                 "keys": keys

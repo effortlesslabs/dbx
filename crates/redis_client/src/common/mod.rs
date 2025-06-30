@@ -1,9 +1,9 @@
 //! Common functionality shared between HTTP and WebSocket clients
 
+pub mod client;
 pub mod error;
 pub mod set;
 pub mod string;
-pub mod client;
 pub mod types;
 
 use crate::error::Result;
@@ -11,12 +11,12 @@ use serde_json::Value;
 use url::Url;
 
 // Re-export types for convenience
-pub use set::*;
-pub use string::*;
-pub use types::*;
 pub use client::HttpClientBase;
 #[cfg(feature = "websocket")]
 pub use client::WebSocketClientBase;
+pub use set::*;
+pub use string::*;
+pub use types::*;
 
 /// Common trait for string operations
 pub trait StringOperations {
@@ -42,7 +42,7 @@ pub trait StringOperations {
     async fn get_by_patterns(
         &mut self,
         patterns: &[String],
-        grouped: Option<bool>
+        grouped: Option<bool>,
     ) -> Result<Value>;
 
     /// Convenience method to set a string without TTL

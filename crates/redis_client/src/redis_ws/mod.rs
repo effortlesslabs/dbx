@@ -1,16 +1,16 @@
 //! WebSocket client for DBX Redis API
 
 use crate::error::Result;
-use futures_util::{ SinkExt, StreamExt };
+use futures_util::{SinkExt, StreamExt};
 use serde_json::Value;
 use std::time::Duration;
 use url::Url;
 
-pub mod string;
 pub mod set;
+pub mod string;
 
-pub use string::WsStringClient;
 pub use set::WsSetClient;
+pub use string::WsStringClient;
 
 /// WebSocket client for interacting with the DBX Redis API
 pub struct WsClient {
@@ -57,7 +57,9 @@ impl WsClient {
         let (mut stream, _) = tokio_tungstenite::connect_async(url).await?;
 
         let message_str = serde_json::to_string(&message)?;
-        stream.send(tokio_tungstenite::tungstenite::Message::Text(message_str)).await?;
+        stream
+            .send(tokio_tungstenite::tungstenite::Message::Text(message_str))
+            .await?;
 
         if let Some(response) = stream.next().await {
             match response? {
@@ -65,11 +67,10 @@ impl WsClient {
                     let value: Value = serde_json::from_str(&text)?;
                     Ok(value)
                 }
-                _ =>
-                    Err(crate::error::DbxError::Api {
-                        status: 0,
-                        message: "Unexpected WebSocket message type".to_string(),
-                    }),
+                _ => Err(crate::error::DbxError::Api {
+                    status: 0,
+                    message: "Unexpected WebSocket message type".to_string(),
+                }),
             }
         } else {
             Err(crate::error::DbxError::Api {

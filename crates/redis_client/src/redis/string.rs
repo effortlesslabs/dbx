@@ -1,12 +1,8 @@
 use crate::{
+    common::{client::http, HttpClientBase, StringOperations},
     error::Result,
-    common::{ StringOperations, HttpClientBase, client::http },
-    SetStringRequest,
-    BatchGetRequest,
-    BatchSetRequest,
-    BatchGetPatternsRequest,
+    BatchGetPatternsRequest, BatchGetRequest, BatchSetRequest, SetStringRequest, StringInfo,
     StringOperation,
-    StringInfo,
 };
 #[cfg(feature = "http")]
 use reqwest::Client;
@@ -95,7 +91,7 @@ impl StringOperations for HttpStringClient {
     async fn get_by_patterns(
         &mut self,
         patterns: &[String],
-        grouped: Option<bool>
+        grouped: Option<bool>,
     ) -> Result<serde_json::Value> {
         let url = self.base_url.join("redis/string/batch/patterns")?;
         let request = BatchGetPatternsRequest {

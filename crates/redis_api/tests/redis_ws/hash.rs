@@ -1,7 +1,7 @@
 use super::super::get_test_ws_base_url;
-use tokio_tungstenite::connect_async;
-use futures::{ SinkExt, StreamExt };
+use futures::{SinkExt, StreamExt};
 use serde_json::json;
+use tokio_tungstenite::connect_async;
 
 #[tokio::test]
 async fn test_ws_hash_set_and_get() {
@@ -15,12 +15,16 @@ async fn test_ws_hash_set_and_get() {
     // Set hash field
     let set_msg =
         json!({"type": "set", "data": {"key": key, "field": field, "value": value}}).to_string();
-    ws.send(tokio_tungstenite::tungstenite::Message::Text(set_msg)).await.unwrap();
+    ws.send(tokio_tungstenite::tungstenite::Message::Text(set_msg))
+        .await
+        .unwrap();
     let _ = ws.next().await;
 
     // Get hash field
     let get_msg = json!({"type": "get", "data": {"key": key, "field": field}}).to_string();
-    ws.send(tokio_tungstenite::tungstenite::Message::Text(get_msg)).await.unwrap();
+    ws.send(tokio_tungstenite::tungstenite::Message::Text(get_msg))
+        .await
+        .unwrap();
     if let Some(Ok(tokio_tungstenite::tungstenite::Message::Text(resp))) = ws.next().await {
         let v: serde_json::Value = serde_json::from_str(&resp).unwrap();
         assert_eq!(v["type"], "result");

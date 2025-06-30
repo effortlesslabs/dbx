@@ -1,7 +1,7 @@
-use napi::bindgen_prelude::*;
-use napi_derive::napi;
 use dbx_redis_client::redis_ws::WsClient;
 use dbx_redis_client::SetOperations;
+use napi::bindgen_prelude::*;
+use napi_derive::napi;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 
@@ -25,11 +25,13 @@ impl WsSetClient {
         self.runtime.block_on(async move {
             let mut ws_client = client.as_ref().clone();
             let mut set_client = ws_client
-                .set().await
+                .set()
+                .await
                 .map_err(|e| Error::from_reason(e.to_string()))?;
 
             set_client
-                .add_one(&key, &member).await
+                .add_one(&key, &member)
+                .await
                 .map(|_| true)
                 .map_err(|e| Error::from_reason(e.to_string()))
         })
@@ -39,18 +41,17 @@ impl WsSetClient {
     #[napi]
     pub fn add_many(&self, key: String, members: Vec<String>) -> Result<bool> {
         let client = self.client.clone();
-        let member_refs: Vec<&str> = members
-            .iter()
-            .map(|s| s.as_str())
-            .collect();
+        let member_refs: Vec<&str> = members.iter().map(|s| s.as_str()).collect();
         self.runtime.block_on(async move {
             let mut ws_client = client.as_ref().clone();
             let mut set_client = ws_client
-                .set().await
+                .set()
+                .await
                 .map_err(|e| Error::from_reason(e.to_string()))?;
 
             set_client
-                .add_many(&key, &member_refs).await
+                .add_many(&key, &member_refs)
+                .await
                 .map(|_| true)
                 .map_err(|e| Error::from_reason(e.to_string()))
         })
@@ -63,11 +64,13 @@ impl WsSetClient {
         self.runtime.block_on(async move {
             let mut ws_client = client.as_ref().clone();
             let mut set_client = ws_client
-                .set().await
+                .set()
+                .await
                 .map_err(|e| Error::from_reason(e.to_string()))?;
 
             set_client
-                .remove(&key, &member).await
+                .remove(&key, &member)
+                .await
                 .map(|v| v as u32)
                 .map_err(|e| Error::from_reason(e.to_string()))
         })
@@ -80,10 +83,14 @@ impl WsSetClient {
         self.runtime.block_on(async move {
             let mut ws_client = client.as_ref().clone();
             let mut set_client = ws_client
-                .set().await
+                .set()
+                .await
                 .map_err(|e| Error::from_reason(e.to_string()))?;
 
-            set_client.members(&key).await.map_err(|e| Error::from_reason(e.to_string()))
+            set_client
+                .members(&key)
+                .await
+                .map_err(|e| Error::from_reason(e.to_string()))
         })
     }
 
@@ -94,11 +101,13 @@ impl WsSetClient {
         self.runtime.block_on(async move {
             let mut ws_client = client.as_ref().clone();
             let mut set_client = ws_client
-                .set().await
+                .set()
+                .await
                 .map_err(|e| Error::from_reason(e.to_string()))?;
 
             set_client
-                .cardinality(&key).await
+                .cardinality(&key)
+                .await
                 .map(|v| v as u32)
                 .map_err(|e| Error::from_reason(e.to_string()))
         })
@@ -111,10 +120,14 @@ impl WsSetClient {
         self.runtime.block_on(async move {
             let mut ws_client = client.as_ref().clone();
             let mut set_client = ws_client
-                .set().await
+                .set()
+                .await
                 .map_err(|e| Error::from_reason(e.to_string()))?;
 
-            set_client.exists(&key, &member).await.map_err(|e| Error::from_reason(e.to_string()))
+            set_client
+                .exists(&key, &member)
+                .await
+                .map_err(|e| Error::from_reason(e.to_string()))
         })
     }
 
@@ -125,10 +138,14 @@ impl WsSetClient {
         self.runtime.block_on(async move {
             let mut ws_client = client.as_ref().clone();
             let mut set_client = ws_client
-                .set().await
+                .set()
+                .await
                 .map_err(|e| Error::from_reason(e.to_string()))?;
 
-            set_client.contains(&key, &member).await.map_err(|e| Error::from_reason(e.to_string()))
+            set_client
+                .contains(&key, &member)
+                .await
+                .map_err(|e| Error::from_reason(e.to_string()))
         })
     }
 
@@ -139,11 +156,13 @@ impl WsSetClient {
         self.runtime.block_on(async move {
             let mut ws_client = client.as_ref().clone();
             let mut set_client = ws_client
-                .set().await
+                .set()
+                .await
                 .map_err(|e| Error::from_reason(e.to_string()))?;
 
             set_client
-                .size(&key).await
+                .size(&key)
+                .await
                 .map(|v| v as u32)
                 .map_err(|e| Error::from_reason(e.to_string()))
         })
@@ -156,10 +175,14 @@ impl WsSetClient {
         self.runtime.block_on(async move {
             let mut ws_client = client.as_ref().clone();
             let mut set_client = ws_client
-                .set().await
+                .set()
+                .await
                 .map_err(|e| Error::from_reason(e.to_string()))?;
 
-            set_client.intersect(&keys).await.map_err(|e| Error::from_reason(e.to_string()))
+            set_client
+                .intersect(&keys)
+                .await
+                .map_err(|e| Error::from_reason(e.to_string()))
         })
     }
 
@@ -170,10 +193,14 @@ impl WsSetClient {
         self.runtime.block_on(async move {
             let mut ws_client = client.as_ref().clone();
             let mut set_client = ws_client
-                .set().await
+                .set()
+                .await
                 .map_err(|e| Error::from_reason(e.to_string()))?;
 
-            set_client.union(&keys).await.map_err(|e| Error::from_reason(e.to_string()))
+            set_client
+                .union(&keys)
+                .await
+                .map_err(|e| Error::from_reason(e.to_string()))
         })
     }
 
@@ -184,10 +211,14 @@ impl WsSetClient {
         self.runtime.block_on(async move {
             let mut ws_client = client.as_ref().clone();
             let mut set_client = ws_client
-                .set().await
+                .set()
+                .await
                 .map_err(|e| Error::from_reason(e.to_string()))?;
 
-            set_client.difference(&keys).await.map_err(|e| Error::from_reason(e.to_string()))
+            set_client
+                .difference(&keys)
+                .await
+                .map_err(|e| Error::from_reason(e.to_string()))
         })
     }
 }

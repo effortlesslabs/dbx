@@ -2,9 +2,9 @@
 //!
 //! This library provides various adapters and utilities for database interactions.
 
+pub mod error;
 pub mod redis;
 pub mod traits;
-pub mod error;
 pub use redis::*;
 
 /// Version information
@@ -26,9 +26,8 @@ mod test_helpers {
 
     /// Get Redis URL from environment variable with fallback to default
     pub fn get_test_redis_url() -> String {
-        env::var("REDIS_URL").unwrap_or_else(|_|
-            "redis://default:redispw@localhost:55000".to_string()
-        )
+        env::var("REDIS_URL")
+            .unwrap_or_else(|_| "redis://default:redispw@localhost:55000".to_string())
     }
 }
 
@@ -49,6 +48,9 @@ mod tests {
         let url = get_test_redis_url();
         println!("Redis URL from environment: {}", url);
         assert!(!url.is_empty(), "Redis URL should not be empty");
-        assert!(url.starts_with("redis://"), "Redis URL should start with redis://");
+        assert!(
+            url.starts_with("redis://"),
+            "Redis URL should start with redis://"
+        );
     }
 }

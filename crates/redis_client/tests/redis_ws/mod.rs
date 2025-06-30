@@ -1,12 +1,12 @@
 #![cfg(feature = "websocket")]
 //! Tests for WebSocket Redis client functionality
 
-use dbx_redis_client::{ WsClient, StringOperations, SetOperations, error::Result };
 use crate::utils;
+use dbx_redis_client::{error::Result, SetOperations, StringOperations, WsClient};
 
 // Import string and set test modules
-pub mod string;
 pub mod set;
+pub mod string;
 
 #[tokio::test]
 async fn test_websocket_client_creation() -> Result<()> {
@@ -47,7 +47,9 @@ async fn test_websocket_string_operations() -> Result<()> {
 
     // Test set with TTL
     let ttl_key = utils::unique_key("ws_test_string_ttl");
-    string_client.set_with_ttl(&ttl_key, test_value, 3600).await?;
+    string_client
+        .set_with_ttl(&ttl_key, test_value, 3600)
+        .await?;
 
     // Test delete operation
     let deleted = string_client.delete(&test_key).await?;
@@ -68,7 +70,7 @@ async fn test_websocket_string_batch_operations() -> Result<()> {
     let keys = vec![
         utils::unique_key("ws_batch_key1"),
         utils::unique_key("ws_batch_key2"),
-        utils::unique_key("ws_batch_key3")
+        utils::unique_key("ws_batch_key3"),
     ];
 
     let operations = vec![
@@ -86,7 +88,7 @@ async fn test_websocket_string_batch_operations() -> Result<()> {
             key: keys[2].clone(),
             value: Some("ws_value3".to_string()),
             ttl: Some(1800),
-        }
+        },
     ];
 
     // Test batch set
@@ -116,12 +118,14 @@ async fn test_websocket_string_pattern_operations() -> Result<()> {
     let keys = vec![
         format!("{}_key1", prefix),
         format!("{}_key2", prefix),
-        format!("{}_key3", prefix)
+        format!("{}_key3", prefix),
     ];
 
     // Set some test data
     for (i, key) in keys.iter().enumerate() {
-        string_client.set(key, &format!("ws_value{}", i), None).await?;
+        string_client
+            .set(key, &format!("ws_value{}", i), None)
+            .await?;
     }
 
     // Test pattern search
@@ -150,10 +154,9 @@ async fn test_websocket_set_operations() -> Result<()> {
     assert_eq!(added, 1);
 
     // Test add multiple members
-    let added_many = set_client.add_many(
-        &test_key,
-        &["ws_member2", "ws_member3", "ws_member4"]
-    ).await?;
+    let added_many = set_client
+        .add_many(&test_key, &["ws_member2", "ws_member3", "ws_member4"])
+        .await?;
     assert_eq!(added_many, 3);
 
     // Test cardinality
@@ -196,13 +199,19 @@ async fn test_websocket_set_operations_multiple_sets() -> Result<()> {
     let set3_key = utils::unique_key("ws_set3");
 
     // Populate set1: {a, b, c, d}
-    set_client.add_many(&set1_key, &["a", "b", "c", "d"]).await?;
+    set_client
+        .add_many(&set1_key, &["a", "b", "c", "d"])
+        .await?;
 
     // Populate set2: {b, c, e, f}
-    set_client.add_many(&set2_key, &["b", "c", "e", "f"]).await?;
+    set_client
+        .add_many(&set2_key, &["b", "c", "e", "f"])
+        .await?;
 
     // Populate set3: {c, d, g, h}
-    set_client.add_many(&set3_key, &["c", "d", "g", "h"]).await?;
+    set_client
+        .add_many(&set3_key, &["c", "d", "g", "h"])
+        .await?;
 
     let keys = vec![set1_key.clone(), set2_key.clone(), set3_key.clone()];
 
@@ -295,7 +304,9 @@ async fn test_websocket_concurrent_operations() -> Result<()> {
 
     // Wait for all operations to complete
     for handle in handles {
-        handle.await.map_err(|e| dbx_redis_client::error::DbxError::Other(anyhow::anyhow!("{}", e)))??;
+        handle
+            .await
+            .map_err(|e| dbx_redis_client::error::DbxError::Other(anyhow::anyhow!("{}", e)))??;
     }
 
     Ok(())

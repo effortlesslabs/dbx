@@ -1,6 +1,6 @@
-use std::time::Duration;
-use serde_json::json;
 use reqwest::Client;
+use serde_json::json;
+use std::time::Duration;
 
 // Constants
 pub const BASE_URL: &str = "http://localhost:3000/redis";
@@ -52,12 +52,13 @@ pub async fn set_string(
     client: &Client,
     base_url: &str,
     key: &str,
-    value: &str
+    value: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let res = client
         .post(&format!("{}/redis/string/{}", base_url, key))
         .json(&json!({"value": value}))
-        .send().await?;
+        .send()
+        .await?;
 
     if res.status() == 200 {
         Ok(())
@@ -69,9 +70,12 @@ pub async fn set_string(
 pub async fn get_string(
     client: &Client,
     base_url: &str,
-    key: &str
+    key: &str,
 ) -> Result<Option<String>, Box<dyn std::error::Error>> {
-    let res = client.get(&format!("{}/redis/string/{}", base_url, key)).send().await?;
+    let res = client
+        .get(&format!("{}/redis/string/{}", base_url, key))
+        .send()
+        .await?;
 
     if res.status() == 200 {
         let body: Option<String> = res.json().await?;
@@ -84,9 +88,12 @@ pub async fn get_string(
 pub async fn delete_string(
     client: &Client,
     base_url: &str,
-    key: &str
+    key: &str,
 ) -> Result<bool, Box<dyn std::error::Error>> {
-    let res = client.delete(&format!("{}/redis/string/{}", base_url, key)).send().await?;
+    let res = client
+        .delete(&format!("{}/redis/string/{}", base_url, key))
+        .send()
+        .await?;
 
     if res.status() == 200 {
         let deleted: bool = res.json().await?;
@@ -120,7 +127,7 @@ pub fn assert_redis_info_structure(info: &serde_json::Value) {
         "keyspace_hits",
         "keyspace_misses",
         "expired_keys",
-        "evicted_keys"
+        "evicted_keys",
     ];
 
     for field in required_fields {
@@ -132,7 +139,7 @@ pub fn assert_redis_info_structure(info: &serde_json::Value) {
 pub async fn batch_set_strings(
     client: &Client,
     base_url: &str,
-    operations: Vec<(&str, &str)>
+    operations: Vec<(&str, &str)>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let batch_ops: Vec<serde_json::Value> = operations
         .iter()
@@ -142,7 +149,8 @@ pub async fn batch_set_strings(
     let res = client
         .post(&format!("{}/redis/string/batch/set", base_url))
         .json(&json!({"operations": batch_ops}))
-        .send().await?;
+        .send()
+        .await?;
 
     assert_status_ok(res.status().as_u16());
     Ok(())
@@ -151,12 +159,13 @@ pub async fn batch_set_strings(
 pub async fn batch_get_strings(
     client: &Client,
     base_url: &str,
-    keys: &[String]
+    keys: &[String],
 ) -> Result<Vec<Option<String>>, Box<dyn std::error::Error>> {
     let res = client
         .post(&format!("{}/redis/string/batch/get", base_url))
         .json(&json!({"keys": keys}))
-        .send().await?;
+        .send()
+        .await?;
 
     assert_status_ok(res.status().as_u16());
     let values: Vec<Option<String>> = res.json().await?;

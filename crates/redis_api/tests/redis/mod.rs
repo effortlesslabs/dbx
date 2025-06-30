@@ -1,7 +1,7 @@
-pub mod string;
 pub mod admin;
 pub mod hash;
 pub mod set;
+pub mod string;
 
 use crate::common::TestContext;
 use crate::get_test_base_url;

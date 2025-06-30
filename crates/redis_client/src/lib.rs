@@ -61,7 +61,7 @@ pub mod redis; // HTTP operations
 #[cfg(feature = "websocket")]
 pub mod redis_ws; // WebSocket operations
 
-pub use common::error::{ DbxError, Result };
+pub use common::error::{DbxError, Result};
 pub use common::*;
 
 // Re-export clients based on features
@@ -72,7 +72,7 @@ pub use redis_ws::WsClient;
 
 /// Re-export commonly used types
 pub mod prelude {
-    pub use crate::common::error::{ DbxError, Result };
+    pub use crate::common::error::{DbxError, Result};
     pub use crate::common::*;
 
     #[cfg(feature = "http")]

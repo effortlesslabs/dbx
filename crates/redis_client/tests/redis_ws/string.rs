@@ -1,8 +1,8 @@
 //! Tests for WebSocket Redis string operations
 #![cfg(feature = "websocket")]
 
-use dbx_redis_client::{ WsClient, error::Result, StringOperations };
 use crate::utils;
+use dbx_redis_client::{error::Result, StringOperations, WsClient};
 
 #[tokio::test]
 async fn test_websocket_string_operations() -> Result<()> {
@@ -37,7 +37,7 @@ async fn test_websocket_string_batch_operations() -> Result<()> {
     let keys = vec![
         utils::unique_key("ws_string_batch_key1"),
         utils::unique_key("ws_string_batch_key2"),
-        utils::unique_key("ws_string_batch_key3")
+        utils::unique_key("ws_string_batch_key3"),
     ];
 
     let operations = vec![
@@ -55,7 +55,7 @@ async fn test_websocket_string_batch_operations() -> Result<()> {
             key: keys[2].clone(),
             value: Some("ws_string_value3".to_string()),
             ttl: Some(1800),
-        }
+        },
     ];
 
     // Test batch set
@@ -85,12 +85,14 @@ async fn test_websocket_string_pattern_operations() -> Result<()> {
     let keys = vec![
         format!("{}_key1", prefix),
         format!("{}_key2", prefix),
-        format!("{}_key3", prefix)
+        format!("{}_key3", prefix),
     ];
 
     // Set some test data
     for (i, key) in keys.iter().enumerate() {
-        string_client.set(key, &format!("ws_string_value{}", i), None).await?;
+        string_client
+            .set(key, &format!("ws_string_value{}", i), None)
+            .await?;
     }
 
     // Test pattern search
@@ -132,9 +134,9 @@ async fn test_websocket_string_concurrent_operations() -> Result<()> {
 
     // Wait for all operations to complete
     for handle in handles {
-        handle.await.map_err(|e|
-            dbx_redis_client::error::DbxError::Other(anyhow::anyhow!("{}", e))
-        )??;
+        handle
+            .await
+            .map_err(|e| dbx_redis_client::error::DbxError::Other(anyhow::anyhow!("{}", e)))??;
     }
 
     Ok(())

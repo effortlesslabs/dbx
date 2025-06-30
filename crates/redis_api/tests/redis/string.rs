@@ -1,16 +1,7 @@
 use crate::common::{
-    assert_status_ok,
-    assert_status_not_found,
-    assert_status_method_not_allowed,
-    set_string,
-    get_string,
-    delete_string,
-    generate_test_key,
-    generate_test_value,
-    generate_large_value,
-    generate_special_chars_value,
-    create_http_client,
-    TestContext,
+    assert_status_method_not_allowed, assert_status_not_found, assert_status_ok,
+    create_http_client, delete_string, generate_large_value, generate_special_chars_value,
+    generate_test_key, generate_test_value, get_string, set_string, TestContext,
 };
 use crate::get_test_base_url;
 use serde_json::json;
@@ -24,10 +15,14 @@ async fn test_set_get_string_basic() {
     ctx.add_test_key(test_key.clone());
 
     // Set string
-    set_string(&ctx.client, &ctx.base_url, &test_key, &test_value).await.unwrap();
+    set_string(&ctx.client, &ctx.base_url, &test_key, &test_value)
+        .await
+        .unwrap();
 
     // Get string
-    let result = get_string(&ctx.client, &ctx.base_url, &test_key).await.unwrap();
+    let result = get_string(&ctx.client, &ctx.base_url, &test_key)
+        .await
+        .unwrap();
     assert_eq!(result, Some(test_value));
 
     ctx.cleanup().await;
@@ -42,10 +37,14 @@ async fn test_set_get_string_with_special_chars() {
     ctx.add_test_key(test_key.clone());
 
     // Set string with special characters
-    set_string(&ctx.client, &ctx.base_url, &test_key, &test_value).await.unwrap();
+    set_string(&ctx.client, &ctx.base_url, &test_key, &test_value)
+        .await
+        .unwrap();
 
     // Get string
-    let result = get_string(&ctx.client, &ctx.base_url, &test_key).await.unwrap();
+    let result = get_string(&ctx.client, &ctx.base_url, &test_key)
+        .await
+        .unwrap();
     assert_eq!(result, Some(test_value));
 
     ctx.cleanup().await;
@@ -60,10 +59,14 @@ async fn test_set_get_large_string() {
     ctx.add_test_key(test_key.clone());
 
     // Set large string
-    set_string(&ctx.client, &ctx.base_url, &test_key, &test_value).await.unwrap();
+    set_string(&ctx.client, &ctx.base_url, &test_key, &test_value)
+        .await
+        .unwrap();
 
     // Get large string
-    let result = get_string(&ctx.client, &ctx.base_url, &test_key).await.unwrap();
+    let result = get_string(&ctx.client, &ctx.base_url, &test_key)
+        .await
+        .unwrap();
     assert_eq!(result, Some(test_value));
 
     ctx.cleanup().await;
@@ -75,7 +78,9 @@ async fn test_get_nonexistent_string() {
     let nonexistent_key = generate_test_key("nonexistent", None);
 
     // Try to get nonexistent string
-    let result = get_string(&ctx.client, &ctx.base_url, &nonexistent_key).await.unwrap();
+    let result = get_string(&ctx.client, &ctx.base_url, &nonexistent_key)
+        .await
+        .unwrap();
     assert_eq!(result, None);
 }
 
@@ -88,18 +93,26 @@ async fn test_delete_string() {
     ctx.add_test_key(test_key.clone());
 
     // Set string
-    set_string(&ctx.client, &ctx.base_url, &test_key, &test_value).await.unwrap();
+    set_string(&ctx.client, &ctx.base_url, &test_key, &test_value)
+        .await
+        .unwrap();
 
     // Verify it exists
-    let result = get_string(&ctx.client, &ctx.base_url, &test_key).await.unwrap();
+    let result = get_string(&ctx.client, &ctx.base_url, &test_key)
+        .await
+        .unwrap();
     assert_eq!(result, Some(test_value));
 
     // Delete string
-    let deleted = delete_string(&ctx.client, &ctx.base_url, &test_key).await.unwrap();
+    let deleted = delete_string(&ctx.client, &ctx.base_url, &test_key)
+        .await
+        .unwrap();
     assert!(deleted);
 
     // Verify it's gone
-    let result = get_string(&ctx.client, &ctx.base_url, &test_key).await.unwrap();
+    let result = get_string(&ctx.client, &ctx.base_url, &test_key)
+        .await
+        .unwrap();
     assert_eq!(result, None);
 }
 
@@ -109,7 +122,9 @@ async fn test_delete_nonexistent_string() {
     let nonexistent_key = generate_test_key("nonexistent", None);
 
     // Try to delete nonexistent string
-    let deleted = delete_string(&ctx.client, &ctx.base_url, &nonexistent_key).await.unwrap();
+    let deleted = delete_string(&ctx.client, &ctx.base_url, &nonexistent_key)
+        .await
+        .unwrap();
     assert!(!deleted);
 }
 
@@ -123,13 +138,21 @@ async fn test_string_overwrite() {
     ctx.add_test_key(test_key.clone());
 
     // Set initial value
-    set_string(&ctx.client, &ctx.base_url, &test_key, &value1).await.unwrap();
-    let result = get_string(&ctx.client, &ctx.base_url, &test_key).await.unwrap();
+    set_string(&ctx.client, &ctx.base_url, &test_key, &value1)
+        .await
+        .unwrap();
+    let result = get_string(&ctx.client, &ctx.base_url, &test_key)
+        .await
+        .unwrap();
     assert_eq!(result, Some(value1.clone()));
 
     // Overwrite with new value
-    set_string(&ctx.client, &ctx.base_url, &test_key, &value2).await.unwrap();
-    let result = get_string(&ctx.client, &ctx.base_url, &test_key).await.unwrap();
+    set_string(&ctx.client, &ctx.base_url, &test_key, &value2)
+        .await
+        .unwrap();
+    let result = get_string(&ctx.client, &ctx.base_url, &test_key)
+        .await
+        .unwrap();
     assert_eq!(result, Some(value2));
 
     ctx.cleanup().await;
@@ -150,7 +173,9 @@ async fn test_concurrent_string_operations() {
 
         let handle = tokio::spawn(async move {
             // Set string
-            set_string(&client, &base_url, &test_key, &test_value).await.unwrap();
+            set_string(&client, &base_url, &test_key, &test_value)
+                .await
+                .unwrap();
 
             // Get string
             let result = get_string(&client, &base_url, &test_key).await.unwrap();
@@ -178,28 +203,32 @@ async fn test_string_operations_with_ttl() {
     ctx.add_test_key(test_key.clone());
 
     // Set string with TTL
-    let res = ctx.client
+    let res = ctx
+        .client
         .post(&format!("{}/redis/string/{}", ctx.base_url, test_key))
-        .json(
-            &json!({
+        .json(&json!({
             "value": test_value,
             "ttl": 1 // 1 second TTL
-        })
-        )
-        .send().await
+        }))
+        .send()
+        .await
         .unwrap();
 
     assert_status_ok(res.status().as_u16());
 
     // Verify it exists immediately
-    let result = get_string(&ctx.client, &ctx.base_url, &test_key).await.unwrap();
+    let result = get_string(&ctx.client, &ctx.base_url, &test_key)
+        .await
+        .unwrap();
     assert_eq!(result, Some(test_value));
 
     // Wait for TTL to expire
     tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
 
     // Verify it's expired
-    let result = get_string(&ctx.client, &ctx.base_url, &test_key).await.unwrap();
+    let result = get_string(&ctx.client, &ctx.base_url, &test_key)
+        .await
+        .unwrap();
     assert_eq!(result, None);
 }
 
@@ -209,7 +238,7 @@ async fn test_batch_string_operations() {
     let operations: Vec<(&str, &str)> = vec![
         ("batch_key_1", "batch_value_1"),
         ("batch_key_2", "batch_value_2"),
-        ("batch_key_3", "batch_value_3")
+        ("batch_key_3", "batch_value_3"),
     ];
 
     // Add keys for cleanup
@@ -223,23 +252,24 @@ async fn test_batch_string_operations() {
         .map(|(key, value)| json!({"key": key, "value": value}))
         .collect();
 
-    let res = ctx.client
+    let res = ctx
+        .client
         .post(&format!("{}/redis/string/batch/set", ctx.base_url))
         .json(&json!({"operations": batch_ops}))
-        .send().await
+        .send()
+        .await
         .unwrap();
 
     assert_status_ok(res.status().as_u16());
 
     // Batch get strings
-    let keys: Vec<String> = operations
-        .iter()
-        .map(|(key, _)| key.to_string())
-        .collect();
-    let res = ctx.client
+    let keys: Vec<String> = operations.iter().map(|(key, _)| key.to_string()).collect();
+    let res = ctx
+        .client
         .post(&format!("{}/redis/string/batch/get", ctx.base_url))
         .json(&json!({"keys": keys}))
-        .send().await
+        .send()
+        .await
         .unwrap();
 
     assert_status_ok(res.status().as_u16());
@@ -259,9 +289,11 @@ async fn test_string_error_handling() {
     let invalid_key = "invalid/key/with/slashes";
 
     // Try to get string with invalid key format
-    let res = ctx.client
+    let res = ctx
+        .client
         .get(&format!("{}/redis/string/{}", ctx.base_url, invalid_key))
-        .send().await
+        .send()
+        .await
         .unwrap();
 
     // Should return 404 or handle gracefully
@@ -278,7 +310,7 @@ async fn test_batch_get_patterns() {
         "tokenBalance:0x123:ethereum:200",
         "tokenBalancePending:0x123:ethereum:50",
         "tokenBalancePending:0x123:ethereum:75",
-        "otherKey:0x456:ethereum:300"
+        "otherKey:0x456:ethereum:300",
     ];
 
     let test_values = vec!["100.5", "200.0", "50.25", "75.75", "300.0"];
@@ -286,22 +318,24 @@ async fn test_batch_get_patterns() {
     // Set all test keys
     for (key, value) in test_keys.iter().zip(test_values.iter()) {
         ctx.add_test_key(key.to_string());
-        set_string(&ctx.client, &ctx.base_url, key, value).await.unwrap();
+        set_string(&ctx.client, &ctx.base_url, key, value)
+            .await
+            .unwrap();
     }
 
     // Test flat pattern matching
-    let res = ctx.client
+    let res = ctx
+        .client
         .post(&format!("{}/redis/string/batch/patterns", ctx.base_url))
-        .json(
-            &json!({
+        .json(&json!({
             "patterns": [
                 "tokenBalance:0x123:ethereum:*",
                 "tokenBalancePending:0x123:ethereum:*"
             ],
             "grouped": false
-        })
-        )
-        .send().await
+        }))
+        .send()
+        .await
         .unwrap();
 
     assert_status_ok(res.status().as_u16());
@@ -318,18 +352,18 @@ async fn test_batch_get_patterns() {
     assert_eq!(results["tokenBalancePending:0x123:ethereum:75"], "75.75");
 
     // Test grouped pattern matching
-    let res = ctx.client
+    let res = ctx
+        .client
         .post(&format!("{}/redis/string/batch/patterns", ctx.base_url))
-        .json(
-            &json!({
+        .json(&json!({
             "patterns": [
                 "tokenBalance:0x123:ethereum:*",
                 "tokenBalancePending:0x123:ethereum:*"
             ],
             "grouped": true
-        })
-        )
-        .send().await
+        }))
+        .send()
+        .await
         .unwrap();
 
     assert_status_ok(res.status().as_u16());
@@ -349,7 +383,10 @@ async fn test_batch_get_patterns() {
 
     // Second pattern should have 2 results
     let second_pattern = &results[1];
-    assert_eq!(second_pattern["pattern"], "tokenBalancePending:0x123:ethereum:*");
+    assert_eq!(
+        second_pattern["pattern"],
+        "tokenBalancePending:0x123:ethereum:*"
+    );
     let second_results = second_pattern["results"].as_object().unwrap();
     assert_eq!(second_results.len(), 2);
 

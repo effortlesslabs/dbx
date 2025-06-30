@@ -1,4 +1,4 @@
-use redis::{ Commands, Connection, FromRedisValue, Pipeline, RedisResult, Script, ToRedisArgs };
+use redis::{Commands, Connection, FromRedisValue, Pipeline, RedisResult, Script, ToRedisArgs};
 
 // Extension trait to add methods to Script that aren't in the original API
 trait ScriptExt {
@@ -77,7 +77,7 @@ impl RedisSortedSet {
         &self,
         key: &str,
         start: isize,
-        stop: isize
+        stop: isize,
     ) -> RedisResult<Vec<(String, f64)>> {
         let mut conn = self.conn.lock().unwrap();
         conn.zrange_withscores(key, start, stop)
@@ -94,7 +94,7 @@ impl RedisSortedSet {
         &self,
         key: &str,
         min: f64,
-        max: f64
+        max: f64,
     ) -> RedisResult<Vec<(String, f64)>> {
         let mut conn = self.conn.lock().unwrap();
         conn.zrangebyscore_withscores(key, min, max)
@@ -107,7 +107,7 @@ impl RedisSortedSet {
         min: f64,
         max: f64,
         offset: isize,
-        count: isize
+        count: isize,
     ) -> RedisResult<Vec<String>> {
         let mut conn = self.conn.lock().unwrap();
         conn.zrangebyscore_limit(key, min, max, offset, count)
@@ -120,7 +120,7 @@ impl RedisSortedSet {
         min: f64,
         max: f64,
         offset: isize,
-        count: isize
+        count: isize,
     ) -> RedisResult<Vec<(String, f64)>> {
         let mut conn = self.conn.lock().unwrap();
         conn.zrangebyscore_limit_withscores(key, min, max, offset, count)
@@ -137,7 +137,7 @@ impl RedisSortedSet {
         &self,
         key: &str,
         start: isize,
-        stop: isize
+        stop: isize,
     ) -> RedisResult<Vec<(String, f64)>> {
         let mut conn = self.conn.lock().unwrap();
         conn.zrevrange_withscores(key, start, stop)
@@ -154,7 +154,7 @@ impl RedisSortedSet {
         &self,
         key: &str,
         max: f64,
-        min: f64
+        min: f64,
     ) -> RedisResult<Vec<(String, f64)>> {
         let mut conn = self.conn.lock().unwrap();
         conn.zrevrangebyscore_withscores(key, max, min)
@@ -167,7 +167,7 @@ impl RedisSortedSet {
         max: f64,
         min: f64,
         offset: isize,
-        count: isize
+        count: isize,
     ) -> RedisResult<Vec<String>> {
         let mut conn = self.conn.lock().unwrap();
         conn.zrevrangebyscore_limit(key, max, min, offset, count)
@@ -180,7 +180,7 @@ impl RedisSortedSet {
         max: f64,
         min: f64,
         offset: isize,
-        count: isize
+        count: isize,
     ) -> RedisResult<Vec<(String, f64)>> {
         let mut conn = self.conn.lock().unwrap();
         conn.zrevrangebyscore_limit_withscores(key, max, min, offset, count)
@@ -251,7 +251,7 @@ impl RedisSortedSet {
         &self,
         destination: &str,
         keys: &[&str],
-        weights: &[f64]
+        weights: &[f64],
     ) -> RedisResult<usize> {
         let mut conn = self.conn.lock().unwrap();
         let key_weight_pairs: Vec<(&str, f64)> = keys
@@ -267,7 +267,7 @@ impl RedisSortedSet {
         &self,
         destination: &str,
         keys: &[&str],
-        weights: &[f64]
+        weights: &[f64],
     ) -> RedisResult<usize> {
         let mut conn = self.conn.lock().unwrap();
         let key_weight_pairs: Vec<(&str, f64)> = keys
@@ -330,7 +330,9 @@ impl RedisSortedSet {
     /// # }
     /// ```
     pub fn with_pipeline<F, T>(&self, f: F) -> RedisResult<T>
-        where F: FnOnce(&mut Pipeline) -> &mut Pipeline, T: FromRedisValue
+    where
+        F: FnOnce(&mut Pipeline) -> &mut Pipeline,
+        T: FromRedisValue,
     {
         let mut conn = self.conn.lock().unwrap();
         let mut pipe = redis::pipe();
@@ -367,7 +369,7 @@ impl RedisSortedSet {
     /// Helper: batch get ranges from multiple sorted sets using pipeline
     pub fn zrange_many(
         &self,
-        set_ranges: Vec<(&str, isize, isize)>
+        set_ranges: Vec<(&str, isize, isize)>,
     ) -> RedisResult<Vec<Vec<String>>> {
         self.with_pipeline(|pipe| {
             for (key, start, stop) in set_ranges {
@@ -444,7 +446,9 @@ impl RedisSortedSet {
     /// # }
     /// ```
     pub fn transaction<F, T>(&self, f: F) -> RedisResult<T>
-        where F: FnOnce(&mut Pipeline) -> &mut Pipeline, T: FromRedisValue
+    where
+        F: FnOnce(&mut Pipeline) -> &mut Pipeline,
+        T: FromRedisValue,
     {
         let mut conn = self.conn.lock().unwrap();
         let mut pipe = redis::pipe();
@@ -504,7 +508,10 @@ impl RedisSortedSet {
     /// # }
     /// ```
     pub fn eval_script<T, K, A>(&self, script: &Script, keys: K, args: A) -> RedisResult<T>
-        where T: FromRedisValue, K: ToRedisArgs, A: ToRedisArgs
+    where
+        T: FromRedisValue,
+        K: ToRedisArgs,
+        A: ToRedisArgs,
     {
         let mut conn = self.conn.lock().unwrap();
         script.key(keys).arg(args).invoke(&mut *conn)
@@ -515,10 +522,11 @@ impl RedisSortedSet {
         pipe: &'a mut Pipeline,
         script: &Script,
         keys: K,
-        args: A
-    )
-        -> &'a mut Pipeline
-        where K: ToRedisArgs, A: ToRedisArgs
+        args: A,
+    ) -> &'a mut Pipeline
+    where
+        K: ToRedisArgs,
+        A: ToRedisArgs,
     {
         // Add the script to the pipeline manually
         let mut eval_cmd = redis::cmd("EVAL");
@@ -558,7 +566,7 @@ impl RedisSortedSet {
             local rank = redis.call('ZRANK', KEYS[1], ARGV[1])
             redis.call('ZADD', KEYS[1], ARGV[2], ARGV[1])
             return rank
-            "#
+            "#,
         )
     }
 
@@ -573,7 +581,7 @@ impl RedisSortedSet {
             else
                 return nil
             end
-            "#
+            "#,
         )
     }
 
@@ -588,7 +596,7 @@ impl RedisSortedSet {
             else
                 return nil
             end
-            "#
+            "#,
         )
     }
 
@@ -604,7 +612,7 @@ impl RedisSortedSet {
             else
                 return 0
             end
-            "#
+            "#,
         )
     }
 
@@ -625,7 +633,7 @@ impl RedisSortedSet {
             local rank = redis.call('ZREVRANK', key, member)
             
             return {normalized, rank}
-            "#
+            "#,
         )
     }
 
@@ -651,7 +659,7 @@ impl RedisSortedSet {
             local total = redis.call('ZCARD', key)
             
             return {rank, total}
-            "#
+            "#,
         )
     }
 
@@ -678,7 +686,7 @@ impl RedisSortedSet {
             -- Return the member's rank and whether it made it to top-K
             local rank = redis.call('ZREVRANK', key, member)
             return {rank, rank ~= nil and rank < k}
-            "#
+            "#,
         )
     }
 
@@ -705,7 +713,7 @@ impl RedisSortedSet {
             else
                 return nil
             end
-            "#
+            "#,
         )
     }
 }
@@ -713,22 +721,19 @@ impl RedisSortedSet {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use redis::pipe;
-    use std::sync::{ Arc, Mutex };
     use crate::test_helpers::get_test_redis_url;
+    use redis::pipe;
+    use std::sync::{Arc, Mutex};
 
     // Create a connection for tests that's used just for compilation
     fn create_test_connection() -> Arc<Mutex<redis::Connection>> {
         // For tests, just create a client but don't actually connect
         // This allows the tests to compile without needing a Redis server
-        let redis_url = std::env
-            ::var("REDIS_URL")
-            .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
-        let client = redis::Client
-            ::open(redis_url)
-            .unwrap_or_else(|_| {
-                redis::Client::open("redis://localhost:6379").expect("Creating test client")
-            });
+        let redis_url =
+            std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+        let client = redis::Client::open(redis_url).unwrap_or_else(|_| {
+            redis::Client::open("redis://localhost:6379").expect("Creating test client")
+        });
 
         // In real tests, you would use actual connections or proper mocks
         // We'll just create a connection object for compilation's sake
@@ -737,14 +742,11 @@ mod tests {
             Err(_) => {
                 // If we can't connect (which is expected in tests), create a fake
                 // Note: This is just to make the tests compile, they're marked as #[ignore]
-                let client = redis::Client
-                    ::open("redis://localhost:6379")
-                    .expect("Creating test client");
-                let conn = client
-                    .get_connection()
-                    .unwrap_or_else(|_| {
-                        panic!("This test is only for compilation and is marked as ignored")
-                    });
+                let client =
+                    redis::Client::open("redis://localhost:6379").expect("Creating test client");
+                let conn = client.get_connection().unwrap_or_else(|_| {
+                    panic!("This test is only for compilation and is marked as ignored")
+                });
                 Arc::new(Mutex::new(conn))
             }
         }
@@ -759,13 +761,7 @@ mod tests {
         let redis_sorted_set = RedisSortedSet::new(conn);
 
         // Just make sure these compile
-        let _zadd_cmd = redis_sorted_set.zadd(
-            "test_zset",
-            &[
-                (1.0, "member1"),
-                (2.0, "member2"),
-            ]
-        );
+        let _zadd_cmd = redis_sorted_set.zadd("test_zset", &[(1.0, "member1"), (2.0, "member2")]);
         let _zrange_cmd = redis_sorted_set.zrange("test_zset", 0, -1);
         let _zrem_cmd = redis_sorted_set.zrem("test_zset", &["member1"]);
         let _zcard_cmd = redis_sorted_set.zcard("test_zset");
@@ -807,9 +803,18 @@ mod tests {
 
         // Test data for batch operations
         let zset_data = vec![
-            ("zset1", vec![(1.0, "member1"), (2.0, "member2"), (3.0, "member3")]),
-            ("zset2", vec![(2.0, "member2"), (3.0, "member3"), (4.0, "member4")]),
-            ("zset3", vec![(1.0, "member1"), (4.0, "member4"), (5.0, "member5")])
+            (
+                "zset1",
+                vec![(1.0, "member1"), (2.0, "member2"), (3.0, "member3")],
+            ),
+            (
+                "zset2",
+                vec![(2.0, "member2"), (3.0, "member3"), (4.0, "member4")],
+            ),
+            (
+                "zset3",
+                vec![(1.0, "member1"), (4.0, "member4"), (5.0, "member5")],
+            ),
         ];
 
         // Just check that these methods compile correctly
@@ -856,7 +861,7 @@ mod tests {
             &mut pipe,
             &add_script,
             &["zset1"],
-            &["member1", "10.0"]
+            &["member1", "10.0"],
         );
     }
 
@@ -887,36 +892,27 @@ mod examples {
     #[ignore = "This example is for demonstration only"]
     fn example_patterns() {
         // Create a connection for examples
-        let redis_url = std::env
-            ::var("REDIS_URL")
-            .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
-        let client = redis::Client
-            ::open(redis_url)
-            .unwrap_or_else(|_| {
-                redis::Client::open("redis://localhost:6379").expect("Creating example client")
-            });
+        let redis_url =
+            std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+        let client = redis::Client::open(redis_url).unwrap_or_else(|_| {
+            redis::Client::open("redis://localhost:6379").expect("Creating example client")
+        });
 
         // This won't actually be used in ignored tests
-        let conn = Arc::new(
-            Mutex::new(
-                client
-                    .get_connection()
-                    .unwrap_or_else(|_| {
-                        panic!("This example is only for demonstration and is marked as ignored")
-                    })
-            )
-        );
+        let conn = Arc::new(Mutex::new(client.get_connection().unwrap_or_else(|_| {
+            panic!("This example is only for demonstration and is marked as ignored")
+        })));
 
         let redis_sorted_set = RedisSortedSet::new(conn);
 
         // Create a script for demonstration
         let incr_script = RedisSortedSet::create_script(
-            "return redis.call('ZINCRBY', KEYS[1], ARGV[1], ARGV[2])"
+            "return redis.call('ZINCRBY', KEYS[1], ARGV[1], ARGV[2])",
         );
 
         // Example 1: Pipeline with multiple sorted set operations
-        let _: Result<(usize, Vec<String>), redis::RedisError> = redis_sorted_set.with_pipeline(
-            |pipe| {
+        let _: Result<(usize, Vec<String>), redis::RedisError> =
+            redis_sorted_set.with_pipeline(|pipe| {
                 pipe.cmd("ZADD")
                     .arg("zset1")
                     .arg(1.0)
@@ -929,8 +925,7 @@ mod examples {
                     .arg(-1)
                     .cmd("ZCARD")
                     .arg("zset1")
-            }
-        );
+            });
 
         // Example 2: Transaction with multiple sorted set operations
         let _: Result<(usize, usize), redis::RedisError> = redis_sorted_set.transaction(|pipe| {
@@ -948,26 +943,23 @@ mod examples {
         });
 
         // Example 3: Using scripts in pipelines
-        let _: Result<(f64, Vec<String>), redis::RedisError> = redis_sorted_set.with_pipeline(
-            |pipe| {
+        let _: Result<(f64, Vec<String>), redis::RedisError> =
+            redis_sorted_set.with_pipeline(|pipe| {
                 RedisSortedSet::add_script_to_pipeline(
                     pipe,
                     &incr_script,
                     &["zset1"],
-                    &["1.5", "member1"]
+                    &["1.5", "member1"],
                 );
 
                 pipe.cmd("ZRANGE").arg("zset1").arg(0).arg(-1)
-            }
-        );
+            });
 
         // Example 4: Batch operations
-        let _ = redis_sorted_set.zadd_many(
-            vec![
-                ("batch:zset1", vec![(1.0, "member1"), (2.0, "member2")]),
-                ("batch:zset2", vec![(2.0, "member2"), (3.0, "member3")])
-            ]
-        );
+        let _ = redis_sorted_set.zadd_many(vec![
+            ("batch:zset1", vec![(1.0, "member1"), (2.0, "member2")]),
+            ("batch:zset2", vec![(2.0, "member2"), (3.0, "member3")]),
+        ]);
 
         // Example 5: Sorted set operations
         let _ = redis_sorted_set.zrange("zset1", 0, -1);

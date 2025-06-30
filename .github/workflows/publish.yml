@@ -82,10 +82,31 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Run Rust tests
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Run clippy
+        run: cargo clippy --all -- -D warnings
+
+      - name: Build crates package
+        run: cargo build --all --verbose
+
+      - name: Make script executable
+        run: chmod +x scripts/test-with-server.sh
+
+      - name: Run tests with server
         run: |
-          cargo test --all
-          cargo clippy --all -- -D warnings
+          # Create .env file for testing
+          cat > .env << EOF
+          REDIS_URL=redis://localhost:6379
+          HOST=0.0.0.0
+          PORT=3000
+          POOL_SIZE=10
+          LOG_LEVEL=INFO
+          EOF
+
+          # Run tests using the script
+          ./scripts/test-with-server.sh --verbose
         env:
           REDIS_URL: redis://localhost:6379
 

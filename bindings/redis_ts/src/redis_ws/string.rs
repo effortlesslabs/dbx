@@ -1,8 +1,8 @@
-use napi::bindgen_prelude::*;
-use napi_derive::napi;
+use dbx_redis_client::common::string::StringOperation;
 use dbx_redis_client::redis_ws::WsClient;
 use dbx_redis_client::StringOperations;
-use dbx_redis_client::common::string::StringOperation;
+use napi::bindgen_prelude::*;
+use napi_derive::napi;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 
@@ -26,10 +26,14 @@ impl WsStringClient {
         self.runtime.block_on(async move {
             let mut ws_client = client.as_ref().clone();
             let mut string_client = ws_client
-                .string().await
+                .string()
+                .await
                 .map_err(|e| Error::from_reason(e.to_string()))?;
 
-            string_client.get(&key).await.map_err(|e| Error::from_reason(e.to_string()))
+            string_client
+                .get(&key)
+                .await
+                .map_err(|e| Error::from_reason(e.to_string()))
         })
     }
 
@@ -41,11 +45,13 @@ impl WsStringClient {
         self.runtime.block_on(async move {
             let mut ws_client = client.as_ref().clone();
             let mut string_client = ws_client
-                .string().await
+                .string()
+                .await
                 .map_err(|e| Error::from_reason(e.to_string()))?;
 
             string_client
-                .set(&key, &value, ttl).await
+                .set(&key, &value, ttl)
+                .await
                 .map(|_| true)
                 .map_err(|e| Error::from_reason(e.to_string()))
         })
@@ -58,11 +64,13 @@ impl WsStringClient {
         self.runtime.block_on(async move {
             let mut ws_client = client.as_ref().clone();
             let mut string_client = ws_client
-                .string().await
+                .string()
+                .await
                 .map_err(|e| Error::from_reason(e.to_string()))?;
 
             string_client
-                .set_simple(&key, &value).await
+                .set_simple(&key, &value)
+                .await
                 .map(|_| true)
                 .map_err(|e| Error::from_reason(e.to_string()))
         })
@@ -75,11 +83,13 @@ impl WsStringClient {
         self.runtime.block_on(async move {
             let mut ws_client = client.as_ref().clone();
             let mut string_client = ws_client
-                .string().await
+                .string()
+                .await
                 .map_err(|e| Error::from_reason(e.to_string()))?;
 
             string_client
-                .set_with_ttl(&key, &value, ttl as u64).await
+                .set_with_ttl(&key, &value, ttl as u64)
+                .await
                 .map(|_| true)
                 .map_err(|e| Error::from_reason(e.to_string()))
         })
@@ -92,10 +102,14 @@ impl WsStringClient {
         self.runtime.block_on(async move {
             let mut ws_client = client.as_ref().clone();
             let mut string_client = ws_client
-                .string().await
+                .string()
+                .await
                 .map_err(|e| Error::from_reason(e.to_string()))?;
 
-            string_client.delete(&key).await.map_err(|e| Error::from_reason(e.to_string()))
+            string_client
+                .delete(&key)
+                .await
+                .map_err(|e| Error::from_reason(e.to_string()))
         })
     }
 
@@ -106,23 +120,23 @@ impl WsStringClient {
         self.runtime.block_on(async move {
             let mut ws_client = client.as_ref().clone();
             let mut string_client = ws_client
-                .string().await
+                .string()
+                .await
                 .map_err(|e| Error::from_reason(e.to_string()))?;
 
             let info = string_client
-                .info(&key).await
+                .info(&key)
+                .await
                 .map_err(|e| Error::from_reason(e.to_string()))?;
 
-            Ok(
-                info.map(|i| StringInfoJs {
-                    key: i.key,
-                    value: i.value,
-                    ttl: i.ttl.map(|t| t as i64),
-                    type_: i.type_,
-                    encoding: i.encoding,
-                    size: i.size as u32,
-                })
-            )
+            Ok(info.map(|i| StringInfoJs {
+                key: i.key,
+                value: i.value,
+                ttl: i.ttl.map(|t| t as i64),
+                type_: i.type_,
+                encoding: i.encoding,
+                size: i.size as u32,
+            }))
         })
     }
 
@@ -133,10 +147,14 @@ impl WsStringClient {
         self.runtime.block_on(async move {
             let mut ws_client = client.as_ref().clone();
             let mut string_client = ws_client
-                .string().await
+                .string()
+                .await
                 .map_err(|e| Error::from_reason(e.to_string()))?;
 
-            string_client.batch_get(&keys).await.map_err(|e| Error::from_reason(e.to_string()))
+            string_client
+                .batch_get(&keys)
+                .await
+                .map_err(|e| Error::from_reason(e.to_string()))
         })
     }
 
@@ -156,11 +174,13 @@ impl WsStringClient {
         self.runtime.block_on(async move {
             let mut ws_client = client.as_ref().clone();
             let mut string_client = ws_client
-                .string().await
+                .string()
+                .await
                 .map_err(|e| Error::from_reason(e.to_string()))?;
 
             string_client
-                .batch_set(&operations).await
+                .batch_set(&operations)
+                .await
                 .map_err(|e| Error::from_reason(e.to_string()))
         })
     }
@@ -172,11 +192,13 @@ impl WsStringClient {
         self.runtime.block_on(async move {
             let mut ws_client = client.as_ref().clone();
             let mut string_client = ws_client
-                .string().await
+                .string()
+                .await
                 .map_err(|e| Error::from_reason(e.to_string()))?;
 
             let result = string_client
-                .get_by_patterns(&patterns, grouped).await
+                .get_by_patterns(&patterns, grouped)
+                .await
                 .map_err(|e| Error::from_reason(e.to_string()))?;
 
             serde_json::to_string(&result).map_err(|e| Error::from_reason(e.to_string()))

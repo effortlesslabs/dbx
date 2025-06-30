@@ -1,8 +1,8 @@
 use crate::redis::RedisResult;
-use redis::{ Connection };
+use redis::Connection;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::sync::{ Arc, Mutex };
-use serde::{ Serialize, Deserialize };
+use std::sync::{Arc, Mutex};
 
 /// Provides administrative operations for Redis.
 ///
@@ -193,7 +193,11 @@ impl AdminOperations {
     /// ```
     pub fn config_set(&self, parameter: &str, value: &str) -> RedisResult<()> {
         let mut conn = self.conn.lock().unwrap();
-        redis::cmd("CONFIG").arg("SET").arg(parameter).arg(value).query(&mut *conn)
+        redis::cmd("CONFIG")
+            .arg("SET")
+            .arg(parameter)
+            .arg(value)
+            .query(&mut *conn)
     }
 
     /// Retrieves the value of a Redis server configuration parameter.
@@ -217,13 +221,19 @@ impl AdminOperations {
     /// ```
     pub fn config_get(&self, parameter: &str) -> RedisResult<String> {
         let mut conn = self.conn.lock().unwrap();
-        let result: Vec<String> = redis::cmd("CONFIG").arg("GET").arg(parameter).query(&mut *conn)?;
+        let result: Vec<String> = redis::cmd("CONFIG")
+            .arg("GET")
+            .arg(parameter)
+            .query(&mut *conn)?;
         if result.len() >= 2 {
             Ok(result[1].clone())
         } else {
             // If we don't get enough results, the parameter probably doesn't exist
             // Return the original error from the query
-            redis::cmd("CONFIG").arg("GET").arg(parameter).query(&mut *conn)
+            redis::cmd("CONFIG")
+                .arg("GET")
+                .arg(parameter)
+                .query(&mut *conn)
         }
     }
 
@@ -803,8 +813,7 @@ mod tests {
         let initial_size = admin.dbsize().unwrap();
 
         // Add some test data with unique keys to avoid conflicts
-        let timestamp = std::time::SystemTime
-            ::now()
+        let timestamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_millis();
@@ -831,8 +840,7 @@ mod tests {
         admin.flushdb().unwrap();
         let size_after_flushdb = admin.dbsize().unwrap();
         assert_eq!(
-            size_after_flushdb,
-            0,
+            size_after_flushdb, 0,
             "Expected database size to be 0 after flushdb, but got {}",
             size_after_flushdb
         );
@@ -841,8 +849,7 @@ mod tests {
         redis.string().set(&key3, "value3").unwrap();
         let size_after_add_again = admin.dbsize().unwrap();
         assert_eq!(
-            size_after_add_again,
-            1,
+            size_after_add_again, 1,
             "Expected database size to be 1 after adding one key, but got {}",
             size_after_add_again
         );
@@ -851,8 +858,7 @@ mod tests {
         admin.flushall().unwrap();
         let size_after_flushall = admin.dbsize().unwrap();
         assert_eq!(
-            size_after_flushall,
-            0,
+            size_after_flushall, 0,
             "Expected database size to be 0 after flushall, but got {}",
             size_after_flushall
         );

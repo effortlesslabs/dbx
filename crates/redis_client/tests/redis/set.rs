@@ -1,7 +1,7 @@
 //! Tests for HTTP Redis set operations
 
-use dbx_redis_client::{ HttpClient, error::Result, SetOperations };
 use crate::utils;
+use dbx_redis_client::{error::Result, HttpClient, SetOperations};
 
 #[tokio::test]
 async fn test_set_operations() -> Result<()> {
@@ -14,7 +14,9 @@ async fn test_set_operations() -> Result<()> {
     assert_eq!(added, 1);
 
     // Test add multiple members
-    let added_many = set_client.add_many(&test_key, &["member2", "member3", "member4"]).await?;
+    let added_many = set_client
+        .add_many(&test_key, &["member2", "member3", "member4"])
+        .await?;
     assert_eq!(added_many, 3);
 
     // Test cardinality
@@ -57,13 +59,19 @@ async fn test_set_operations_multiple_sets() -> Result<()> {
     let set3_key = utils::unique_key("set3");
 
     // Populate set1: {a, b, c, d}
-    set_client.add_many(&set1_key, &["a", "b", "c", "d"]).await?;
+    set_client
+        .add_many(&set1_key, &["a", "b", "c", "d"])
+        .await?;
 
     // Populate set2: {b, c, e, f}
-    set_client.add_many(&set2_key, &["b", "c", "e", "f"]).await?;
+    set_client
+        .add_many(&set2_key, &["b", "c", "e", "f"])
+        .await?;
 
     // Populate set3: {c, d, g, h}
-    set_client.add_many(&set3_key, &["c", "d", "g", "h"]).await?;
+    set_client
+        .add_many(&set3_key, &["c", "d", "g", "h"])
+        .await?;
 
     let keys = vec![set1_key.clone(), set2_key.clone(), set3_key.clone()];
 
@@ -119,7 +127,9 @@ async fn test_set_concurrent_operations() -> Result<()> {
 
     // Wait for all operations to complete
     for handle in handles {
-        handle.await.map_err(|e| dbx_redis_client::error::DbxError::Other(anyhow::anyhow!("{}", e)))??;
+        handle
+            .await
+            .map_err(|e| dbx_redis_client::error::DbxError::Other(anyhow::anyhow!("{}", e)))??;
     }
 
     Ok(())
@@ -136,13 +146,15 @@ async fn test_set_large_operations() -> Result<()> {
     let large_members: Vec<String> = (0..1000).map(|i| format!("member_{}", i)).collect();
 
     // Test adding large set
-    let added = set_client.add_many(
-        &test_key,
-        &large_members
-            .iter()
-            .map(|s| s.as_str())
-            .collect::<Vec<&str>>()
-    ).await?;
+    let added = set_client
+        .add_many(
+            &test_key,
+            &large_members
+                .iter()
+                .map(|s| s.as_str())
+                .collect::<Vec<&str>>(),
+        )
+        .await?;
     assert_eq!(added, 1000);
 
     // Test cardinality

@@ -1,7 +1,7 @@
+use dbx_redis_client::redis_ws::WsClient;
+use dbx_redis_client::HttpClient;
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
-use dbx_redis_client::HttpClient;
-use dbx_redis_client::redis_ws::WsClient;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 
@@ -10,8 +10,8 @@ pub mod redis;
 pub mod redis_ws;
 
 // Re-export WebSocket types at crate root for NAPI
-pub use redis_ws::string::WsStringClient;
 pub use redis_ws::set::WsSetClient;
+pub use redis_ws::string::WsStringClient;
 
 /// NAPI wrapper for DBX Redis Client (HTTP)
 #[napi]
@@ -49,9 +49,8 @@ impl DbxRedisClient {
         let runtime = Arc::new(Runtime::new().map_err(|e| Error::from_reason(e.to_string()))?);
         let timeout = std::time::Duration::from_millis(timeout_ms as u64);
         let client = runtime.block_on(async {
-            HttpClient::with_timeout(&base_url, timeout).map_err(|e|
-                Error::from_reason(e.to_string())
-            )
+            HttpClient::with_timeout(&base_url, timeout)
+                .map_err(|e| Error::from_reason(e.to_string()))
         })?;
 
         Ok(Self {
@@ -85,7 +84,9 @@ impl DbxWsClient {
     pub fn new(ws_url: String) -> Result<Self> {
         let runtime = Arc::new(Runtime::new().map_err(|e| Error::from_reason(e.to_string()))?);
         let client = runtime.block_on(async {
-            WsClient::new(&ws_url).await.map_err(|e| Error::from_reason(e.to_string()))
+            WsClient::new(&ws_url)
+                .await
+                .map_err(|e| Error::from_reason(e.to_string()))
         })?;
 
         Ok(Self {

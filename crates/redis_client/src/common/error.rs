@@ -1,14 +1,11 @@
-use std::fmt;
 use anyhow;
+use std::fmt;
 
 /// Custom error type for DBX SDK operations
 #[derive(Debug)]
 pub enum DbxError {
     /// API returned an error response
-    Api {
-        status: u16,
-        message: String,
-    },
+    Api { status: u16, message: String },
     /// Invalid URL
     InvalidUrl(url::ParseError),
     /// JSON serialization/deserialization error

@@ -1,9 +1,7 @@
 use crate::{
+    common::{client::http, HttpClientBase, SetOperations},
     error::Result,
-    common::{ SetOperations, HttpClientBase, client::http },
-    SetMemberRequest,
-    SetMembersRequest,
-    SetKeysRequest,
+    SetKeysRequest, SetMemberRequest, SetMembersRequest,
 };
 #[cfg(feature = "http")]
 use reqwest::Client;
@@ -48,10 +46,7 @@ impl SetOperations for HttpSetClient {
     async fn add_many(&mut self, key: &str, members: &[&str]) -> Result<usize> {
         let url = self.base_url.join(&format!("redis/set/{}/many", key))?;
         let request = SetMembersRequest {
-            members: members
-                .iter()
-                .map(|&s| s.to_string())
-                .collect(),
+            members: members.iter().map(|&s| s.to_string()).collect(),
         };
 
         let response = self.client.post(url).json(&request).send().await?;
@@ -60,7 +55,9 @@ impl SetOperations for HttpSetClient {
 
     /// Remove a member from a set
     async fn remove(&mut self, key: &str, member: &str) -> Result<usize> {
-        let url = self.base_url.join(&format!("redis/set/{}/{}", key, member))?;
+        let url = self
+            .base_url
+            .join(&format!("redis/set/{}/{}", key, member))?;
         let response = self.client.delete(url).send().await?;
         http::handle_response(response, &format!("remove member from set: {}", key)).await
     }
@@ -74,14 +71,18 @@ impl SetOperations for HttpSetClient {
 
     /// Get the cardinality (size) of a set
     async fn cardinality(&mut self, key: &str) -> Result<usize> {
-        let url = self.base_url.join(&format!("redis/set/{}/cardinality", key))?;
+        let url = self
+            .base_url
+            .join(&format!("redis/set/{}/cardinality", key))?;
         let response = self.client.get(url).send().await?;
         http::handle_response(response, &format!("get cardinality of set: {}", key)).await
     }
 
     /// Check if a member exists in a set
     async fn exists(&mut self, key: &str, member: &str) -> Result<bool> {
-        let url = self.base_url.join(&format!("redis/set/{}/{}/exists", key, member))?;
+        let url = self
+            .base_url
+            .join(&format!("redis/set/{}/{}/exists", key, member))?;
         let response = self.client.get(url).send().await?;
         http::handle_response(response, &format!("check member existence in set: {}", key)).await
     }

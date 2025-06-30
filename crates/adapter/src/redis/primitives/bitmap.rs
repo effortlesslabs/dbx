@@ -1,4 +1,4 @@
-use redis::{ Commands, Connection, FromRedisValue, Pipeline, RedisResult, Script, ToRedisArgs };
+use redis::{Commands, Connection, FromRedisValue, Pipeline, RedisResult, Script, ToRedisArgs};
 
 // Extension trait to add methods to Script that aren't in the original API
 trait ScriptExt {
@@ -65,13 +65,21 @@ impl RedisBitmap {
     /// Counts the number of set bits (population counting) in a string within a range
     pub fn bitcount_range(&self, key: &str, start: i64, end: i64) -> RedisResult<u64> {
         let mut conn = self.conn.lock().unwrap();
-        redis::cmd("BITCOUNT").arg(key).arg(start).arg(end).query(&mut *conn)
+        redis::cmd("BITCOUNT")
+            .arg(key)
+            .arg(start)
+            .arg(end)
+            .query(&mut *conn)
     }
 
     /// Performs a bitwise operation between multiple keys and stores the result
     pub fn bitop(&self, operation: &str, destkey: &str, keys: &[&str]) -> RedisResult<u64> {
         let mut conn = self.conn.lock().unwrap();
-        redis::cmd("BITOP").arg(operation).arg(destkey).arg(keys).query(&mut *conn)
+        redis::cmd("BITOP")
+            .arg(operation)
+            .arg(destkey)
+            .arg(keys)
+            .query(&mut *conn)
     }
 
     /// Performs a bitwise AND operation between multiple keys and stores the result
@@ -92,21 +100,33 @@ impl RedisBitmap {
     /// Performs a bitwise NOT operation on a key and stores the result
     pub fn bitop_not(&self, destkey: &str, sourcekey: &str) -> RedisResult<u64> {
         let mut conn = self.conn.lock().unwrap();
-        redis::cmd("BITOP").arg("NOT").arg(destkey).arg(sourcekey).query(&mut *conn)
+        redis::cmd("BITOP")
+            .arg("NOT")
+            .arg(destkey)
+            .arg(sourcekey)
+            .query(&mut *conn)
     }
 
     /// Returns the position of the first bit set to 1 or 0 in a string
     pub fn bitpos(&self, key: &str, bit: bool) -> RedisResult<i64> {
         let mut conn = self.conn.lock().unwrap();
         let bit_value = if bit { 1 } else { 0 };
-        redis::cmd("BITPOS").arg(key).arg(bit_value).query(&mut *conn)
+        redis::cmd("BITPOS")
+            .arg(key)
+            .arg(bit_value)
+            .query(&mut *conn)
     }
 
     /// Returns the position of the first bit set to 1 or 0 in a string within a range
     pub fn bitpos_range(&self, key: &str, bit: bool, start: i64, end: i64) -> RedisResult<i64> {
         let mut conn = self.conn.lock().unwrap();
         let bit_value = if bit { 1 } else { 0 };
-        redis::cmd("BITPOS").arg(key).arg(bit_value).arg(start).arg(end).query(&mut *conn)
+        redis::cmd("BITPOS")
+            .arg(key)
+            .arg(bit_value)
+            .arg(start)
+            .arg(end)
+            .query(&mut *conn)
     }
 
     /// Returns the position of the first bit set to 1 or 0 in a string within a range with byte granularity
@@ -115,12 +135,11 @@ impl RedisBitmap {
         key: &str,
         bit: bool,
         start: i64,
-        end: i64
+        end: i64,
     ) -> RedisResult<i64> {
         let mut conn = self.conn.lock().unwrap();
         let bit_value = if bit { 1 } else { 0 };
-        redis
-            ::cmd("BITPOS")
+        redis::cmd("BITPOS")
             .arg(key)
             .arg(bit_value)
             .arg(start)
@@ -135,12 +154,11 @@ impl RedisBitmap {
         key: &str,
         bit: bool,
         start: i64,
-        end: i64
+        end: i64,
     ) -> RedisResult<i64> {
         let mut conn = self.conn.lock().unwrap();
         let bit_value = if bit { 1 } else { 0 };
-        redis
-            ::cmd("BITPOS")
+        redis::cmd("BITPOS")
             .arg(key)
             .arg(bit_value)
             .arg(start)
@@ -203,14 +221,17 @@ impl RedisBitmap {
     pub fn set_bits_from_bytes(&self, key: &str, offset: u64, bytes: &[u8]) -> RedisResult<()> {
         let mut conn = self.conn.lock().unwrap();
         // Set the string value starting at the specified offset
-        redis::cmd("SETRANGE").arg(key).arg(offset).arg(bytes).query(&mut *conn)
+        redis::cmd("SETRANGE")
+            .arg(key)
+            .arg(offset)
+            .arg(bytes)
+            .query(&mut *conn)
     }
 
     /// Gets multiple bits as bytes
     pub fn get_bits_as_bytes(&self, key: &str, offset: u64, length: u64) -> RedisResult<Vec<u8>> {
         let mut conn = self.conn.lock().unwrap();
-        redis
-            ::cmd("GETRANGE")
+        redis::cmd("GETRANGE")
             .arg(key)
             .arg(offset)
             .arg(offset + length - 1)
@@ -238,7 +259,9 @@ impl RedisBitmap {
     /// # }
     /// ```
     pub fn with_pipeline<F, T>(&self, f: F) -> RedisResult<T>
-        where F: FnOnce(&mut Pipeline) -> &mut Pipeline, T: FromRedisValue
+    where
+        F: FnOnce(&mut Pipeline) -> &mut Pipeline,
+        T: FromRedisValue,
     {
         let mut conn = self.conn.lock().unwrap();
         let mut pipe = redis::pipe();
@@ -250,7 +273,7 @@ impl RedisBitmap {
     pub fn setbit_many(
         &self,
         key: &str,
-        bit_offsets: Vec<(usize, bool)>
+        bit_offsets: Vec<(usize, bool)>,
     ) -> RedisResult<Vec<bool>> {
         self.with_pipeline(|pipe| {
             for (offset, value) in bit_offsets {
@@ -331,7 +354,9 @@ impl RedisBitmap {
     /// # }
     /// ```
     pub fn transaction<F, T>(&self, f: F) -> RedisResult<T>
-        where F: FnOnce(&mut Pipeline) -> &mut Pipeline, T: FromRedisValue
+    where
+        F: FnOnce(&mut Pipeline) -> &mut Pipeline,
+        T: FromRedisValue,
     {
         let mut conn = self.conn.lock().unwrap();
         let mut pipe = redis::pipe();
@@ -389,7 +414,10 @@ impl RedisBitmap {
     /// # }
     /// ```
     pub fn eval_script<T, K, A>(&self, script: &Script, keys: K, args: A) -> RedisResult<T>
-        where T: FromRedisValue, K: ToRedisArgs, A: ToRedisArgs
+    where
+        T: FromRedisValue,
+        K: ToRedisArgs,
+        A: ToRedisArgs,
     {
         let mut conn = self.conn.lock().unwrap();
         script.key(keys).arg(args).invoke(&mut *conn)
@@ -400,10 +428,11 @@ impl RedisBitmap {
         pipe: &'a mut Pipeline,
         script: &Script,
         keys: K,
-        args: A
-    )
-        -> &'a mut Pipeline
-        where K: ToRedisArgs, A: ToRedisArgs
+        args: A,
+    ) -> &'a mut Pipeline
+    where
+        K: ToRedisArgs,
+        A: ToRedisArgs,
     {
         // Add the script to the pipeline manually
         let mut eval_cmd = redis::cmd("EVAL");
@@ -444,7 +473,7 @@ impl RedisBitmap {
             local previous = redis.call('GETBIT', KEYS[1], ARGV[1])
             redis.call('SETBIT', KEYS[1], ARGV[1], ARGV[2])
             return previous
-            "#
+            "#,
         )
     }
 
@@ -455,7 +484,7 @@ impl RedisBitmap {
             local count = redis.call('BITCOUNT', KEYS[1])
             redis.call('SETBIT', KEYS[1], ARGV[1], ARGV[2])
             return count
-            "#
+            "#,
         )
     }
 
@@ -470,7 +499,7 @@ impl RedisBitmap {
             else
                 return -1
             end
-            "#
+            "#,
         )
     }
 
@@ -494,7 +523,7 @@ impl RedisBitmap {
             else
                 return redis.error_reply("Invalid operation")
             end
-            "#
+            "#,
         )
     }
 
@@ -529,7 +558,7 @@ impl RedisBitmap {
             else
                 return 1  -- Item might be present
             end
-            "#
+            "#,
         )
     }
 
@@ -561,7 +590,7 @@ impl RedisBitmap {
             else
                 return 1  -- Request allowed
             end
-            "#
+            "#,
         )
     }
 
@@ -579,7 +608,7 @@ impl RedisBitmap {
             
             -- Return total count of unique visitors
             return redis.call('BITCOUNT', key)
-            "#
+            "#,
         )
     }
 }
@@ -587,22 +616,19 @@ impl RedisBitmap {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use redis::pipe;
-    use std::sync::{ Arc, Mutex };
     use crate::test_helpers::get_test_redis_url;
+    use redis::pipe;
+    use std::sync::{Arc, Mutex};
 
     // Create a connection for tests that's used just for compilation
     fn create_test_connection() -> Arc<Mutex<redis::Connection>> {
         // For tests, just create a client but don't actually connect
         // This allows the tests to compile without needing a Redis server
-        let redis_url = std::env
-            ::var("REDIS_URL")
-            .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
-        let client = redis::Client
-            ::open(redis_url)
-            .unwrap_or_else(|_| {
-                redis::Client::open("redis://localhost:6379").expect("Creating test client")
-            });
+        let redis_url =
+            std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+        let client = redis::Client::open(redis_url).unwrap_or_else(|_| {
+            redis::Client::open("redis://localhost:6379").expect("Creating test client")
+        });
 
         // In real tests, you would use actual connections or proper mocks
         // We'll just create a connection object for compilation's sake
@@ -611,14 +637,11 @@ mod tests {
             Err(_) => {
                 // If we can't connect (which is expected in tests), create a fake
                 // Note: This is just to make the tests compile, they're marked as #[ignore]
-                let client = redis::Client
-                    ::open("redis://localhost:6379")
-                    .expect("Creating test client");
-                let conn = client
-                    .get_connection()
-                    .unwrap_or_else(|_| {
-                        panic!("This test is only for compilation and is marked as ignored")
-                    });
+                let client =
+                    redis::Client::open("redis://localhost:6379").expect("Creating test client");
+                let conn = client.get_connection().unwrap_or_else(|_| {
+                    panic!("This test is only for compilation and is marked as ignored")
+                });
                 Arc::new(Mutex::new(conn))
             }
         }
@@ -725,32 +748,22 @@ mod examples {
     #[ignore = "This example is for demonstration only"]
     fn example_patterns() {
         // Create a connection for examples
-        let redis_url = std::env
-            ::var("REDIS_URL")
-            .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
-        let client = redis::Client
-            ::open(redis_url)
-            .unwrap_or_else(|_| {
-                redis::Client::open("redis://localhost:6379").expect("Creating example client")
-            });
+        let redis_url =
+            std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+        let client = redis::Client::open(redis_url).unwrap_or_else(|_| {
+            redis::Client::open("redis://localhost:6379").expect("Creating example client")
+        });
 
         // This won't actually be used in ignored tests
-        let conn = Arc::new(
-            Mutex::new(
-                client
-                    .get_connection()
-                    .unwrap_or_else(|_| {
-                        panic!("This example is only for demonstration and is marked as ignored")
-                    })
-            )
-        );
+        let conn = Arc::new(Mutex::new(client.get_connection().unwrap_or_else(|_| {
+            panic!("This example is only for demonstration and is marked as ignored")
+        })));
 
         let redis_bitmap = RedisBitmap::new(conn);
 
         // Create a script for demonstration
-        let setbit_script = RedisBitmap::create_script(
-            "return redis.call('SETBIT', KEYS[1], ARGV[1], ARGV[2])"
-        );
+        let setbit_script =
+            RedisBitmap::create_script("return redis.call('SETBIT', KEYS[1], ARGV[1], ARGV[2])");
 
         // Example 1: Pipeline with multiple bitmap operations
         let _: Result<(bool, u64), redis::RedisError> = redis_bitmap.with_pipeline(|pipe| {

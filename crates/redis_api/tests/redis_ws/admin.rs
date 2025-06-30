@@ -1,32 +1,44 @@
-use tokio_tungstenite::{ connect_async, tungstenite::protocol::Message };
-use futures::{ SinkExt, StreamExt };
-use serde_json::{ json, Value };
-use url::Url;
 use crate::get_test_server;
+use futures::{SinkExt, StreamExt};
+use serde_json::{json, Value};
+use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
+use url::Url;
 
 async fn connect_to_admin_ws() -> (
     futures::stream::SplitSink<
-        tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>,
-        Message
+        tokio_tungstenite::WebSocketStream<
+            tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>,
+        >,
+        Message,
     >,
-    futures::stream::SplitStream<tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>>,
+    futures::stream::SplitStream<
+        tokio_tungstenite::WebSocketStream<
+            tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>,
+        >,
+    >,
 ) {
     let server = get_test_server().await;
     let ws_url = format!("ws://{}/redis_ws/admin/ws", server.addr);
-    let (ws_stream, _) = connect_async(Url::parse(&ws_url).unwrap()).await.expect(
-        "Failed to connect"
-    );
+    let (ws_stream, _) = connect_async(Url::parse(&ws_url).unwrap())
+        .await
+        .expect("Failed to connect");
     let (write, read) = ws_stream.split();
     (write, read)
 }
 
 async fn send_message_and_get_response(
     write: &mut futures::stream::SplitSink<
-        tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>,
-        Message
+        tokio_tungstenite::WebSocketStream<
+            tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>,
+        >,
+        Message,
     >,
-    read: &mut futures::stream::SplitStream<tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>>,
-    message: Value
+    read: &mut futures::stream::SplitStream<
+        tokio_tungstenite::WebSocketStream<
+            tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>,
+        >,
+    >,
+    message: Value,
 ) -> Value {
     let message_str = serde_json::to_string(&message).unwrap();
     write.send(Message::Text(message_str)).await.unwrap();

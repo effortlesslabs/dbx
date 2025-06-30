@@ -1,14 +1,14 @@
 //! Integration tests for redis_rs crate
 
+pub mod common;
 pub mod redis;
 pub mod redis_ws;
-pub mod common;
 
 /// Test utilities and common functionality
 
 /// Test utilities and helpers
 pub mod utils {
-    use std::time::{ SystemTime, UNIX_EPOCH, Duration };
+    use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
     /// Get test HTTP server URL
     pub fn http_test_url() -> String {
@@ -22,7 +22,10 @@ pub mod utils {
 
     /// Generate a unique test key
     pub fn unique_key(prefix: &str) -> String {
-        let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis();
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_millis();
         format!("{}_{}_{}", prefix, timestamp, rand::random::<u32>())
     }
 

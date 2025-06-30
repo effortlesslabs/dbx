@@ -2,13 +2,13 @@ pub mod common;
 pub mod redis;
 pub mod redis_ws;
 
-use std::sync::Arc;
 use dbx_redis_api::{
-    config::{ Config, DatabaseType },
-    server::Server,
+    config::{Config, DatabaseType},
     constants::defaults::Defaults,
+    server::Server,
 };
 use std::net::SocketAddr;
+use std::sync::Arc;
 
 // Load environment variables from .env file for tests
 #[ctor::ctor]
@@ -24,13 +24,11 @@ pub struct TestServer {
 impl TestServer {
     pub async fn new() -> anyhow::Result<Self> {
         let config = Config {
-            database_url: std::env
-                ::var("REDIS_URL")
+            database_url: std::env::var("REDIS_URL")
                 .unwrap_or_else(|_| Defaults::REDIS_URL.to_string()),
             host: std::env::var("HOST").unwrap_or_else(|_| Defaults::HOST.to_string()),
             port: 0, // Use port 0 for random available port
-            pool_size: std::env
-                ::var("POOL_SIZE")
+            pool_size: std::env::var("POOL_SIZE")
                 .unwrap_or_else(|_| Defaults::POOL_SIZE.to_string())
                 .parse()
                 .unwrap_or(Defaults::POOL_SIZE),
@@ -48,11 +46,11 @@ impl TestServer {
         let app = self.server.create_router();
         let listener = tokio::net::TcpListener::bind(self.addr).await?;
         tokio::spawn(async move {
-            if
-                let Err(e) = axum::serve(
-                    listener,
-                    app.into_make_service_with_connect_info::<std::net::SocketAddr>()
-                ).await
+            if let Err(e) = axum::serve(
+                listener,
+                app.into_make_service_with_connect_info::<std::net::SocketAddr>(),
+            )
+            .await
             {
                 eprintln!("Server error: {}", e);
             }
@@ -63,8 +61,13 @@ impl TestServer {
 }
 
 pub async fn get_test_server() -> Arc<TestServer> {
-    let test_server = TestServer::new().await.expect("Failed to create test server");
-    test_server.start().await.expect("Failed to start test server");
+    let test_server = TestServer::new()
+        .await
+        .expect("Failed to create test server");
+    test_server
+        .start()
+        .await
+        .expect("Failed to start test server");
     Arc::new(test_server)
 }
 
