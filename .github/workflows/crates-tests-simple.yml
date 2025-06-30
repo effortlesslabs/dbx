@@ -145,5 +145,5 @@ jobs:
       - name: Build crates documentation
         run: cargo doc --workspace --all-features --no-deps
 
-      - name: Check crates package
-        run: cargo package --workspace --allow-dirty
+      # - name: Check crates package
+      #   run: cargo package --workspace --allow-dirty

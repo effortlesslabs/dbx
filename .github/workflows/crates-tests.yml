@@ -97,8 +97,8 @@ jobs:
           LOG_LEVEL=INFO
           EOF
 
-          # Run tests using the script
-          ./scripts/test-with-server.sh --verbose
+          # Run tests using the script (skip Redis since it's provided as service)
+          ./scripts/test-with-server.sh --verbose --skip-redis
         env:
           REDIS_URL: redis://localhost:6379
 

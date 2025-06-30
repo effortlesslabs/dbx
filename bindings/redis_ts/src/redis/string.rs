@@ -19,10 +19,13 @@ impl StringClient {
     #[napi]
     pub fn get(&self, key: String) -> Result<Option<String>> {
         let client = self.client.clone();
-        self.runtime.block_on(async move { client
+        self.runtime.block_on(async move {
+            client
                 .string()
-                .get(&key).await
-                .map_err(|e| Error::from_reason(e.to_string())) })
+                .get(&key)
+                .await
+                .map_err(|e| Error::from_reason(e.to_string()))
+        })
     }
 
     /// Set a string value
@@ -30,43 +33,55 @@ impl StringClient {
     pub fn set(&self, key: String, value: String, ttl: Option<u32>) -> Result<bool> {
         let client = self.client.clone();
         let ttl = ttl.map(|t| t as u64);
-        self.runtime.block_on(async move { client
+        self.runtime.block_on(async move {
+            client
                 .string()
-                .set(&key, &value, ttl).await
+                .set(&key, &value, ttl)
+                .await
                 .map(|_| true)
-                .map_err(|e| Error::from_reason(e.to_string())) })
+                .map_err(|e| Error::from_reason(e.to_string()))
+        })
     }
 
     /// Set a string value without TTL
     #[napi]
     pub fn set_simple(&self, key: String, value: String) -> Result<bool> {
         let client = self.client.clone();
-        self.runtime.block_on(async move { client
+        self.runtime.block_on(async move {
+            client
                 .string()
-                .set_simple(&key, &value).await
+                .set_simple(&key, &value)
+                .await
                 .map(|_| true)
-                .map_err(|e| Error::from_reason(e.to_string())) })
+                .map_err(|e| Error::from_reason(e.to_string()))
+        })
     }
 
     /// Set a string value with TTL
     #[napi]
     pub fn set_with_ttl(&self, key: String, value: String, ttl: u32) -> Result<bool> {
         let client = self.client.clone();
-        self.runtime.block_on(async move { client
+        self.runtime.block_on(async move {
+            client
                 .string()
-                .set_with_ttl(&key, &value, ttl as u64).await
+                .set_with_ttl(&key, &value, ttl as u64)
+                .await
                 .map(|_| true)
-                .map_err(|e| Error::from_reason(e.to_string())) })
+                .map_err(|e| Error::from_reason(e.to_string()))
+        })
     }
 
     /// Delete a string value
     #[napi]
     pub fn delete(&self, key: String) -> Result<bool> {
         let client = self.client.clone();
-        self.runtime.block_on(async move { client
+        self.runtime.block_on(async move {
+            client
                 .string()
-                .delete(&key).await
-                .map_err(|e| Error::from_reason(e.to_string())) })
+                .delete(&key)
+                .await
+                .map_err(|e| Error::from_reason(e.to_string()))
+        })
     }
 
     /// Get string information
@@ -76,18 +91,17 @@ impl StringClient {
         self.runtime.block_on(async move {
             let info = client
                 .string()
-                .info(&key).await
+                .info(&key)
+                .await
                 .map_err(|e| Error::from_reason(e.to_string()))?;
-            Ok(
-                info.map(|i| StringInfoJs {
-                    key: i.key,
-                    value: i.value,
-                    ttl: i.ttl,
-                    type_: i.type_,
-                    encoding: i.encoding,
-                    size: i.size as u32,
-                })
-            )
+            Ok(info.map(|i| StringInfoJs {
+                key: i.key,
+                value: i.value,
+                ttl: i.ttl,
+                type_: i.type_,
+                encoding: i.encoding,
+                size: i.size as u32,
+            }))
         })
     }
 
@@ -95,10 +109,13 @@ impl StringClient {
     #[napi]
     pub fn batch_get(&self, keys: Vec<String>) -> Result<Vec<Option<String>>> {
         let client = self.client.clone();
-        self.runtime.block_on(async move { client
+        self.runtime.block_on(async move {
+            client
                 .string()
-                .batch_get(&keys).await
-                .map_err(|e| Error::from_reason(e.to_string())) })
+                .batch_get(&keys)
+                .await
+                .map_err(|e| Error::from_reason(e.to_string()))
+        })
     }
 
     /// Batch set multiple strings
@@ -114,10 +131,13 @@ impl StringClient {
             })
             .collect();
 
-        self.runtime.block_on(async move { client
+        self.runtime.block_on(async move {
+            client
                 .string()
-                .batch_set(&operations).await
-                .map_err(|e| Error::from_reason(e.to_string())) })
+                .batch_set(&operations)
+                .await
+                .map_err(|e| Error::from_reason(e.to_string()))
+        })
     }
 
     /// Get strings by patterns
@@ -127,7 +147,8 @@ impl StringClient {
         self.runtime.block_on(async move {
             let result = client
                 .string()
-                .get_by_patterns(&patterns, grouped).await
+                .get_by_patterns(&patterns, grouped)
+                .await
                 .map_err(|e| Error::from_reason(e.to_string()))?;
             serde_json::to_string(&result).map_err(|e| Error::from_reason(e.to_string()))
         })

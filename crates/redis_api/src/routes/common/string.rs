@@ -1,7 +1,7 @@
 use dbx_adapter::redis::primitives::string::RedisString;
 use redis::Connection;
-use serde::{ Deserialize, Serialize };
-use std::sync::{ Arc, Mutex };
+use serde::{Deserialize, Serialize};
+use std::sync::{Arc, Mutex};
 
 // Type alias for complex return type
 type PatternGroupedResults = Vec<(String, Vec<(String, Option<String>)>)>;
@@ -51,7 +51,7 @@ pub fn set_string_with_ttl(
     conn: Arc<Mutex<Connection>>,
     key: &str,
     value: &str,
-    ttl: u64
+    ttl: u64,
 ) -> redis::RedisResult<()> {
     redis_string(conn).set_with_expiry(key, value, ttl as usize)
 }
@@ -70,7 +70,7 @@ pub fn delete_string(conn: Arc<Mutex<Connection>>, key: &str) -> redis::RedisRes
 
 pub fn get_string_info(
     conn: Arc<Mutex<Connection>>,
-    key: &str
+    key: &str,
 ) -> redis::RedisResult<Option<StringInfo>> {
     let redis_str = redis_string(conn.clone());
     let type_ = if redis_str.exists(key)? {
@@ -82,16 +82,14 @@ pub fn get_string_info(
     let ttl = redis_str.ttl(key).ok();
     let encoding = "raw".to_string();
     let size = value.len();
-    Ok(
-        Some(StringInfo {
-            key: key.to_string(),
-            value,
-            ttl,
-            type_,
-            encoding,
-            size,
-        })
-    )
+    Ok(Some(StringInfo {
+        key: key.to_string(),
+        value,
+        ttl,
+        type_,
+        encoding,
+        size,
+    }))
 }
 
 pub fn increment_string(conn: Arc<Mutex<Connection>>, key: &str) -> redis::RedisResult<i64> {
@@ -101,7 +99,7 @@ pub fn increment_string(conn: Arc<Mutex<Connection>>, key: &str) -> redis::Redis
 pub fn increment_string_by(
     conn: Arc<Mutex<Connection>>,
     key: &str,
-    amount: i64
+    amount: i64,
 ) -> redis::RedisResult<i64> {
     redis_string(conn).incr_by(key, amount)
 }
@@ -113,7 +111,7 @@ pub fn decrement_string(conn: Arc<Mutex<Connection>>, key: &str) -> redis::Redis
 pub fn decrement_string_by(
     conn: Arc<Mutex<Connection>>,
     key: &str,
-    amount: i64
+    amount: i64,
 ) -> redis::RedisResult<i64> {
     redis_string(conn).decr_by(key, amount)
 }
@@ -121,21 +119,18 @@ pub fn decrement_string_by(
 pub fn append_string(
     conn: Arc<Mutex<Connection>>,
     key: &str,
-    value: &str
+    value: &str,
 ) -> redis::RedisResult<usize> {
     redis_string(conn).append(key, value)
 }
 
 pub fn get_string_length(
     conn: Arc<Mutex<Connection>>,
-    key: &str
+    key: &str,
 ) -> redis::RedisResult<Option<usize>> {
     let redis_str = redis_string(conn);
     if redis_str.exists(key)? {
-        let len = redis_str
-            .get(key)?
-            .map(|v| v.len())
-            .unwrap_or(0);
+        let len = redis_str.get(key)?.map(|v| v.len()).unwrap_or(0);
         Ok(Some(len))
     } else {
         Ok(None)
@@ -148,19 +143,16 @@ pub fn get_string_length(
 
 pub fn get_multiple_strings(
     conn: Arc<Mutex<Connection>>,
-    keys: &[String]
+    keys: &[String],
 ) -> redis::RedisResult<Vec<Option<String>>> {
     let redis_str = redis_string(conn);
-    let key_refs: Vec<&str> = keys
-        .iter()
-        .map(|k| k.as_str())
-        .collect();
+    let key_refs: Vec<&str> = keys.iter().map(|k| k.as_str()).collect();
     redis_str.get_many(key_refs)
 }
 
 pub fn set_multiple_strings(
     conn: Arc<Mutex<Connection>>,
-    operations: &[StringOperation]
+    operations: &[StringOperation],
 ) -> redis::RedisResult<()> {
     let redis_str = redis_string(conn);
     let mut kvs = Vec::new();
@@ -182,7 +174,7 @@ pub fn set_multiple_strings(
 /// Get multiple strings by patterns, expanding each pattern to matching keys
 pub fn get_strings_by_patterns(
     conn: Arc<Mutex<Connection>>,
-    patterns: &[String]
+    patterns: &[String],
 ) -> redis::RedisResult<Vec<(String, Option<String>)>> {
     let redis_str = redis_string(conn);
     let mut results = Vec::new();
@@ -196,10 +188,7 @@ pub fn get_strings_by_patterns(
             results.push((pattern.clone(), None));
         } else {
             // Get values for all matching keys
-            let key_refs: Vec<&str> = matching_keys
-                .iter()
-                .map(|k| k.as_str())
-                .collect();
+            let key_refs: Vec<&str> = matching_keys.iter().map(|k| k.as_str()).collect();
             let values = redis_str.get_many(key_refs)?;
 
             // Combine keys with their values
@@ -215,7 +204,7 @@ pub fn get_strings_by_patterns(
 /// Get multiple strings by patterns, returning results grouped by pattern
 pub fn get_strings_by_patterns_grouped(
     conn: Arc<Mutex<Connection>>,
-    patterns: &[String]
+    patterns: &[String],
 ) -> redis::RedisResult<PatternGroupedResults> {
     let redis_str = redis_string(conn);
     let mut results = Vec::new();
@@ -229,17 +218,12 @@ pub fn get_strings_by_patterns_grouped(
             results.push((pattern.clone(), Vec::new()));
         } else {
             // Get values for all matching keys
-            let key_refs: Vec<&str> = matching_keys
-                .iter()
-                .map(|k| k.as_str())
-                .collect();
+            let key_refs: Vec<&str> = matching_keys.iter().map(|k| k.as_str()).collect();
             let values = redis_str.get_many(key_refs)?;
 
             // Combine keys with their values
-            let pattern_results: Vec<(String, Option<String>)> = matching_keys
-                .into_iter()
-                .zip(values.into_iter())
-                .collect();
+            let pattern_results: Vec<(String, Option<String>)> =
+                matching_keys.into_iter().zip(values.into_iter()).collect();
 
             results.push((pattern.clone(), pattern_results));
         }

@@ -39,6 +39,7 @@ ENV_FILE=".env"
 REDIS_URL=""
 SERVER_PORT="3000"
 SKIP_SERVER=false
+SKIP_REDIS=false
 SKIP_CLEANUP=false
 VERBOSE=false
 SERVER_PID=""
@@ -63,6 +64,10 @@ while [[ $# -gt 0 ]]; do
             SKIP_SERVER=true
             shift
             ;;
+        --skip-redis)
+            SKIP_REDIS=true
+            shift
+            ;;
         --skip-cleanup)
             SKIP_CLEANUP=true
             shift
@@ -79,6 +84,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --redis-url <url>       Redis connection URL (overrides .env)"
             echo "  --server-port <port>    Server port (default: 3000)"
             echo "  --skip-server           Skip starting server (assume it's already running)"
+            echo "  --skip-redis            Skip starting Redis"
             echo "  --skip-cleanup          Don't stop server after tests"
             echo "  --verbose               Enable verbose output"
             echo "  --help                  Show this help message"
@@ -154,6 +160,11 @@ load_environment() {
 
 # Start Redis service
 start_redis() {
+    if [ "$SKIP_REDIS" = true ]; then
+        log_info "Skipping Redis start (--skip-redis flag)"
+        return 0
+    fi
+    
     log_step "Starting Redis service..."
     
     # Check if Redis is already running

@@ -1,18 +1,11 @@
 use crate::routes::common::set::{
-    add_to_set,
-    delete_set,
-    difference_sets,
-    get_set_cardinality,
-    get_set_members,
-    intersect_sets,
-    remove_from_set,
-    set_exists,
-    union_sets,
+    add_to_set, delete_set, difference_sets, get_set_cardinality, get_set_members, intersect_sets,
+    remove_from_set, set_exists, union_sets,
 };
 use axum::{
-    extract::{ Json, Path, State },
+    extract::{Json, Path, State},
     http::StatusCode,
-    routing::{ delete, get, post },
+    routing::{delete, get, post},
     Router,
 };
 use dbx_adapter::redis::client::RedisPool;
@@ -38,13 +31,14 @@ struct SetKeysRequest {
 async fn add_to_set_handler(
     State(pool): State<Arc<RedisPool>>,
     Path(key): Path<String>,
-    Json(payload): Json<SetMemberRequest>
+    Json(payload): Json<SetMemberRequest>,
 ) -> Result<Json<usize>, StatusCode> {
-    let conn = pool.get_connection().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let conn = pool
+        .get_connection()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let conn_arc = Arc::new(std::sync::Mutex::new(conn));
-    let added = add_to_set(conn_arc, &key, &[&payload.member]).map_err(
-        |_| StatusCode::INTERNAL_SERVER_ERROR
-    )?;
+    let added = add_to_set(conn_arc, &key, &[&payload.member])
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Json(added))
 }
 
@@ -52,44 +46,45 @@ async fn add_to_set_handler(
 async fn add_many_to_set_handler(
     State(pool): State<Arc<RedisPool>>,
     Path(key): Path<String>,
-    Json(payload): Json<SetMembersRequest>
+    Json(payload): Json<SetMembersRequest>,
 ) -> Result<Json<usize>, StatusCode> {
     // If members array is empty, return 0 (no members added)
     if payload.members.is_empty() {
         return Ok(Json(0));
     }
 
-    let conn = pool.get_connection().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let conn = pool
+        .get_connection()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let conn_arc = Arc::new(std::sync::Mutex::new(conn));
-    let member_refs: Vec<&str> = payload.members
-        .iter()
-        .map(|s| s.as_str())
-        .collect();
-    let added = add_to_set(conn_arc, &key, &member_refs).map_err(
-        |_| StatusCode::INTERNAL_SERVER_ERROR
-    )?;
+    let member_refs: Vec<&str> = payload.members.iter().map(|s| s.as_str()).collect();
+    let added =
+        add_to_set(conn_arc, &key, &member_refs).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Json(added))
 }
 
 // Remove member from set
 async fn remove_from_set_handler(
     State(pool): State<Arc<RedisPool>>,
-    Path((key, member)): Path<(String, String)>
+    Path((key, member)): Path<(String, String)>,
 ) -> Result<Json<usize>, StatusCode> {
-    let conn = pool.get_connection().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let conn = pool
+        .get_connection()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let conn_arc = Arc::new(std::sync::Mutex::new(conn));
-    let removed = remove_from_set(conn_arc, &key, &[&member]).map_err(
-        |_| StatusCode::INTERNAL_SERVER_ERROR
-    )?;
+    let removed = remove_from_set(conn_arc, &key, &[&member])
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Json(removed))
 }
 
 // Get all set members
 async fn get_set_members_handler(
     State(pool): State<Arc<RedisPool>>,
-    Path(key): Path<String>
+    Path(key): Path<String>,
 ) -> Result<Json<Vec<String>>, StatusCode> {
-    let conn = pool.get_connection().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let conn = pool
+        .get_connection()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let conn_arc = Arc::new(std::sync::Mutex::new(conn));
     let members = get_set_members(conn_arc, &key).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Json(members))
@@ -98,57 +93,56 @@ async fn get_set_members_handler(
 // Get set cardinality
 async fn get_set_cardinality_handler(
     State(pool): State<Arc<RedisPool>>,
-    Path(key): Path<String>
+    Path(key): Path<String>,
 ) -> Result<Json<usize>, StatusCode> {
-    let conn = pool.get_connection().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let conn = pool
+        .get_connection()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let conn_arc = Arc::new(std::sync::Mutex::new(conn));
-    let cardinality = get_set_cardinality(conn_arc, &key).map_err(
-        |_| StatusCode::INTERNAL_SERVER_ERROR
-    )?;
+    let cardinality =
+        get_set_cardinality(conn_arc, &key).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Json(cardinality))
 }
 
 // Check if member exists in set
 async fn set_exists_handler(
     State(pool): State<Arc<RedisPool>>,
-    Path((key, member)): Path<(String, String)>
+    Path((key, member)): Path<(String, String)>,
 ) -> Result<Json<bool>, StatusCode> {
-    let conn = pool.get_connection().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let conn = pool
+        .get_connection()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let conn_arc = Arc::new(std::sync::Mutex::new(conn));
-    let exists = set_exists(conn_arc, &key, &member).map_err(
-        |_| StatusCode::INTERNAL_SERVER_ERROR
-    )?;
+    let exists =
+        set_exists(conn_arc, &key, &member).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Json(exists))
 }
 
 // Intersect sets
 async fn intersect_sets_handler(
     State(pool): State<Arc<RedisPool>>,
-    Json(payload): Json<SetKeysRequest>
+    Json(payload): Json<SetKeysRequest>,
 ) -> Result<Json<Vec<String>>, StatusCode> {
-    let conn = pool.get_connection().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let conn = pool
+        .get_connection()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let conn_arc = Arc::new(std::sync::Mutex::new(conn));
-    let key_refs: Vec<&str> = payload.keys
-        .iter()
-        .map(|k| k.as_str())
-        .collect();
-    let result = intersect_sets(conn_arc, &key_refs).map_err(
-        |_| StatusCode::INTERNAL_SERVER_ERROR
-    )?;
+    let key_refs: Vec<&str> = payload.keys.iter().map(|k| k.as_str()).collect();
+    let result =
+        intersect_sets(conn_arc, &key_refs).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Json(result))
 }
 
 // Union sets
 async fn union_sets_handler(
     State(pool): State<Arc<RedisPool>>,
-    Json(payload): Json<SetKeysRequest>
+    Json(payload): Json<SetKeysRequest>,
 ) -> Result<Json<Vec<String>>, StatusCode> {
-    let conn = pool.get_connection().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let conn = pool
+        .get_connection()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let conn_arc = Arc::new(std::sync::Mutex::new(conn));
-    let key_refs: Vec<&str> = payload.keys
-        .iter()
-        .map(|k| k.as_str())
-        .collect();
+    let key_refs: Vec<&str> = payload.keys.iter().map(|k| k.as_str()).collect();
     let result = union_sets(conn_arc, &key_refs).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Json(result))
 }
@@ -156,26 +150,26 @@ async fn union_sets_handler(
 // Difference of sets
 async fn difference_sets_handler(
     State(pool): State<Arc<RedisPool>>,
-    Json(payload): Json<SetKeysRequest>
+    Json(payload): Json<SetKeysRequest>,
 ) -> Result<Json<Vec<String>>, StatusCode> {
-    let conn = pool.get_connection().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let conn = pool
+        .get_connection()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let conn_arc = Arc::new(std::sync::Mutex::new(conn));
-    let key_refs: Vec<&str> = payload.keys
-        .iter()
-        .map(|k| k.as_str())
-        .collect();
-    let result = difference_sets(conn_arc, &key_refs).map_err(
-        |_| StatusCode::INTERNAL_SERVER_ERROR
-    )?;
+    let key_refs: Vec<&str> = payload.keys.iter().map(|k| k.as_str()).collect();
+    let result =
+        difference_sets(conn_arc, &key_refs).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Json(result))
 }
 
 // Delete entire set
 async fn delete_set_handler(
     State(pool): State<Arc<RedisPool>>,
-    Path(key): Path<String>
+    Path(key): Path<String>,
 ) -> Result<Json<bool>, StatusCode> {
-    let conn = pool.get_connection().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let conn = pool
+        .get_connection()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let conn_arc = Arc::new(std::sync::Mutex::new(conn));
     let deleted = delete_set(conn_arc, &key).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Json(deleted))
