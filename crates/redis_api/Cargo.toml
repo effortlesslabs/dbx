@@ -12,7 +12,7 @@ name = "dbx-redis-api"
 path = "src/main.rs"
 
 [dependencies]
-dbx-adapter = { path = "../adapter", features = ["async", "connection-pool"] }
+dbx-adapter = { path = "../adapter", version = "0.1.6", features = ["async", "connection-pool"] }
 axum = { workspace = true, features = ["ws"] }
 tokio = { workspace = true, features = ["full"] }
 serde = { workspace = true }

@@ -4,8 +4,8 @@
 //! Redis connections, including support for connection pooling and different
 //! connection types.
 
-use redis::{Client, Connection, RedisError, RedisResult};
-use std::sync::{Arc, Mutex};
+use redis::{ Client, Connection, RedisError, RedisResult };
+use std::sync::{ Arc, Mutex };
 
 use super::primitives::hash::RedisHash;
 use super::primitives::set::RedisSet;
@@ -185,5 +185,5 @@ pub fn create_pool(url: &str, pool_size: u32) -> RedisResult<RedisPool> {
 
 /// Convert a Redis error to a standard error message
 pub fn format_redis_error(error: &RedisError) -> String {
-    format!("Redis error: {}", error)
+    format!("Redis error: {error}")
 }

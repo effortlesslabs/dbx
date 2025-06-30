@@ -1,9 +1,8 @@
-use axum::{extract::State, http::StatusCode, Json};
-use dbx_adapter::redis::primitives::admin::{AdminOperations, HealthCheck, ServerStatus};
+use dbx_adapter::redis::primitives::admin::{ AdminOperations, HealthCheck, ServerStatus };
 use redis::Connection;
-use serde::{Deserialize, Serialize};
+use serde::{ Deserialize, Serialize };
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::{ Arc, Mutex };
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ConfigSetRequest {
@@ -47,7 +46,7 @@ pub fn get_server_info(conn: Arc<Mutex<Connection>>) -> redis::RedisResult<Strin
 
 pub fn get_server_info_section(
     conn: Arc<Mutex<Connection>>,
-    section: &str,
+    section: &str
 ) -> redis::RedisResult<String> {
     redis_admin(conn).info_section(section)
 }
@@ -81,19 +80,19 @@ pub fn server_status(conn: Arc<Mutex<Connection>>) -> redis::RedisResult<ServerS
 // =========================
 
 pub fn get_memory_stats(
-    conn: Arc<Mutex<Connection>>,
+    conn: Arc<Mutex<Connection>>
 ) -> redis::RedisResult<HashMap<String, String>> {
     redis_admin(conn).memory_stats()
 }
 
 pub fn get_client_stats(
-    conn: Arc<Mutex<Connection>>,
+    conn: Arc<Mutex<Connection>>
 ) -> redis::RedisResult<HashMap<String, String>> {
     redis_admin(conn).client_stats()
 }
 
 pub fn get_server_stats(
-    conn: Arc<Mutex<Connection>>,
+    conn: Arc<Mutex<Connection>>
 ) -> redis::RedisResult<HashMap<String, String>> {
     redis_admin(conn).server_stats()
 }
@@ -105,7 +104,7 @@ pub fn get_server_stats(
 pub fn config_set(
     conn: Arc<Mutex<Connection>>,
     parameter: &str,
-    value: &str,
+    value: &str
 ) -> redis::RedisResult<()> {
     redis_admin(conn).config_set(parameter, value)
 }
