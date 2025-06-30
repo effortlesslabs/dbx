@@ -86,10 +86,10 @@ jobs:
       - name: Start DBX server
         run: |
           # Build the server
-          cargo build -p redis_api --release
+          cargo build -p dbx-redis-api --release
 
           # Start the server in background
-          nohup cargo run -p redis_api --release > server.log 2>&1 &
+          nohup cargo run -p dbx-redis-api --release > server.log 2>&1 &
           echo $! > server.pid
 
           # Wait for server to start
