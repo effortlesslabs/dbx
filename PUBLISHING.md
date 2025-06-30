@@ -14,7 +14,7 @@ DBX consists of multiple components that need to be published:
 
 ### Required Accounts
 
-- **Docker Hub**: [effortlesslabs](https://hub.docker.com/r/effortlesslabs)
+- **Docker Hub**: [effortlesslabs/0dbx_redis](https://hub.docker.com/r/effortlesslabs/0dbx_redis)
 - **NPM**: [@0dbx](https://www.npmjs.com/org/0dbx)
 - **GitHub**: [effortlesslabs/dbx](https://github.com/effortlesslabs/dbx)
 
@@ -51,8 +51,8 @@ Cargo.toml: [workspace.package].version = "0.1.6"
 bindings/redis_ts/package.json: "version": "0.1.6"
 
 # Docker image tags
-effortlesslabs/dbx:0.1.6
-effortlesslabs/dbx:latest
+effortlesslabs/0dbx_redis:0.1.6
+effortlesslabs/0dbx_redis:latest
 ```
 
 ## Publishing Process
@@ -86,7 +86,7 @@ cargo test
 cd bindings/redis_ts && npm test && cd ../..
 
 # Test Docker build
-docker build -t effortlesslabs/dbx:test .
+docker build -t effortlesslabs/0dbx_redis:test .
 ```
 
 ### 3. Publish TypeScript SDK
@@ -110,14 +110,14 @@ npm view @0dbx/redis version
 ```bash
 # Build multi-arch image
 docker buildx build --platform linux/amd64,linux/arm64 \
-  -t effortlesslabs/dbx:0.1.6 \
-  -t effortlesslabs/dbx:latest \
+  -t effortlesslabs/0dbx_redis:0.1.6 \
+  -t effortlesslabs/0dbx_redis:latest \
   --push .
 
 # Build AMD64-only image (for Railway)
 docker buildx build --platform linux/amd64 \
-  -t effortlesslabs/dbx:0.1.6-amd64-only \
-  -t effortlesslabs/dbx:latest-amd64-only \
+  -t effortlesslabs/0dbx_redis:0.1.6-amd64-only \
+  -t effortlesslabs/0dbx_redis:latest-amd64-only \
   --push .
 ```
 
@@ -244,14 +244,14 @@ cd ../..
 # Build and push Docker image
 echo "🐳 Building and pushing Docker image..."
 docker buildx build --platform linux/amd64,linux/arm64 \
-  -t effortlesslabs/dbx:$VERSION \
-  -t effortlesslabs/dbx:latest \
+  -t effortlesslabs/0dbx_redis:$VERSION \
+  -t effortlesslabs/0dbx_redis:latest \
   --push .
 
 # Build AMD64-only image
 docker buildx build --platform linux/amd64 \
-  -t effortlesslabs/dbx:$VERSION-amd64-only \
-  -t effortlesslabs/dbx:latest-amd64-only \
+  -t effortlesslabs/0dbx_redis:$VERSION-amd64-only \
+  -t effortlesslabs/0dbx_redis:latest-amd64-only \
   --push .
 
 echo "✅ Published DBX v$VERSION successfully!"
@@ -277,19 +277,19 @@ npm publish --access public
 npm view @0dbx/redis version
 ```
 
-### Docker Image (effortlesslabs/dbx)
+### Docker Image (effortlesslabs/0dbx_redis)
 
 ```bash
 # Build multi-arch image
 docker buildx build --platform linux/amd64,linux/arm64 \
-  -t effortlesslabs/dbx:0.1.6 \
-  -t effortlesslabs/dbx:latest \
+  -t effortlesslabs/0dbx_redis:0.1.6 \
+  -t effortlesslabs/0dbx_redis:latest \
   --push .
 
 # Build AMD64-only image (for Railway)
 docker buildx build --platform linux/amd64 \
-  -t effortlesslabs/dbx:0.1.6-amd64-only \
-  -t effortlesslabs/dbx:latest-amd64-only \
+  -t effortlesslabs/0dbx_redis:0.1.6-amd64-only \
+  -t effortlesslabs/0dbx_redis:latest-amd64-only \
   --push .
 ```
 
@@ -318,111 +318,21 @@ docker buildx build --platform linux/amd64 \
 ### Docker
 
 ```bash
-docker pull effortlesslabs/dbx:0.1.6
+docker pull effortlesslabs/0dbx_redis:0.1.6
 ```
+````
+
 ````
 
 ### TypeScript SDK
 
 ```bash
 npm install @0dbx/redis@0.1.6
-```
+````
 
 ## 🔗 Links
 
 - [Documentation](https://docs.dbx.dev)
 - [GitHub Repository](https://github.com/effortlesslabs/dbx)
-- [Docker Hub](https://hub.docker.com/r/effortlesslabs/dbx)
+- [Docker Hub](https://hub.docker.com/r/effortlesslabs/0dbx_redis)
 - [NPM Package](https://www.npmjs.com/package/@0dbx/redis)
-
-````
-
-## Troubleshooting
-
-### Common Issues
-
-#### NPM Publishing Issues
-
-```bash
-# Check NPM login status
-npm whoami
-
-# Login to NPM
-npm login --scope=@0dbx
-
-# Check package.json
-cat bindings/redis_ts/package.json
-
-# Test build
-cd bindings/redis_ts && npm run build && cd ../..
-````
-
-#### Docker Publishing Issues
-
-```bash
-# Check Docker login
-docker login
-
-# Check buildx
-docker buildx ls
-
-# Create new builder if needed
-docker buildx create --name mybuilder --use
-
-# Inspect image
-docker buildx imagetools inspect effortlesslabs/dbx:latest
-```
-
-#### Version Mismatch Issues
-
-```bash
-# Check all version locations
-grep -r "0.1.6" Cargo.toml bindings/redis_ts/package.json Dockerfile
-
-# Update all versions
-./scripts/update-version.sh 0.1.6
-```
-
-### Rollback Process
-
-```bash
-# Rollback Docker image
-docker tag effortlesslabs/dbx:0.1.5 effortlesslabs/dbx:latest
-docker push effortlesslabs/dbx:latest
-
-# Rollback NPM package
-npm unpublish @0dbx/redis@0.1.6
-
-# Rollback git tag
-git tag -d v0.1.6
-git push origin :refs/tags/v0.1.6
-```
-
-## Best Practices
-
-### Before Publishing
-
-1. **Run all tests**: `cargo test && npm test`
-2. **Check documentation**: Ensure docs are up to date
-3. **Test Docker image**: `docker run -d --name test-dbx effortlesslabs/dbx:test`
-4. **Verify TypeScript SDK**: Test in a sample project
-
-### After Publishing
-
-1. **Verify Docker image**: Pull and test the published image
-2. **Verify NPM package**: Install and test the published package
-3. **Update documentation**: Update any version-specific docs
-4. **Announce release**: Post on GitHub, social media, etc.
-
-### Security Considerations
-
-1. **Rotate tokens regularly**: Update Docker and NPM tokens
-2. **Use secrets**: Store tokens in GitHub Secrets
-3. **Audit dependencies**: Regularly update dependencies
-4. **Scan images**: Use Docker Scout or similar tools
-
-## Next Steps
-
-- [Development Guide](DEVELOPMENT.md) - Set up development environment
-- [Contributing Guide](CONTRIBUTING.md) - How to contribute to DBX
-- [Testing Guide](TESTING_WORKFLOW.md) - Testing procedures

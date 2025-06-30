@@ -10,11 +10,13 @@ services:
     restart: unless-stopped
     networks:
       - dbx-network
+    volumes:
+      - redis_data:/data
 
   # DBX API service
   dbx-api:
     # Use published image (replace with your Docker Hub username)
-    # image: effortlesslabs/dbx:latest
+    # image: effortlesslabs/0dbx_redis:latest
     # Or build from local Dockerfile
     build:
       context: .
@@ -42,6 +44,9 @@ services:
     restart: unless-stopped
     networks:
       - dbx-network
+
+volumes:
+  redis_data:
 
 networks:
   dbx-network:

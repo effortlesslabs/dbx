@@ -185,8 +185,8 @@ echo "   • Run locally: cargo run --bin api"
 
 echo ""
 echo "🐳 Docker:"
-echo "   • Build image: docker build -t effortlesslabs/dbx ."
-echo "   • Run container: docker run -p 3000:3000 effortlesslabs/dbx"
+echo "   • Build image: docker build -t effortlesslabs/0dbx_redis ."
+echo "   • Run container: docker run -p 3000:3000 effortlesslabs/0dbx_redis"
 echo "   • Multi-platform: ./scripts/publish.sh --tag <tag> --push"
 
 echo ""

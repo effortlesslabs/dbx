@@ -19,7 +19,7 @@ The fastest way to get started:
 # Run with Docker
 docker run -d --name dbx -p 3000:3000 \
   -e REDIS_URL=redis://localhost:6379 \
-  effortlesslabs/dbx:latest
+  effortlesslabs/0dbx_redis:latest
 
 # Or use Docker Compose
 docker-compose up -d
@@ -33,24 +33,23 @@ docker-compose up -d
 
 ```bash
 # Pull the latest image
-docker pull effortlesslabs/dbx:latest
+docker pull effortlesslabs/0dbx_redis:latest
 
-# Run with basic configuration
-docker run -d --name dbx -p 3000:3000 \
-  -e REDIS_URL=redis://localhost:6379 \
-  effortlesslabs/dbx:latest
+# Run with default configuration
+docker run -p 3000:3000 effortlesslabs/0dbx_redis:latest
 ```
 
 #### Custom Configuration
 
 ```bash
-# Run with custom configuration
-docker run -d --name dbx -p 8080:3000 \
-  -e REDIS_URL=redis://user:pass@redis.com:6379 \
-  -e PORT=3000 \
-  -e POOL_SIZE=20 \
-  -e LOG_LEVEL=DEBUG \
-  effortlesslabs/dbx:latest
+# Run with custom Redis URL
+docker run -p 3000:3000 -e REDIS_URL=redis://your-redis-server:6379 effortlesslabs/0dbx_redis:latest
+
+# Run with custom port
+docker run -p 8080:3000 effortlesslabs/0dbx_redis:latest
+
+# Run with custom log level
+docker run -p 3000:3000 -e LOG_LEVEL=DEBUG effortlesslabs/0dbx_redis:latest
 ```
 
 #### Docker Compose
@@ -60,16 +59,12 @@ Create a `docker-compose.yml` file:
 ```yaml
 version: "3.8"
 services:
-  dbx-api:
-    image: effortlesslabs/dbx:latest
+  dbx:
+    image: effortlesslabs/0dbx_redis:latest
     ports:
       - "3000:3000"
     environment:
       - REDIS_URL=redis://redis:6379
-      - HOST=0.0.0.0
-      - PORT=3000
-      - POOL_SIZE=10
-      - LOG_LEVEL=INFO
     depends_on:
       - redis
 
@@ -379,7 +374,7 @@ services:
     [
       {
         "name": "dbx-api",
-        "image": "effortlesslabs/dbx:latest",
+        "image": "effortlesslabs/0dbx_redis:latest",
         "portMappings": [{ "containerPort": 3000, "protocol": "tcp" }],
         "environment": [{ "name": "REDIS_URL", "value": "redis://your-redis-endpoint:6379" }],
         "healthCheck":
@@ -470,10 +465,10 @@ sudo chmod +x dbx-redis-api
 docker logs dbx
 
 # Port conflicts
-docker run -p 8080:3000 effortlesslabs/dbx:latest
+docker run -p 8080:3000 effortlesslabs/0dbx_redis:latest
 
 # Volume mounts
-docker run -v $(pwd)/data:/app/data effortlesslabs/dbx:latest
+docker run -v $(pwd)/data:/app/data effortlesslabs/0dbx_redis:latest
 ```
 
 ### Getting Help

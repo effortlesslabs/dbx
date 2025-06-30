@@ -24,15 +24,11 @@ Docker deployment offers several advantages:
 ### Single Container Deployment
 
 ```bash
-# Pull the latest DBX image
-docker pull effortlesslabs/dbx:latest
+# Pull the latest image
+docker pull effortlesslabs/0dbx_redis:latest
 
-# Run DBX with basic configuration
-docker run -d \
-  --name dbx \
-  -p 8080:8080 \
-  -e DBX_DATABASE_URL=redis://redis:6379 \
-  effortlesslabs/dbx:latest
+# Run with default configuration
+docker run -p 3000:3000 effortlesslabs/0dbx_redis:latest
 ```
 
 ### Using Docker Compose
@@ -44,7 +40,7 @@ version: "3.8"
 
 services:
   dbx:
-    image: effortlesslabs/dbx:latest
+    image: effortlesslabs/0dbx_redis:latest
     container_name: dbx
     ports:
       - "8080:8080"
@@ -92,7 +88,7 @@ version: "3.8"
 
 services:
   dbx:
-    image: effortlesslabs/dbx:latest
+    image: effortlesslabs/0dbx_redis:latest
     container_name: dbx
     ports:
       - "8080:8080"
@@ -444,7 +440,7 @@ spec:
     spec:
       containers:
         - name: dbx
-          image: effortlesslabs/dbx:latest
+          image: effortlesslabs/0dbx_redis:latest
           ports:
             - containerPort: 8080
           env:
@@ -508,7 +504,7 @@ version: "3.8"
 
 services:
   dbx:
-    image: effortlesslabs/dbx:latest
+    image: effortlesslabs/0dbx_redis:latest
     environment:
       - DBX_LOG_LEVEL=info
       - DBX_LOG_FORMAT=json
@@ -555,7 +551,7 @@ version: "3.8"
 
 services:
   dbx:
-    image: effortlesslabs/dbx:latest
+    image: effortlesslabs/0dbx_redis:latest
     environment:
       - DBX_METRICS_ENABLED=true
     labels:
@@ -604,11 +600,11 @@ USER dbx
 ```bash
 # Scan for vulnerabilities
 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-  aquasec/trivy image effortlesslabs/dbx:latest
+  aquasec/trivy image effortlesslabs/0dbx_redis:latest
 
 # Scan with Snyk
 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-  snyk/snyk:docker effortlesslabs/dbx:latest
+  snyk/snyk:docker effortlesslabs/0dbx_redis:latest
 ```
 
 ### Secrets Management
@@ -619,7 +615,7 @@ version: "3.8"
 
 services:
   dbx:
-    image: effortlesslabs/dbx:latest
+    image: effortlesslabs/0dbx_redis:latest
     secrets:
       - dbx_api_key
       - redis_password
@@ -683,7 +679,7 @@ docker run -it --rm \
   -p 8080:8080 \
   -e DBX_LOG_LEVEL=debug \
   -e DBX_DATABASE_URL=redis://redis:6379 \
-  effortlesslabs/dbx:latest
+  effortlesslabs/0dbx_redis:latest
 ```
 
 ## Best Practices
@@ -692,7 +688,7 @@ docker run -it --rm \
 
 ```bash
 # Instead of 'latest', use specific versions
-docker pull effortlesslabs/dbx:v1.0.0
+docker pull effortlesslabs/0dbx_redis:v1.0.0
 ```
 
 ### 2. Implement Health Checks
@@ -723,7 +719,7 @@ resources:
 ```bash
 # Regular security scans
 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-  aquasec/trivy image effortlesslabs/dbx:latest
+  aquasec/trivy image effortlesslabs/0dbx_redis:latest
 ```
 
 ### 5. Backup Strategy

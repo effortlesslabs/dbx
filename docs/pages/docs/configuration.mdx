@@ -96,12 +96,11 @@ DBX_METRICS_ENABLED=true
 
 ```bash
 docker run -d --name dbx -p 3000:3000 \
-  -e REDIS_URL=redis://redis:6379 \
-  -e HOST=0.0.0.0 \
+  -e REDIS_URL=redis://your-redis-server:6379 \
   -e PORT=3000 \
-  -e POOL_SIZE=10 \
   -e LOG_LEVEL=INFO \
-  effortlesslabs/dbx:latest
+  -e POOL_SIZE=10 \
+  effortlesslabs/0dbx_redis:latest
 ```
 
 ### Docker Compose
@@ -109,18 +108,15 @@ docker run -d --name dbx -p 3000:3000 \
 ```yaml
 version: "3.8"
 services:
-  dbx-api:
-    image: effortlesslabs/dbx:latest
+  dbx:
+    image: effortlesslabs/0dbx_redis:latest
     ports:
       - "3000:3000"
     environment:
       - REDIS_URL=redis://redis:6379
-      - HOST=0.0.0.0
       - PORT=3000
-      - POOL_SIZE=10
       - LOG_LEVEL=INFO
-      - DBX_API_KEY=your-secret-api-key
-      - DBX_CORS_ORIGINS=https://yourdomain.com
+      - POOL_SIZE=10
     depends_on:
       - redis
 
@@ -235,10 +231,10 @@ LOG_FORMAT=json
 
 ```bash
 # Set a secret API key
-DBX_API_KEY=your-secret-api-key-here
+DBX_API_KEY=your-secret-api-key
 
 # Use in requests
-curl -H "Authorization: Bearer your-secret-api-key-here" \
+curl -H "Authorization: Bearer your-secret-api-key" \
   http://localhost:3000/redis/admin/health
 ```
 

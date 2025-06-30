@@ -13,7 +13,7 @@
 
 # Docker Hub settings
 DOCKER_USERNAME="${DOCKER_USERNAME:-effortlesslabs}"
-DOCKER_REPO="${DOCKER_REPO:-dbx}"
+DOCKER_REPO="${DOCKER_REPO:-0dbx_redis}"
 DOCKER_PLATFORMS="${DOCKER_PLATFORMS:-linux/amd64,linux/arm64}"
 
 # Docker build settings

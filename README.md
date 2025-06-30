@@ -1,40 +1,73 @@
-# DBX
+# DBX - Redis API Server
 
-Lightweight API Proxy for Edge & Embedded Systems.
+<div align="center">
 
-<p>
-  <a href="https://www.npmjs.com/package/@0dbx/redis">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/npm/v/@0dbx/redis?colorA=21262d&colorB=21262d&style=flat">
-      <img src="https://img.shields.io/npm/v/@0dbx/redis?colorA=f6f8fa&colorB=f6f8fa&style=flat" alt="Version">
-    </picture>
-  </a>
-  <a href="https://hub.docker.com/r/effortlesslabs/dbx">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/docker/v/effortlesslabs/dbx?colorA=21262d&colorB=21262d&style=flat">
-      <img src="https://img.shields.io/docker/v/effortlesslabs/dbx?colorA=f6f8fa&colorB=f6f8fa&style=flat" alt="Docker Version">
-    </picture>
-  </a>
-  <a href="LICENSE">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/license-MIT-blue.svg?colorA=21262d&colorB=21262d&style=flat">
-      <img src="https://img.shields.io/badge/license-MIT-blue.svg?colorA=f6f8fa&colorB=f6f8fa&style=flat" alt="MIT License">
-    </picture>
-  </a>
-</p>
+<a href="https://hub.docker.com/r/effortlesslabs/0dbx_redis">
+<picture>
+<source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/docker/v/effortlesslabs/0dbx_redis?colorA=21262d&colorB=21262d&style=flat">
+<img src="https://img.shields.io/docker/v/effortlesslabs/0dbx_redis?colorA=f6f8fa&colorB=f6f8fa&style=flat" alt="Docker Version">
+</picture>
+</a>
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Rust](https://github.com/effortlesslabs/dbx/actions/workflows/rust.yml/badge.svg)](https://github.com/effortlesslabs/dbx/actions/workflows/rust.yml)
+
+**A high-performance Redis API server with TypeScript SDK and WebSocket support**
+
+</div>
 
 DBX is a minimal and portable HTTP/WebSocket proxy that exposes Redis through a unified API layer. Built in Rust, DBX is optimized for edge runtimes like Cloudflare Workers, Raspberry Pi, and RISC-V boards. It enables fast, standardized access to Redis using REST and WebSocket, with language bindings (TypeScript, etc.) and pluggable backend support. Perfect for lightweight clients, embedded apps, and serverless environments.
 
 ## Quick Start
 
-### Basic Usage
+### Using Docker (Recommended)
 
 ```bash
-# Start the server
-cargo run --bin dbx-redis-api
+# Pull the latest image
+docker pull effortlesslabs/0dbx_redis:latest
 
-# Or use the convenience script
-./scripts/run.sh --redis-url redis://localhost:6379
+# Run with default configuration
+docker run -p 3000:3000 effortlesslabs/0dbx_redis:latest
+
+# Run with custom Redis URL
+docker run -p 3000:3000 -e REDIS_URL=redis://your-redis-server:6379 effortlesslabs/0dbx_redis:latest
+```
+
+### Using Docker Compose
+
+```yaml
+version: "3.8"
+services:
+  dbx:
+    image: effortlesslabs/0dbx_redis:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+```
+
+### Using Binary
+
+```bash
+# Clone the repository
+git clone https://github.com/effortlesslabs/dbx.git
+cd dbx
+
+# Build the project
+cargo build --release
+
+# Run with default configuration
+./target/release/dbx
+
+# Run with custom Redis URL
+REDIS_URL=redis://localhost:6379 ./target/release/dbx
 ```
 
 ## Features
@@ -106,57 +139,32 @@ cargo run --bin dbx-redis-api -- --redis-url redis://localhost:6379
 cargo test
 ```
 
-## Docker
+## Docker Images
 
-```bash
-# Build image
-docker build -t effortlesslabs/dbx .
+### Multi-Platform Support
 
-# Run with custom config
-docker run -d --name dbx -p 8080:3000 \
-  -e REDIS_URL=redis://user:pass@redis.com:6379 \
-  -e PORT=3000 \
-  -e LOG_LEVEL=DEBUG \
-  effortlesslabs/dbx:latest
-```
+DBX provides Docker images for multiple architectures:
 
-## Deployment
+- **Latest**: `effortlesslabs/0dbx_redis:latest`
+- **AMD64 Only**: `effortlesslabs/0dbx_redis:latest-amd64-only`
+- **Versioned**: `effortlesslabs/0dbx_redis:0.1.6-amd64-only`
 
 ### Railway Deployment
 
-For Railway deployment, use the AMD64-only Docker image tags to avoid "exec format error" issues:
+For Railway deployment, use the AMD64-only tag:
 
 ```bash
-# Use AMD64-only tag for Railway
-effortlesslabs/dbx:latest-amd64-only
-effortlesslabs/dbx:0.1.6-amd64-only
+docker pull effortlesslabs/0dbx_redis:latest-amd64-only
 ```
 
-# Multi-arch (AMD64 + ARM64)
+### Local Development
 
-effortlesslabs/dbx:latest
-effortlesslabs/dbx:0.1.6
+```bash
+# Build locally
+docker build -t effortlesslabs/0dbx_redis .
 
-### Docker Compose
-
-```yaml
-version: "3.8"
-services:
-  dbx-api:
-    image: effortlesslabs/dbx:latest
-    ports:
-      - "3000:3000"
-    environment:
-      - REDIS_URL=redis://redis:6379
-      - PORT=3000
-      - LOG_LEVEL=INFO
-    depends_on:
-      - redis
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
+# Run locally
+docker run -p 3000:3000 effortlesslabs/0dbx_redis:latest
 ```
 
 ## API Endpoints
@@ -179,6 +187,13 @@ services:
 - `ws://localhost:3000/redis_ws/hash/ws` - Hash operations
 - `ws://localhost:3000/redis_ws/set/ws` - Set operations
 - `ws://localhost:3000/redis_ws/admin/ws` - Admin operations
+
+## Links
+
+- **📖 Documentation**: [https://dbx.effortlesslabs.com](https://dbx.effortlesslabs.com)
+- **🐳 Docker Hub**: [https://hub.docker.com/r/effortlesslabs/0dbx_redis](https://hub.docker.com/r/effortlesslabs/0dbx_redis)
+- **📦 NPM Package**: [https://www.npmjs.com/package/@0dbx/redis](https://www.npmjs.com/package/@0dbx/redis)
+- **🐙 GitHub**: [https://github.com/effortlesslabs/dbx](https://github.com/effortlesslabs/dbx)
 
 ## Publishing
 
@@ -223,5 +238,3 @@ licensed as above, without any additional terms or conditions.
 </sub>
 
 ---
-
-**🔗 Docker Hub**: [https://hub.docker.com/r/effortlesslabs/dbx](https://hub.docker.com/r/effortlesslabs/dbx)
