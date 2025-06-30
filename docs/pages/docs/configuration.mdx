@@ -1,67 +1,126 @@
 # Configuration
 
-This guide covers the configuration options for DBX. DBX uses environment variables for configuration.
+DBX can be configured using environment variables or command-line arguments. This guide covers all available configuration options.
 
 ## Environment Variables
 
-### Required Configuration
+### Database Configuration
 
-| Variable        | Default                  | Description                |
-| --------------- | ------------------------ | -------------------------- |
-| `DATABASE_URL`  | `redis://localhost:6379` | Redis connection URL       |
-| `DATABASE_TYPE` | `redis`                  | Database type (redis only) |
+| Variable    | Default                                   | Description          |
+| ----------- | ----------------------------------------- | -------------------- |
+| `REDIS_URL` | `redis://default:redispw@localhost:55000` | Redis connection URL |
 
 ### Server Configuration
 
-| Variable | Default   | Description         |
-| -------- | --------- | ------------------- |
-| `HOST`   | `0.0.0.0` | Server host address |
-| `PORT`   | `3000`    | Server port number  |
-
-### Connection Pool Configuration
-
-| Variable    | Default | Description                |
-| ----------- | ------- | -------------------------- |
-| `POOL_SIZE` | `10`    | Redis connection pool size |
+| Variable    | Default   | Description                |
+| ----------- | --------- | -------------------------- |
+| `HOST`      | `0.0.0.0` | Server host address        |
+| `PORT`      | `3000`    | Server port number         |
+| `POOL_SIZE` | `10`      | Redis connection pool size |
 
 ### Logging Configuration
 
-| Variable    | Default | Description                                 |
-| ----------- | ------- | ------------------------------------------- |
-| `LOG_LEVEL` | `INFO`  | Logging level (TRACE, DEBUG, INFO, WARN, ERROR) |
+| Variable     | Default | Description                              |
+| ------------ | ------- | ---------------------------------------- |
+| `LOG_LEVEL`  | `INFO`  | Logging level (DEBUG, INFO, WARN, ERROR) |
+| `LOG_FORMAT` | `text`  | Log format (text, json)                  |
+
+### Security Configuration (Optional)
+
+| Variable                  | Default | Description                       |
+| ------------------------- | ------- | --------------------------------- |
+| `DBX_API_KEY`             | -       | Secret API key for authentication |
+| `DBX_CORS_ORIGINS`        | `*`     | CORS allowed origins              |
+| `DBX_RATE_LIMIT_REQUESTS` | `1000`  | Rate limit requests per window    |
+| `DBX_RATE_LIMIT_WINDOW`   | `60`    | Rate limit window in seconds      |
+
+### WebSocket Configuration (Optional)
+
+| Variable         | Default     | Description              |
+| ---------------- | ----------- | ------------------------ |
+| `DBX_WS_ENABLED` | `true`      | Enable WebSocket support |
+| `DBX_WS_PATH`    | `/redis_ws` | WebSocket endpoint path  |
+
+### Monitoring Configuration (Optional)
+
+| Variable                    | Default | Description                      |
+| --------------------------- | ------- | -------------------------------- |
+| `DBX_METRICS_ENABLED`       | `true`  | Enable metrics collection        |
+| `DBX_HEALTH_CHECK_INTERVAL` | `30`    | Health check interval in seconds |
+
+## Configuration Examples
+
+### Basic Configuration
+
+```bash
+# .env file
+REDIS_URL=redis://localhost:6379
+HOST=0.0.0.0
+PORT=3000
+POOL_SIZE=10
+LOG_LEVEL=INFO
+```
+
+### Production Configuration
+
+```bash
+# .env file
+REDIS_URL=redis://user:password@redis.example.com:6379/0
+HOST=0.0.0.0
+PORT=8080
+POOL_SIZE=50
+LOG_LEVEL=WARN
+DBX_API_KEY=your-secret-api-key
+DBX_CORS_ORIGINS=https://yourdomain.com
+DBX_RATE_LIMIT_REQUESTS=1000
+DBX_RATE_LIMIT_WINDOW=60
+```
+
+### Development Configuration
+
+```bash
+# .env file
+REDIS_URL=redis://localhost:6379
+HOST=127.0.0.1
+PORT=3000
+POOL_SIZE=5
+LOG_LEVEL=DEBUG
+DBX_CORS_ORIGINS=*
+DBX_WS_ENABLED=true
+DBX_METRICS_ENABLED=true
+```
 
 ## Docker Configuration
 
-The easiest way to configure DBX is through Docker environment variables:
+### Docker Run
 
 ```bash
-# Basic configuration
 docker run -d --name dbx -p 3000:3000 \
-  -e DATABASE_URL=redis://localhost:6379 \
-  -e DATABASE_TYPE=redis \
+  -e REDIS_URL=redis://redis:6379 \
   -e HOST=0.0.0.0 \
   -e PORT=3000 \
   -e POOL_SIZE=10 \
   -e LOG_LEVEL=INFO \
-  fnlog0/dbx:latest
+  effortlesslabs/dbx:latest
 ```
 
-## Using docker-compose
+### Docker Compose
 
 ```yaml
-version: '3.8'
+version: "3.8"
 services:
-  dbx:
-    image: fnlog0/dbx:latest
+  dbx-api:
+    image: effortlesslabs/dbx:latest
     ports:
       - "3000:3000"
     environment:
-      - DATABASE_URL=redis://redis:6379
-      - DATABASE_TYPE=redis
+      - REDIS_URL=redis://redis:6379
       - HOST=0.0.0.0
       - PORT=3000
       - POOL_SIZE=10
       - LOG_LEVEL=INFO
+      - DBX_API_KEY=your-secret-api-key
+      - DBX_CORS_ORIGINS=https://yourdomain.com
     depends_on:
       - redis
 
@@ -71,141 +130,306 @@ services:
       - "6379:6379"
 ```
 
-## Using the Run Script
+## Command Line Arguments
 
-DBX provides a convenience script for easy configuration:
-
-```bash
-# Basic usage
-./scripts/run.sh --redis-url redis://localhost:6379
-
-# With custom configuration
-./scripts/run.sh \
-  --redis-url redis://user:pass@redis.com:6379 \
-  --port 8080 \
-  --pool-size 20 \
-  --log-level DEBUG
-```
-
-### Available Script Options
-
-| Flag           | Default                  | Description             |
-| -------------- | ------------------------ | ----------------------- |
-| `--redis-url`  | *required*               | Redis connection URL    |
-| `--host`       | `0.0.0.0`                | Server host             |
-| `--port`       | `3000`                   | Server port             |
-| `--pool-size`  | `10`                     | Connection pool size    |
-| `--log-level`  | `INFO`                   | Logging level           |
-| `--image`      | *build local*            | Docker image to use     |
-
-## Redis Connection URLs
-
-### Supported Connection Formats
+### Running with Arguments
 
 ```bash
-# Basic connection
-redis://localhost:6379
+# Run with custom Redis URL
+cargo run --bin dbx-redis-api -- --redis-url redis://localhost:6379
 
-# With authentication
-redis://username:password@localhost:6379
+# Run with custom port
+cargo run --bin dbx-redis-api -- --port 8080
 
-# With database selection
-redis://localhost:6379/1
-
-# SSL/TLS connection
-rediss://localhost:6379
+# Run with custom host
+cargo run --bin dbx-redis-api -- --host 127.0.0.1
 ```
 
-## Health Check Endpoints
+### Available Arguments
 
-DBX provides built-in health check endpoints:
+| Argument      | Environment Variable | Description          |
+| ------------- | -------------------- | -------------------- |
+| `--redis-url` | `REDIS_URL`          | Redis connection URL |
+| `--host`      | `HOST`               | Server host address  |
+| `--port`      | `PORT`               | Server port number   |
+| `--pool-size` | `POOL_SIZE`          | Connection pool size |
 
-- `GET /redis/admin/ping` - Basic server ping
-- `GET /redis/admin/health` - Detailed health status
-- `GET /redis/admin/info` - Redis server information
+## Redis URL Format
 
-## Example Configurations
+### Basic Format
+
+```
+redis://[username:password@]host:port[/database]
+```
+
+### Examples
+
+```bash
+# Local Redis without authentication
+REDIS_URL=redis://localhost:6379
+
+# Local Redis with database selection
+REDIS_URL=redis://localhost:6379/1
+
+# Remote Redis with authentication
+REDIS_URL=redis://user:password@redis.example.com:6379
+
+# Remote Redis with authentication and database
+REDIS_URL=redis://user:password@redis.example.com:6379/2
+
+# Redis with SSL/TLS
+REDIS_URL=rediss://user:password@redis.example.com:6380
+```
+
+## Connection Pooling
+
+### Pool Configuration
+
+The connection pool manages Redis connections for optimal performance:
+
+```bash
+# Set pool size based on your needs
+POOL_SIZE=10  # For small applications
+POOL_SIZE=50  # For medium applications
+POOL_SIZE=100 # For high-traffic applications
+```
+
+### Pool Behavior
+
+- Connections are created on-demand up to the pool size limit
+- Idle connections are kept alive for reuse
+- Failed connections are automatically retried
+- Pool size should be tuned based on your application's concurrency needs
+
+## Logging Configuration
+
+### Log Levels
+
+```bash
+# Debug level - detailed information
+LOG_LEVEL=DEBUG
+
+# Info level - general information
+LOG_LEVEL=INFO
+
+# Warn level - warnings only
+LOG_LEVEL=WARN
+
+# Error level - errors only
+LOG_LEVEL=ERROR
+```
+
+### Log Format
+
+```bash
+# Text format (human-readable)
+LOG_FORMAT=text
+
+# JSON format (machine-readable)
+LOG_FORMAT=json
+```
+
+## Security Configuration
+
+### API Key Authentication
+
+```bash
+# Set a secret API key
+DBX_API_KEY=your-secret-api-key-here
+
+# Use in requests
+curl -H "Authorization: Bearer your-secret-api-key-here" \
+  http://localhost:3000/redis/admin/health
+```
+
+### CORS Configuration
+
+```bash
+# Allow all origins (development)
+DBX_CORS_ORIGINS=*
+
+# Allow specific origins
+DBX_CORS_ORIGINS=https://yourdomain.com,https://app.yourdomain.com
+
+# Allow multiple origins
+DBX_CORS_ORIGINS=https://yourdomain.com,https://api.yourdomain.com
+```
+
+### Rate Limiting
+
+```bash
+# Rate limit configuration
+DBX_RATE_LIMIT_REQUESTS=1000  # Requests per window
+DBX_RATE_LIMIT_WINDOW=60      # Window in seconds
+```
+
+## WebSocket Configuration
+
+### WebSocket Settings
+
+```bash
+# Enable/disable WebSocket support
+DBX_WS_ENABLED=true
+
+# Custom WebSocket path
+DBX_WS_PATH=/redis_ws
+```
+
+### WebSocket URLs
+
+```bash
+# Default WebSocket endpoints
+ws://localhost:3000/redis_ws/string/ws
+ws://localhost:3000/redis_ws/hash/ws
+ws://localhost:3000/redis_ws/set/ws
+ws://localhost:3000/redis_ws/admin/ws
+```
+
+## Monitoring Configuration
+
+### Health Checks
+
+```bash
+# Health check endpoint
+GET http://localhost:3000/redis/admin/health
+
+# Health check interval
+DBX_HEALTH_CHECK_INTERVAL=30
+```
+
+### Metrics
+
+```bash
+# Enable metrics collection
+DBX_METRICS_ENABLED=true
+```
+
+## Environment-Specific Configurations
 
 ### Development
 
 ```bash
-# Local development with Redis
-docker run -d --name dbx -p 3000:3000 \
-  -e DATABASE_URL=redis://localhost:6379 \
-  -e LOG_LEVEL=DEBUG \
-  fnlog0/dbx:latest
+# .env.development
+REDIS_URL=redis://localhost:6379
+HOST=127.0.0.1
+PORT=3000
+POOL_SIZE=5
+LOG_LEVEL=DEBUG
+DBX_CORS_ORIGINS=*
+DBX_WS_ENABLED=true
+DBX_METRICS_ENABLED=true
+```
+
+### Staging
+
+```bash
+# .env.staging
+REDIS_URL=redis://staging-redis.example.com:6379
+HOST=0.0.0.0
+PORT=3000
+POOL_SIZE=20
+LOG_LEVEL=INFO
+DBX_API_KEY=staging-api-key
+DBX_CORS_ORIGINS=https://staging.yourdomain.com
+DBX_RATE_LIMIT_REQUESTS=500
+DBX_RATE_LIMIT_WINDOW=60
 ```
 
 ### Production
 
 ```bash
-# Production with authentication
-docker run -d --name dbx -p 3000:3000 \
-  -e DATABASE_URL=redis://user:pass@redis.company.com:6379 \
-  -e DATABASE_TYPE=redis \
-  -e POOL_SIZE=20 \
-  -e LOG_LEVEL=INFO \
-  fnlog0/dbx:latest
-```
-
-### Cloud Deployment
-
-```bash
-# Railway, Heroku, etc.
-docker run -d --name dbx -p $PORT:3000 \
-  -e DATABASE_URL=$REDIS_URL \
-  -e HOST=0.0.0.0 \
-  -e PORT=3000 \
-  fnlog0/dbx:latest-amd64-only
-```
-
-## Environment File
-
-You can also use a `.env` file:
-
-```env
-DATABASE_URL=redis://localhost:6379
-DATABASE_TYPE=redis
+# .env.production
+REDIS_URL=redis://prod-redis.example.com:6379
 HOST=0.0.0.0
-PORT=3000
-POOL_SIZE=10
-LOG_LEVEL=INFO
+PORT=8080
+POOL_SIZE=50
+LOG_LEVEL=WARN
+DBX_API_KEY=production-api-key
+DBX_CORS_ORIGINS=https://yourdomain.com
+DBX_RATE_LIMIT_REQUESTS=1000
+DBX_RATE_LIMIT_WINDOW=60
+DBX_WS_ENABLED=true
+DBX_METRICS_ENABLED=true
 ```
 
-Then load it with Docker:
+## Configuration Validation
+
+### Environment Variable Validation
+
+DBX validates configuration on startup:
 
 ```bash
-docker run -d --name dbx -p 3000:3000 --env-file .env fnlog0/dbx:latest
+# Invalid Redis URL
+REDIS_URL=invalid-url
+# Error: Invalid Redis URL format
+
+# Invalid port
+PORT=99999
+# Error: Port must be between 1 and 65535
+
+# Invalid pool size
+POOL_SIZE=0
+# Error: Pool size must be greater than 0
+```
+
+### Configuration Check
+
+```bash
+# Check configuration without starting server
+cargo run --bin dbx-redis-api -- --check-config
+
+# Or check environment variables
+echo $REDIS_URL
+echo $PORT
+echo $POOL_SIZE
 ```
 
 ## Troubleshooting
 
-### Connection Issues
+### Common Configuration Issues
 
-**Test Redis Connection**
+**Redis Connection Failed**
 
 ```bash
-# Test Redis connectivity
+# Check Redis URL format
+REDIS_URL=redis://localhost:6379
+
+# Test Redis connection
 redis-cli -u redis://localhost:6379 ping
 ```
 
-**Check Logs**
+**Port Already in Use**
 
 ```bash
-# View DBX logs
-docker logs -f dbx
+# Check what's using the port
+lsof -i :3000
+
+# Use a different port
+PORT=8080
 ```
 
-**Common Issues**
+**Permission Denied**
 
-1. **Redis not running**: Start Redis server
-2. **Wrong port**: Check PORT environment variable
-3. **Connection refused**: Verify DATABASE_URL format
-4. **Permission denied**: Check Redis authentication
+```bash
+# Check file permissions
+ls -la .env
 
-## Best Practices
+# Fix permissions
+chmod 600 .env
+```
 
-1. **Use connection pooling**: Set POOL_SIZE based on your workload
-2. **Monitor connections**: Use admin endpoints for health checks
-3. **Secure connections**: Use rediss:// for TLS in production
-4. **Log appropriately**: Use INFO for production, DEBUG for development
+### Configuration Debugging
+
+```bash
+# Enable debug logging
+LOG_LEVEL=DEBUG
+
+# Check configuration at startup
+cargo run --bin dbx-redis-api -- --verbose
+```
+
+## Next Steps
+
+- [Getting Started](/docs/getting-started) - Get up and running with DBX
+- [Installation](/docs/installation) - Learn about installation options
+- [API Reference](/docs/api/rest/string) - Explore the complete API documentation

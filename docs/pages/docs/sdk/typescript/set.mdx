@@ -120,3 +120,476 @@ All methods throw `DBXError` on failure. See [String Client](./string) for error
 - Use batch operations for efficiency
 - Set TTL on set keys for temporary data
 - Use set partitioning for large datasets
+
+# Set Operations
+
+The DBX TypeScript SDK provides comprehensive set operations for Redis. This guide covers all available set methods and their usage patterns.
+
+## Overview
+
+Set operations in Redis allow you to work with unordered collections of unique strings. Sets are perfect for managing unique items, tags, and relationships.
+
+## Basic Operations
+
+### Creating a Set Client
+
+```typescript
+import { DbxRedisClient } from "@0dbx/redis";
+
+const client = new DbxRedisClient("http://localhost:3000");
+const setClient = client.set;
+```
+
+### Adding Members
+
+```typescript
+// Add a single member to a set
+await setClient.addMember("tags", "redis");
+
+// Add multiple members to a set
+await setClient.addMembers("tags", ["redis", "database", "nosql"]);
+
+// Add with TTL (Time To Live) in seconds
+await setClient.addMember("temp-set", "member1", 3600); // expires in 1 hour
+```
+
+### Getting Members
+
+```typescript
+// Get all members of a set
+const members = await setClient.getMembers("tags");
+console.log(members); // ["redis", "database", "nosql"]
+
+// Get set cardinality (number of members)
+const cardinality = await setClient.getCardinality("tags");
+console.log(cardinality); // 3
+```
+
+### Removing Members
+
+```typescript
+// Remove a single member
+await setClient.removeMember("tags", "nosql");
+
+// Remove multiple members
+await setClient.removeMembers("tags", ["database", "nosql"]);
+
+// Check if removal was successful
+const members = await setClient.getMembers("tags");
+console.log(members); // ["redis"]
+```
+
+### Checking Membership
+
+```typescript
+// Check if a member exists in a set
+const isMember = await setClient.isMember("tags", "redis");
+console.log(isMember); // true
+
+// Check multiple members
+const memberStatus = await setClient.areMembers("tags", ["redis", "database"]);
+console.log(memberStatus); // [true, false]
+```
+
+## Advanced Operations
+
+### Set Operations
+
+```typescript
+// Union of multiple sets
+const union = await setClient.union(["set1", "set2", "set3"]);
+
+// Intersection of multiple sets
+const intersection = await setClient.intersection(["set1", "set2"]);
+
+// Difference between sets (set1 - set2)
+const difference = await setClient.difference("set1", "set2");
+
+// Store union result in a new set
+await setClient.unionStore("result-set", ["set1", "set2"]);
+
+// Store intersection result in a new set
+await setClient.intersectionStore("result-set", ["set1", "set2"]);
+```
+
+### Random Operations
+
+```typescript
+// Get a random member from a set
+const randomMember = await setClient.getRandomMember("tags");
+
+// Get multiple random members
+const randomMembers = await setClient.getRandomMembers("tags", 3);
+
+// Remove and return a random member
+const poppedMember = await setClient.popMember("tags");
+```
+
+### Set Information
+
+```typescript
+// Get set cardinality
+const size = await setClient.getCardinality("tags");
+
+// Check if set exists
+const exists = await setClient.exists("tags");
+
+// Get TTL for a set
+const ttl = await setClient.ttl("tags");
+
+// Set TTL for a set
+await setClient.expire("tags", 7200); // 2 hours
+```
+
+### Batch Operations
+
+```typescript
+// Perform multiple set operations in a single request
+const results = await setClient.batch([
+  { type: "addMember", key: "set1", member: "member1" },
+  { type: "addMembers", key: "set2", members: ["member2", "member3"] },
+  { type: "getMembers", key: "set3" },
+  { type: "removeMember", key: "set1", member: "member1" },
+]);
+
+console.log(results);
+// [
+//   { success: true, added: 1 },
+//   { success: true, added: 2 },
+//   { members: ["existing", "members"] },
+//   { success: true, removed: 1 }
+// ]
+```
+
+## WebSocket Set Operations
+
+### Creating a WebSocket Set Client
+
+```typescript
+import { DbxWsClient } from "@0dbx/redis";
+
+const wsClient = new DbxWsClient("ws://localhost:3000/redis_ws");
+const wsSetClient = wsClient.set;
+```
+
+### WebSocket Set Operations
+
+```typescript
+// Add member via WebSocket
+await wsSetClient.addMember("tags", "redis");
+
+// Get members via WebSocket
+const members = await wsSetClient.getMembers("tags");
+
+// Remove member via WebSocket
+await wsSetClient.removeMember("tags", "redis");
+
+// Check membership via WebSocket
+const isMember = await wsSetClient.isMember("tags", "redis");
+
+// Set operations via WebSocket
+const union = await wsSetClient.union(["set1", "set2"]);
+const intersection = await wsSetClient.intersection(["set1", "set2"]);
+```
+
+## Error Handling
+
+### Common Error Patterns
+
+```typescript
+try {
+  const members = await setClient.getMembers("non-existent-set");
+} catch (error) {
+  if (error.message.includes("not found")) {
+    console.log("Set doesn't exist");
+  } else if (error.message.includes("timeout")) {
+    console.log("Request timed out");
+  } else {
+    console.error("Unexpected error:", error);
+  }
+}
+```
+
+### Type-Safe Error Handling
+
+```typescript
+interface SetOperationError {
+  message: string;
+  code?: string;
+  status?: number;
+}
+
+async function safeSetOperation<T>(operation: () => Promise<T>): Promise<T | null> {
+  try {
+    return await operation();
+  } catch (error) {
+    const dbxError = error as SetOperationError;
+
+    switch (dbxError.code) {
+      case "not_found":
+        console.warn("Set not found");
+        return null;
+      case "timeout":
+        console.error("Operation timed out");
+        return null;
+      default:
+        console.error("Set operation failed:", dbxError.message);
+        return null;
+    }
+  }
+}
+
+// Usage
+const members = await safeSetOperation(() => setClient.getMembers("my-set"));
+```
+
+## Performance Optimization
+
+### Connection Reuse
+
+```typescript
+// Create a singleton client for your application
+class SetService {
+  private static instance: DbxRedisClient;
+  private static setClient: any;
+
+  static getInstance(): any {
+    if (!SetService.instance) {
+      SetService.instance = new DbxRedisClient("http://localhost:3000");
+      SetService.setClient = SetService.instance.set;
+    }
+    return SetService.setClient;
+  }
+}
+
+// Use throughout your application
+const setClient = SetService.getInstance();
+```
+
+### Batch Operations for Performance
+
+```typescript
+// Instead of multiple individual requests
+const promises = [
+  setClient.addMember("set1", "member1"),
+  setClient.addMember("set1", "member2"),
+  setClient.addMember("set1", "member3"),
+];
+await Promise.all(promises);
+
+// Use batch operations for better performance
+await setClient.batch([
+  { type: "addMember", key: "set1", member: "member1" },
+  { type: "addMember", key: "set1", member: "member2" },
+  { type: "addMember", key: "set1", member: "member3" },
+]);
+```
+
+## Real-World Examples
+
+### Tag Management System
+
+```typescript
+class TagManager {
+  private client: any;
+  private prefix = "tags:";
+
+  constructor(client: any) {
+    this.client = client;
+  }
+
+  async addTagsToItem(itemId: string, tags: string[]): Promise<void> {
+    const key = `${this.prefix}item:${itemId}`;
+    await this.client.addMembers(key, tags);
+  }
+
+  async removeTagsFromItem(itemId: string, tags: string[]): Promise<void> {
+    const key = `${this.prefix}item:${itemId}`;
+    await this.client.removeMembers(key, tags);
+  }
+
+  async getItemTags(itemId: string): Promise<string[]> {
+    const key = `${this.prefix}item:${itemId}`;
+    return await this.client.getMembers(key);
+  }
+
+  async findItemsWithTag(tag: string): Promise<string[]> {
+    const key = `${this.prefix}tag:${tag}`;
+    return await this.client.getMembers(key);
+  }
+
+  async getPopularTags(limit: number = 10): Promise<string[]> {
+    // This would require additional implementation for popularity tracking
+    const allTags = await this.client.getMembers("tags:popular");
+    return allTags.slice(0, limit);
+  }
+}
+
+// Usage
+const tagManager = new TagManager(setClient);
+await tagManager.addTagsToItem("post:123", ["redis", "database", "tutorial"]);
+const tags = await tagManager.getItemTags("post:123");
+```
+
+### User Following System
+
+```typescript
+class FollowSystem {
+  private client: any;
+  private followingPrefix = "following:";
+  private followersPrefix = "followers:";
+
+  constructor(client: any) {
+    this.client = client;
+  }
+
+  async followUser(followerId: string, targetId: string): Promise<void> {
+    const followingKey = `${this.followingPrefix}${followerId}`;
+    const followersKey = `${this.followersPrefix}${targetId}`;
+
+    await Promise.all([
+      this.client.addMember(followingKey, targetId),
+      this.client.addMember(followersKey, followerId),
+    ]);
+  }
+
+  async unfollowUser(followerId: string, targetId: string): Promise<void> {
+    const followingKey = `${this.followingPrefix}${followerId}`;
+    const followersKey = `${this.followersPrefix}${targetId}`;
+
+    await Promise.all([
+      this.client.removeMember(followingKey, targetId),
+      this.client.removeMember(followersKey, followerId),
+    ]);
+  }
+
+  async getFollowing(userId: string): Promise<string[]> {
+    const key = `${this.followingPrefix}${userId}`;
+    return await this.client.getMembers(key);
+  }
+
+  async getFollowers(userId: string): Promise<string[]> {
+    const key = `${this.followersPrefix}${userId}`;
+    return await this.client.getMembers(key);
+  }
+
+  async isFollowing(followerId: string, targetId: string): Promise<boolean> {
+    const key = `${this.followingPrefix}${followerId}`;
+    return await this.client.isMember(key, targetId);
+  }
+
+  async getMutualFollowers(user1Id: string, user2Id: string): Promise<string[]> {
+    const followers1 = `${this.followersPrefix}${user1Id}`;
+    const followers2 = `${this.followersPrefix}${user2Id}`;
+
+    return await this.client.intersection([followers1, followers2]);
+  }
+}
+
+// Usage
+const followSystem = new FollowSystem(setClient);
+await followSystem.followUser("user:123", "user:456");
+const following = await followSystem.getFollowing("user:123");
+const isFollowing = await followSystem.isFollowing("user:123", "user:456");
+```
+
+### Online Users Tracking
+
+```typescript
+class OnlineUsersTracker {
+  private client: any;
+  private onlineKey = "online:users";
+  private sessionPrefix = "session:";
+
+  constructor(client: any) {
+    this.client = client;
+  }
+
+  async userOnline(userId: string, sessionId: string): Promise<void> {
+    await Promise.all([
+      this.client.addMember(this.onlineKey, userId),
+      this.client.addMember(`${this.sessionPrefix}${userId}`, sessionId),
+    ]);
+  }
+
+  async userOffline(userId: string): Promise<void> {
+    await Promise.all([
+      this.client.removeMember(this.onlineKey, userId),
+      this.client.delete(`${this.sessionPrefix}${userId}`),
+    ]);
+  }
+
+  async getOnlineUsers(): Promise<string[]> {
+    return await this.client.getMembers(this.onlineKey);
+  }
+
+  async getOnlineCount(): Promise<number> {
+    return await this.client.getCardinality(this.onlineKey);
+  }
+
+  async isUserOnline(userId: string): Promise<boolean> {
+    return await this.client.isMember(this.onlineKey, userId);
+  }
+
+  async getUserSessions(userId: string): Promise<string[]> {
+    return await this.client.getMembers(`${this.sessionPrefix}${userId}`);
+  }
+}
+
+// Usage
+const onlineTracker = new OnlineUsersTracker(setClient);
+await onlineTracker.userOnline("user:123", "session:abc");
+const onlineUsers = await onlineTracker.getOnlineUsers();
+const onlineCount = await onlineTracker.getOnlineCount();
+```
+
+## API Reference
+
+### Methods
+
+| Method                           | Description                            | Parameters                                     | Returns               |
+| -------------------------------- | -------------------------------------- | ---------------------------------------------- | --------------------- |
+| `addMember(key, member, ttl?)`   | Add a member to a set                  | `key: string, member: string, ttl?: number`    | `Promise<void>`       |
+| `addMembers(key, members, ttl?)` | Add multiple members to a set          | `key: string, members: string[], ttl?: number` | `Promise<void>`       |
+| `getMembers(key)`                | Get all members of a set               | `key: string`                                  | `Promise<string[]>`   |
+| `getCardinality(key)`            | Get set cardinality                    | `key: string`                                  | `Promise<number>`     |
+| `removeMember(key, member)`      | Remove a member from a set             | `key: string, member: string`                  | `Promise<void>`       |
+| `removeMembers(key, members)`    | Remove multiple members from a set     | `key: string, members: string[]`               | `Promise<void>`       |
+| `isMember(key, member)`          | Check if member exists in set          | `key: string, member: string`                  | `Promise<boolean>`    |
+| `areMembers(key, members)`       | Check if multiple members exist in set | `key: string, members: string[]`               | `Promise<boolean[]>`  |
+| `union(keys)`                    | Get union of multiple sets             | `keys: string[]`                               | `Promise<string[]>`   |
+| `intersection(keys)`             | Get intersection of multiple sets      | `keys: string[]`                               | `Promise<string[]>`   |
+| `difference(key1, key2)`         | Get difference between two sets        | `key1: string, key2: string`                   | `Promise<string[]>`   |
+| `getRandomMember(key)`           | Get a random member from a set         | `key: string`                                  | `Promise<string>`     |
+| `getRandomMembers(key, count)`   | Get multiple random members from a set | `key: string, count: number`                   | `Promise<string[]>`   |
+| `popMember(key)`                 | Remove and return a random member      | `key: string`                                  | `Promise<string>`     |
+| `exists(key)`                    | Check if set exists                    | `key: string`                                  | `Promise<boolean>`    |
+| `ttl(key)`                       | Get remaining TTL                      | `key: string`                                  | `Promise<number>`     |
+| `expire(key, ttl)`               | Set TTL for set                        | `key: string, ttl: number`                     | `Promise<void>`       |
+| `batch(operations)`              | Batch operations                       | `operations: Array<BatchOperation>`            | `Promise<Array<any>>` |
+
+### Batch Operation Types
+
+```typescript
+interface BatchOperation {
+  type:
+    | "addMember"
+    | "addMembers"
+    | "getMembers"
+    | "removeMember"
+    | "removeMembers"
+    | "isMember"
+    | "union"
+    | "intersection";
+  key: string;
+  member?: string;
+  members?: string[];
+  keys?: string[];
+}
+```
+
+## Next Steps
+
+- [String Operations](/docs/sdk/typescript/string) - Learn about string operations
+- [WebSocket Operations](/docs/sdk/typescript/websocket) - Learn about WebSocket operations
+- [API Reference](/docs/api/rest/set) - Explore the complete REST API documentation

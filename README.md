@@ -3,10 +3,10 @@
 Lightweight API Proxy for Edge & Embedded Systems.
 
 <p>
-  <a href="https://www.npmjs.com/package/dbx-sdk">
+  <a href="https://www.npmjs.com/package/@0dbx/redis">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/npm/v/dbx-sdk?colorA=21262d&colorB=21262d&style=flat">
-      <img src="https://img.shields.io/npm/v/dbx-sdk?colorA=f6f8fa&colorB=f6f8fa&style=flat" alt="Version">
+      <source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/npm/v/@0dbx/redis?colorA=21262d&colorB=21262d&style=flat">
+      <img src="https://img.shields.io/npm/v/@0dbx/redis?colorA=f6f8fa&colorB=f6f8fa&style=flat" alt="Version">
     </picture>
   </a>
   <a href="https://hub.docker.com/r/effortlesslabs/dbx">
@@ -23,7 +23,7 @@ Lightweight API Proxy for Edge & Embedded Systems.
   </a>
 </p>
 
-DBX is a minimal and portable HTTP/WebSocket proxy that exposes Redis, Qdrant, and MDBX through a unified API layer. Built in Rust, DBX is optimized for edge runtimes like Cloudflare Workers, Raspberry Pi, and RISC-V boards. It enables fast, standardized access to multiple databases using REST and WebSocket, with language bindings (TypeScript, etc.) and pluggable backend support. Perfect for lightweight clients, embedded apps, and serverless environments.
+DBX is a minimal and portable HTTP/WebSocket proxy that exposes Redis through a unified API layer. Built in Rust, DBX is optimized for edge runtimes like Cloudflare Workers, Raspberry Pi, and RISC-V boards. It enables fast, standardized access to Redis using REST and WebSocket, with language bindings (TypeScript, etc.) and pluggable backend support. Perfect for lightweight clients, embedded apps, and serverless environments.
 
 ## Quick Start
 
@@ -31,7 +31,7 @@ DBX is a minimal and portable HTTP/WebSocket proxy that exposes Redis, Qdrant, a
 
 ```bash
 # Start the server
-cargo run --bin api
+cargo run --bin dbx-redis-api
 
 # Or use the convenience script
 ./scripts/run.sh --redis-url redis://localhost:6379
@@ -40,9 +40,9 @@ cargo run --bin api
 ## Features
 
 - **🚀 Lightweight**: Minimal footprint, perfect for edge computing
-- **🔌 Multi-Database**: Support for Redis, Qdrant, and MDBX
+- **🔌 Redis-Focused**: Optimized Redis operations with connection pooling
 - **🌐 Dual Interface**: HTTP REST API + WebSocket real-time updates
-- **📱 TypeScript SDK**: Full client library with type safety
+- **📱 TypeScript SDK**: Full client library with type safety via NAPI bindings
 - **⚡ High Performance**: Built in Rust for maximum efficiency
 - **🔧 Pluggable**: Easy to extend with new database backends
 - **Redis Operations**: Full support for Redis string, hash, set, and admin operations
@@ -55,37 +55,32 @@ cargo run --bin api
 ## TypeScript SDK
 
 ```bash
-npm install dbx-sdk
+npm install @0dbx/redis
 # or
-yarn add dbx-sdk
+yarn add @0dbx/redis
 # or
-pnpm add dbx-sdk
+pnpm add @0dbx/redis
 ```
 
 ```typescript
-import { DbxClient } from "dbx-sdk";
+import { DbxRedisClient } from "@0dbx/redis";
 
 // Create client
-const client = new DbxClient({
-  baseUrl: "http://localhost:3000",
-  timeout: 5000,
-});
+const client = new DbxRedisClient("http://localhost:3000");
 
 // String operations
 await client.string.set("my-key", "hello world", 3600); // with TTL
 const value = await client.string.get("my-key");
 console.log(value); // "hello world"
 
-// Hash operations
-await client.hash.setField("user:1", "name", "John");
-const name = await client.hash.getField("user:1", "name");
-
 // Set operations
 await client.set.addMember("tags", "redis");
 const members = await client.set.getMembers("tags");
 
-// Admin operations
-const health = await client.admin.health();
+// WebSocket client
+import { DbxWsClient } from "@0dbx/redis";
+const wsClient = new DbxWsClient("ws://localhost:3000/redis_ws");
+await wsClient.string.set("my-key", "hello world");
 ```
 
 ## Use Cases
@@ -105,7 +100,7 @@ cd dbx
 cargo build --release
 
 # Run locally
-cargo run -- --redis-url redis://localhost:6379
+cargo run --bin dbx-redis-api -- --redis-url redis://localhost:6379
 
 # Run tests
 cargo test
@@ -119,7 +114,7 @@ docker build -t effortlesslabs/dbx .
 
 # Run with custom config
 docker run -d --name dbx -p 8080:3000 \
-  -e DATABASE_URL=redis://user:pass@redis.com:6379 \
+  -e REDIS_URL=redis://user:pass@redis.com:6379 \
   -e PORT=3000 \
   -e LOG_LEVEL=DEBUG \
   effortlesslabs/dbx:latest
@@ -134,13 +129,13 @@ For Railway deployment, use the AMD64-only Docker image tags to avoid "exec form
 ```bash
 # Use AMD64-only tag for Railway
 effortlesslabs/dbx:latest-amd64-only
-effortlesslabs/dbx:0.1.4-amd64-only
+effortlesslabs/dbx:0.1.6-amd64-only
 ```
 
 # Multi-arch (AMD64 + ARM64)
 
 effortlesslabs/dbx:latest
-effortlesslabs/dbx:0.1.4
+effortlesslabs/dbx:0.1.6
 
 ### Docker Compose
 
@@ -152,7 +147,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - DATABASE_URL=redis://redis:6379
+      - REDIS_URL=redis://redis:6379
       - PORT=3000
       - LOG_LEVEL=INFO
     depends_on:
@@ -163,6 +158,27 @@ services:
     ports:
       - "6379:6379"
 ```
+
+## API Endpoints
+
+### REST API
+
+- `GET /redis/string/{key}` - Get string value
+- `POST /redis/string/{key}` - Set string value
+- `DELETE /redis/string/{key}` - Delete string value
+- `GET /redis/hash/{key}/field/{field}` - Get hash field
+- `POST /redis/hash/{key}/field/{field}` - Set hash field
+- `GET /redis/set/{key}/members` - Get set members
+- `POST /redis/set/{key}/members` - Add set members
+- `GET /redis/admin/health` - Health check
+- `GET /redis/admin/ping` - Ping server
+
+### WebSocket API
+
+- `ws://localhost:3000/redis_ws/string/ws` - String operations
+- `ws://localhost:3000/redis_ws/hash/ws` - Hash operations
+- `ws://localhost:3000/redis_ws/set/ws` - Set operations
+- `ws://localhost:3000/redis_ws/admin/ws` - Admin operations
 
 ## Publishing
 

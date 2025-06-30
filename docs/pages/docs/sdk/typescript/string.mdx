@@ -44,403 +44,411 @@ const stringClient = client.string;
 
 ## String Operations
 
-### GET - Retrieve a String Value
+The DBX TypeScript SDK provides comprehensive string operations for Redis. This guide covers all available string methods and their usage patterns.
 
-Get a string value by key.
+## Overview
+
+String operations are the most basic data type in Redis, supporting simple key-value storage with additional features like expiration and existence checks.
+
+## Basic Operations
+
+### Creating a String Client
 
 ```typescript
-// REST
-const value = await client.string.get("user:123:name");
+import { DbxRedisClient } from "@0dbx/redis";
 
-// WebSocket
-const value = await client.string.get("user:123:name");
-
-console.log(value); // "John Doe"
+const client = new DbxRedisClient("http://localhost:3000");
+const stringClient = client.string;
 ```
 
-**TypeScript Types:**
+### Setting Values
 
 ```typescript
-interface StringGetOptions {
-  key: string;
-}
+// Set a simple string value
+await stringClient.set("my-key", "hello world");
 
-// Returns: string | null
+// Set with TTL (Time To Live) in seconds
+await stringClient.set("my-key", "hello world", 3600); // expires in 1 hour
+
+// Set with 0 TTL (no expiration)
+await stringClient.set("my-key", "hello world", 0);
 ```
 
-### SET - Set a String Value
-
-Set a string value with optional expiration.
+### Getting Values
 
 ```typescript
-// REST
-await client.string.set("user:123:name", "John Doe", {
-  expire: 3600, // 1 hour
-});
-
-// WebSocket
-await client.string.set("user:123:name", "John Doe", {
-  expire: 3600,
-});
-```
-
-**TypeScript Types:**
-
-```typescript
-interface StringSetOptions {
-  expire?: number; // TTL in seconds
-  nx?: boolean; // Only set if key doesn't exist
-  xx?: boolean; // Only set if key exists
-}
-
-// Returns: boolean
-```
-
-### SETNX - Set if Not Exists
-
-Set a string value only if the key doesn't already exist.
-
-```typescript
-// REST
-const created = await client.string.setnx("user:123:name", "John Doe");
-
-// WebSocket
-const created = await client.string.setnx("user:123:name", "John Doe");
-
-console.log(created); // true if created, false if already existed
-```
-
-**TypeScript Types:**
-
-```typescript
-interface StringSetNXOptions {
-  key: string;
-  value: string;
-}
-
-// Returns: boolean
-```
-
-### MSET - Set Multiple Values
-
-Set multiple string values atomically.
-
-```typescript
-// REST
-await client.string.mset({
-  "user:123:name": "John Doe",
-  "user:123:email": "john@example.com",
-  "user:123:age": "30",
-});
-
-// WebSocket
-await client.string.mset({
-  "user:123:name": "John Doe",
-  "user:123:email": "john@example.com",
-  "user:123:age": "30",
-});
-```
-
-**TypeScript Types:**
-
-```typescript
-interface StringMSetOptions {
-  pairs: Record<string, string>;
-}
-
-// Returns: boolean
-```
-
-### MGET - Get Multiple Values
-
-Retrieve multiple string values by keys.
-
-```typescript
-// REST
-const values = await client.string.mget(["user:123:name", "user:123:email", "user:123:age"]);
-
-// WebSocket
-const values = await client.string.mget(["user:123:name", "user:123:email", "user:123:age"]);
-
-console.log(values); // ["John Doe", "john@example.com", "30"]
-```
-
-**TypeScript Types:**
-
-```typescript
-interface StringMGetOptions {
-  keys: string[];
-}
-
-// Returns: (string | null)[]
-```
-
-### INCR - Increment Counter
-
-Increment a numeric string value by 1.
-
-```typescript
-// REST
-const newValue = await client.string.incr("counter:visits");
-
-// WebSocket
-const newValue = await client.string.incr("counter:visits");
-
-console.log(newValue); // 42
-```
-
-**TypeScript Types:**
-
-```typescript
-interface StringIncrOptions {
-  key: string;
-}
-
-// Returns: number
-```
-
-### INCRBY - Increment by Amount
-
-Increment a numeric string value by a specified amount.
-
-```typescript
-// REST
-const newValue = await client.string.incrby("counter:visits", 5);
-
-// WebSocket
-const newValue = await client.string.incrby("counter:visits", 5);
-
-console.log(newValue); // 47
-```
-
-**TypeScript Types:**
-
-```typescript
-interface StringIncrByOptions {
-  key: string;
-  amount: number;
-}
-
-// Returns: number
-```
-
-### DECR - Decrement Counter
-
-Decrement a numeric string value by 1.
-
-```typescript
-// REST
-const newValue = await client.string.decr("counter:visits");
-
-// WebSocket
-const newValue = await client.string.decr("counter:visits");
-
-console.log(newValue); // 46
-```
-
-**TypeScript Types:**
-
-```typescript
-interface StringDecrOptions {
-  key: string;
-}
-
-// Returns: number
-```
-
-### DECRBY - Decrement by Amount
-
-Decrement a numeric string value by a specified amount.
-
-```typescript
-// REST
-const newValue = await client.string.decrby("counter:visits", 3);
-
-// WebSocket
-const newValue = await client.string.decrby("counter:visits", 3);
-
-console.log(newValue); // 43
-```
-
-**TypeScript Types:**
-
-```typescript
-interface StringDecrByOptions {
-  key: string;
-  amount: number;
-}
-
-// Returns: number
-```
-
-### APPEND - Append to String
-
-Append a value to an existing string.
-
-```typescript
-// REST
-const newLength = await client.string.append("user:123:notes", " - Updated on 2024-01-15");
-
-// WebSocket
-const newLength = await client.string.append("user:123:notes", " - Updated on 2024-01-15");
-
-console.log(newLength); // 45
-```
-
-**TypeScript Types:**
-
-```typescript
-interface StringAppendOptions {
-  key: string;
-  value: string;
-}
-
-// Returns: number (new string length)
-```
-
-### STRLEN - Get String Length
-
-Get the length of a string value.
-
-```typescript
-// REST
-const length = await client.string.strlen("user:123:name");
-
-// WebSocket
-const length = await client.string.strlen("user:123:name");
-
-console.log(length); // 8
-```
-
-**TypeScript Types:**
-
-```typescript
-interface StringStrlenOptions {
-  key: string;
-}
-
-// Returns: number
-```
-
-### GETRANGE - Get String Range
-
-Get a substring from a string value.
-
-```typescript
-// REST
-const substring = await client.string.getrange("user:123:name", 0, 3);
-
-// WebSocket
-const substring = await client.string.getrange("user:123:name", 0, 3);
-
-console.log(substring); // "John"
-```
-
-**TypeScript Types:**
-
-```typescript
-interface StringGetRangeOptions {
-  key: string;
-  start: number;
-  end: number;
-}
-
-// Returns: string
-```
-
-### SETRANGE - Set String Range
-
-Set a substring within a string value.
-
-```typescript
-// REST
-const newLength = await client.string.setrange("user:123:name", 5, "Smith");
-
-// WebSocket
-const newLength = await client.string.setrange("user:123:name", 5, "Smith");
-
-console.log(newLength); // 10
-```
-
-**TypeScript Types:**
-
-```typescript
-interface StringSetRangeOptions {
-  key: string;
-  offset: number;
-  value: string;
-}
-
-// Returns: number (new string length)
-```
-
-## Error Handling
-
-The SDK provides comprehensive error handling with typed error responses:
-
-```typescript
-import { DBXError } from "@effortlesslabs/dbx";
-
+// Get a string value
+const value = await stringClient.get("my-key");
+console.log(value); // "hello world"
+
+// Get a non-existent key
 try {
-  const value = await client.string.get("nonexistent:key");
+  const value = await stringClient.get("non-existent-key");
 } catch (error) {
-  if (error instanceof DBXError) {
-    console.log(error.code); // "KEY_NOT_FOUND"
-    console.log(error.message); // "Key 'nonexistent:key' not found"
-    console.log(error.status); // 404
-  }
+  console.log("Key not found");
 }
 ```
 
-**Error Types:**
+### Deleting Values
 
 ```typescript
-interface DBXError {
-  code: string;
-  message: string;
-  status: number;
-  details?: any;
+// Delete a key
+await stringClient.delete("my-key");
+
+// Check if deletion was successful
+try {
+  const value = await stringClient.get("my-key");
+} catch (error) {
+  console.log("Key was successfully deleted");
 }
 ```
 
-## Advanced Usage
+## Advanced Operations
+
+### Checking Existence
+
+```typescript
+// Check if a key exists
+const exists = await stringClient.exists("my-key");
+console.log(exists); // true or false
+```
+
+### TTL Operations
+
+```typescript
+// Get remaining TTL for a key
+const ttl = await stringClient.ttl("my-key");
+console.log(ttl); // seconds remaining, -1 if no TTL, -2 if key doesn't exist
+
+// Set TTL for an existing key
+await stringClient.expire("my-key", 7200); // 2 hours
+
+// Remove TTL (make key persistent)
+await stringClient.expire("my-key", -1);
+```
 
 ### Batch Operations
 
 ```typescript
-// Batch multiple operations
-const results = await Promise.all([
-  client.string.set("key1", "value1"),
-  client.string.set("key2", "value2"),
-  client.string.set("key3", "value3"),
+// Perform multiple string operations in a single request
+const results = await stringClient.batch([
+  { type: "set", key: "key1", value: "value1", ttl: 3600 },
+  { type: "set", key: "key2", value: "value2" },
+  { type: "get", key: "key3" },
+  { type: "delete", key: "key4" },
 ]);
 
-console.log(results); // [true, true, true]
+console.log(results);
+// [
+//   { success: true, key: "key1" },
+//   { success: true, key: "key2" },
+//   { value: "value3" },
+//   { success: true, deleted: true }
+// ]
 ```
 
-### Conditional Operations
+## WebSocket String Operations
+
+### Creating a WebSocket String Client
 
 ```typescript
-// Set only if key doesn't exist
-const created = await client.string.set("unique:key", "value", { nx: true });
+import { DbxWsClient } from "@0dbx/redis";
 
-// Set only if key exists
-const updated = await client.string.set("existing:key", "new-value", { xx: true });
+const wsClient = new DbxWsClient("ws://localhost:3000/redis_ws");
+const wsStringClient = wsClient.string;
 ```
 
-### Expiration Management
+### WebSocket String Operations
 
 ```typescript
-// Set with expiration
-await client.string.set("session:123", "user-data", { expire: 3600 });
+// Set value via WebSocket
+await wsStringClient.set("my-key", "hello world");
 
-// Check if key exists and get TTL
-const exists = await client.admin.exists(["session:123"]);
-if (exists > 0) {
-  const ttl = await client.admin.ttl("session:123");
-  console.log(`Session expires in ${ttl} seconds`);
+// Get value via WebSocket
+const value = await wsStringClient.get("my-key");
+
+// Delete value via WebSocket
+await wsStringClient.delete("my-key");
+
+// Check existence via WebSocket
+const exists = await wsStringClient.exists("my-key");
+
+// TTL operations via WebSocket
+const ttl = await wsStringClient.ttl("my-key");
+await wsStringClient.expire("my-key", 3600);
+```
+
+## Error Handling
+
+### Common Error Patterns
+
+```typescript
+try {
+  const value = await stringClient.get("non-existent-key");
+} catch (error) {
+  if (error.message.includes("not found")) {
+    console.log("Key doesn't exist");
+  } else if (error.message.includes("timeout")) {
+    console.log("Request timed out");
+  } else {
+    console.error("Unexpected error:", error);
+  }
 }
 ```
+
+### Type-Safe Error Handling
+
+```typescript
+interface StringOperationError {
+  message: string;
+  code?: string;
+  status?: number;
+}
+
+async function safeStringOperation<T>(operation: () => Promise<T>): Promise<T | null> {
+  try {
+    return await operation();
+  } catch (error) {
+    const dbxError = error as StringOperationError;
+
+    switch (dbxError.code) {
+      case "not_found":
+        console.warn("Key not found");
+        return null;
+      case "timeout":
+        console.error("Operation timed out");
+        return null;
+      default:
+        console.error("String operation failed:", dbxError.message);
+        return null;
+    }
+  }
+}
+
+// Usage
+const value = await safeStringOperation(() => stringClient.get("my-key"));
+```
+
+## Performance Optimization
+
+### Connection Reuse
+
+```typescript
+// Create a singleton client for your application
+class StringService {
+  private static instance: DbxRedisClient;
+  private static stringClient: any;
+
+  static getInstance(): any {
+    if (!StringService.instance) {
+      StringService.instance = new DbxRedisClient("http://localhost:3000");
+      StringService.stringClient = StringService.instance.string;
+    }
+    return StringService.stringClient;
+  }
+}
+
+// Use throughout your application
+const stringClient = StringService.getInstance();
+```
+
+### Batch Operations for Performance
+
+```typescript
+// Instead of multiple individual requests
+const promises = [
+  stringClient.set("key1", "value1"),
+  stringClient.set("key2", "value2"),
+  stringClient.set("key3", "value3"),
+];
+await Promise.all(promises);
+
+// Use batch operations for better performance
+await stringClient.batch([
+  { type: "set", key: "key1", value: "value1" },
+  { type: "set", key: "key2", value: "value2" },
+  { type: "set", key: "key3", value: "value3" },
+]);
+```
+
+### Caching Patterns
+
+```typescript
+class CachedStringClient {
+  private cache = new Map<string, { value: string; expires: number }>();
+  private client: any;
+
+  constructor(client: any) {
+    this.client = client;
+  }
+
+  async get(key: string, ttl: number = 300): Promise<string | null> {
+    const cached = this.cache.get(key);
+
+    if (cached && cached.expires > Date.now()) {
+      return cached.value;
+    }
+
+    try {
+      const value = await this.client.get(key);
+      this.cache.set(key, {
+        value,
+        expires: Date.now() + ttl * 1000,
+      });
+      return value;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async set(key: string, value: string, ttl: number = 3600): Promise<void> {
+    await this.client.set(key, value, ttl);
+    this.cache.set(key, {
+      value,
+      expires: Date.now() + ttl * 1000,
+    });
+  }
+}
+
+// Usage
+const cachedClient = new CachedStringClient(stringClient);
+await cachedClient.set("my-key", "hello world", 3600);
+const value = await cachedClient.get("my-key", 300); // 5-minute cache
+```
+
+## Real-World Examples
+
+### User Session Management
+
+```typescript
+class SessionManager {
+  private client: any;
+  private prefix = "session:";
+
+  constructor(client: any) {
+    this.client = client;
+  }
+
+  async createSession(userId: string, sessionData: any): Promise<string> {
+    const sessionId = this.generateSessionId();
+    const key = `${this.prefix}${sessionId}`;
+
+    await this.client.set(key, JSON.stringify(sessionData), 86400); // 24 hours
+    return sessionId;
+  }
+
+  async getSession(sessionId: string): Promise<any | null> {
+    const key = `${this.prefix}${sessionId}`;
+
+    try {
+      const data = await this.client.get(key);
+      return JSON.parse(data);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async extendSession(sessionId: string): Promise<void> {
+    const key = `${this.prefix}${sessionId}`;
+    await this.client.expire(key, 86400); // Extend to 24 hours
+  }
+
+  async deleteSession(sessionId: string): Promise<void> {
+    const key = `${this.prefix}${sessionId}`;
+    await this.client.delete(key);
+  }
+
+  private generateSessionId(): string {
+    return Math.random().toString(36).substring(2) + Date.now().toString(36);
+  }
+}
+
+// Usage
+const sessionManager = new SessionManager(stringClient);
+const sessionId = await sessionManager.createSession("user123", {
+  userId: "user123",
+  loginTime: new Date().toISOString(),
+  permissions: ["read", "write"],
+});
+
+const session = await sessionManager.getSession(sessionId);
+```
+
+### Configuration Management
+
+```typescript
+class ConfigManager {
+  private client: any;
+  private prefix = "config:";
+
+  constructor(client: any) {
+    this.client = client;
+  }
+
+  async setConfig(key: string, value: any): Promise<void> {
+    const configKey = `${this.prefix}${key}`;
+    await this.client.set(configKey, JSON.stringify(value));
+  }
+
+  async getConfig<T>(key: string, defaultValue?: T): Promise<T | null> {
+    const configKey = `${this.prefix}${key}`;
+
+    try {
+      const data = await this.client.get(configKey);
+      return JSON.parse(data);
+    } catch (error) {
+      return defaultValue || null;
+    }
+  }
+
+  async deleteConfig(key: string): Promise<void> {
+    const configKey = `${this.prefix}${key}`;
+    await this.client.delete(configKey);
+  }
+}
+
+// Usage
+const configManager = new ConfigManager(stringClient);
+
+await configManager.setConfig("app.settings", {
+  theme: "dark",
+  language: "en",
+  notifications: true,
+});
+
+const settings = await configManager.getConfig("app.settings");
+```
+
+## API Reference
+
+### Methods
+
+| Method                  | Description         | Parameters                                 | Returns               |
+| ----------------------- | ------------------- | ------------------------------------------ | --------------------- |
+| `set(key, value, ttl?)` | Set a string value  | `key: string, value: string, ttl?: number` | `Promise<void>`       |
+| `get(key)`              | Get a string value  | `key: string`                              | `Promise<string>`     |
+| `delete(key)`           | Delete a key        | `key: string`                              | `Promise<void>`       |
+| `exists(key)`           | Check if key exists | `key: string`                              | `Promise<boolean>`    |
+| `ttl(key)`              | Get remaining TTL   | `key: string`                              | `Promise<number>`     |
+| `expire(key, ttl)`      | Set TTL for key     | `key: string, ttl: number`                 | `Promise<void>`       |
+| `batch(operations)`     | Batch operations    | `operations: Array<BatchOperation>`        | `Promise<Array<any>>` |
+
+### Batch Operation Types
+
+```typescript
+interface BatchOperation {
+  type: "set" | "get" | "delete" | "exists" | "ttl" | "expire";
+  key: string;
+  value?: string;
+  ttl?: number;
+}
+```
+
+## Next Steps
+
+- [Set Operations](/docs/sdk/typescript/set) - Learn about set operations
+- [WebSocket Operations](/docs/sdk/typescript/websocket) - Learn about WebSocket operations
+- [API Reference](/docs/api/rest/string) - Explore the complete REST API documentation
 
 ## TypeScript Configuration
 

@@ -13,8 +13,8 @@ import { HomePage } from "vocs/components";
   </HomePage.Tagline>
   <HomePage.InstallPackage name="dbx-sdk" type="install" />
   <HomePage.Description>
-    DBX is a minimal, blazing-fast Redis API proxy designed for edge and embedded systems. Built in Rust 
-    with TypeScript SDK support, providing REST and WebSocket APIs for Redis operations.
+    DBX is a minimal, blazing-fast Redis API proxy designed for edge and embedded systems. Built in
+    Rust with TypeScript SDK support, providing REST and WebSocket APIs for Redis operations.
   </HomePage.Description>
   <HomePage.Buttons>
     <HomePage.Button href="/docs" variant="accent">
@@ -23,6 +23,146 @@ import { HomePage } from "vocs/components";
     <HomePage.Button href="https://github.com/effortlesslabs/dbx">GitHub</HomePage.Button>
   </HomePage.Buttons>
 </HomePage.Root>
+
+# DBX Documentation
+
+Welcome to the DBX documentation! DBX is a lightweight, high-performance Redis API proxy designed for edge and embedded systems.
+
+## What is DBX?
+
+DBX is a minimal and portable HTTP/WebSocket proxy that exposes Redis through a unified API layer. Built in Rust, DBX is optimized for edge runtimes like Cloudflare Workers, Raspberry Pi, and RISC-V boards.
+
+### Key Features
+
+- **🚀 Lightweight**: Minimal footprint, perfect for edge computing
+- **🔌 Redis-Focused**: Optimized Redis operations with connection pooling
+- **🌐 Dual Interface**: HTTP REST API + WebSocket real-time updates
+- **📱 TypeScript SDK**: Full client library with type safety via NAPI bindings
+- **⚡ High Performance**: Built in Rust for maximum efficiency
+- **🔧 Pluggable**: Easy to extend with new database backends
+
+## Quick Start
+
+### Using Docker
+
+```bash
+# Run with Docker
+docker run -d --name dbx -p 3000:3000 \
+  -e REDIS_URL=redis://localhost:6379 \
+  effortlesslabs/dbx:latest
+```
+
+### Using TypeScript SDK
+
+```bash
+# Install SDK
+npm install @0dbx/redis
+
+# Use in your code
+import { DbxRedisClient } from "@0dbx/redis";
+
+const client = new DbxRedisClient("http://localhost:3000");
+await client.string.set("key", "value");
+const value = await client.string.get("key");
+```
+
+## Documentation Sections
+
+### Getting Started
+
+- **[Quick Start Guide](/docs/getting-started)** - Get up and running in minutes
+- **[Installation](/docs/installation)** - Detailed installation instructions
+- **[Configuration](/docs/configuration)** - Learn about configuration options
+
+### API Reference
+
+#### REST API
+
+- **[String Operations](/docs/api/rest/string)** - String data type operations
+- **[Hash Operations](/docs/api/rest/hash)** - Hash data type operations
+- **[Set Operations](/docs/api/rest/set)** - Set data type operations
+- **[Admin Operations](/docs/api/rest/admin)** - Server administration
+- **[Error Handling](/docs/api/rest/errors)** - Error codes and responses
+
+#### WebSocket API
+
+- **[Connection Guide](/docs/api/websocket/connection)** - WebSocket connection setup
+- **[String Operations](/docs/api/websocket/string)** - WebSocket string operations
+- **[Hash Operations](/docs/api/websocket/hash)** - WebSocket hash operations
+- **[Set Operations](/docs/api/websocket/set)** - WebSocket set operations
+- **[Admin Operations](/docs/api/websocket/admin)** - WebSocket admin operations
+
+### SDK Documentation
+
+#### TypeScript SDK
+
+- **[Installation](/docs/sdk/typescript/installation)** - SDK setup and configuration
+- **[String Operations](/docs/sdk/typescript/string)** - String operations with TypeScript
+- **[Set Operations](/docs/sdk/typescript/set)** - Set operations with TypeScript
+- **[WebSocket Operations](/docs/sdk/typescript/websocket)** - WebSocket operations with TypeScript
+
+### Deployment
+
+- **[Docker Deployment](/docs/deployment/docker)** - Deploy with Docker
+- **[Cloud Deployment](/docs/deployment/cloud)** - Deploy to cloud platforms
+
+### Development
+
+- **[Development Setup](/docs/development)** - Set up development environment
+- **[Contributing](/docs/development/contributing)** - How to contribute to DBX
+
+## API Endpoints Overview
+
+### REST API Endpoints
+
+| Endpoint                          | Method | Description         |
+| --------------------------------- | ------ | ------------------- |
+| `/redis/string/{key}`             | GET    | Get string value    |
+| `/redis/string/{key}`             | POST   | Set string value    |
+| `/redis/string/{key}`             | DELETE | Delete string value |
+| `/redis/hash/{key}/field/{field}` | GET    | Get hash field      |
+| `/redis/hash/{key}/field/{field}` | POST   | Set hash field      |
+| `/redis/set/{key}/members`        | GET    | Get set members     |
+| `/redis/set/{key}/members`        | POST   | Add set members     |
+| `/redis/admin/health`             | GET    | Health check        |
+| `/redis/admin/ping`               | GET    | Ping server         |
+
+### WebSocket Endpoints
+
+| Endpoint                                 | Description       |
+| ---------------------------------------- | ----------------- |
+| `ws://localhost:3000/redis_ws/string/ws` | String operations |
+| `ws://localhost:3000/redis_ws/hash/ws`   | Hash operations   |
+| `ws://localhost:3000/redis_ws/set/ws`    | Set operations    |
+| `ws://localhost:3000/redis_ws/admin/ws`  | Admin operations  |
+
+## Use Cases
+
+### Edge Computing
+
+Deploy DBX on edge nodes to provide local database access with cloud synchronization capabilities.
+
+### IoT Applications
+
+Use DBX in embedded systems to provide a standardized API for various database backends.
+
+### Microservices
+
+Integrate DBX as a database proxy layer in microservice architectures for consistent data access patterns.
+
+### Real-time Applications
+
+Leverage WebSocket connections for real-time data synchronization and event streaming.
+
+## Community
+
+- **GitHub**: [effortlesslabs/dbx](https://github.com/effortlesslabs/dbx)
+- **Issues**: [Report bugs and request features](https://github.com/effortlesslabs/dbx/issues)
+- **Discussions**: [Join the community](https://github.com/effortlesslabs/dbx/discussions)
+
+## License
+
+DBX is open source and available under the MIT License.
 
 # Features
 

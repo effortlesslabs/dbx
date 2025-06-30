@@ -1,100 +1,508 @@
-# TypeScript SDK - WebSocket Client
+# WebSocket Operations
 
-The DBX TypeScript SDK provides a WebSocket client for real-time bidirectional communication with the database. This client offers type-safe methods for all operations with full TypeScript support.
+The DBX TypeScript SDK provides WebSocket support for real-time Redis operations. This guide covers WebSocket client usage and real-time data synchronization.
 
-## Installation
+## Overview
 
-```bash
-npm install @effortlesslabs/dbx
-```
+WebSocket operations provide real-time, bidirectional communication with the DBX server. This is ideal for applications that need live updates, real-time dashboards, or event-driven architectures.
 
-## Basic Usage
+## Basic Setup
 
-```typescript
-import { DBXWebSocketClient } from "@effortlesslabs/dbx";
-
-const client = new DBXWebSocketClient({
-  url: "ws://localhost:8080/ws",
-  token: "your-jwt-token",
-});
-
-await client.connect();
-```
-
-## Connection Management
-
-### Connect
+### Creating a WebSocket Client
 
 ```typescript
-await client.connect();
+import { DbxWsClient } from "@0dbx/redis";
+
+// Create WebSocket client
+const wsClient = new DbxWsClient("ws://localhost:3000/redis_ws");
+
+// Get the base URL
+const baseUrl = wsClient.get_base_url();
+console.log("Connected to:", baseUrl);
 ```
 
-### Disconnect
+### Connection Management
 
 ```typescript
-await client.disconnect();
+// The WebSocket connection is automatically managed
+const wsClient = new DbxWsClient("ws://localhost:3000/redis_ws");
+
+// Test the connection
+const testResult = await wsClient.test_method();
+console.log(testResult); // "hello from napi"
 ```
 
-### Connection State
+## String Operations via WebSocket
+
+### Creating a WebSocket String Client
 
 ```typescript
-const isConnected = client.isConnected();
+import { DbxWsClient } from "@0dbx/redis";
+
+const wsClient = new DbxWsClient("ws://localhost:3000/redis_ws");
+const wsStringClient = wsClient.string;
 ```
 
-### Event Listeners
+### WebSocket String Operations
 
 ```typescript
-client.on("connect", () => console.log("Connected"));
-client.on("disconnect", () => console.log("Disconnected"));
-client.on("error", (error) => console.error("Error:", error));
+// Set value via WebSocket
+await wsStringClient.set("my-key", "hello world");
+
+// Get value via WebSocket
+const value = await wsStringClient.get("my-key");
+console.log(value); // "hello world"
+
+// Delete value via WebSocket
+await wsStringClient.delete("my-key");
+
+// Check existence via WebSocket
+const exists = await wsStringClient.exists("my-key");
+
+// TTL operations via WebSocket
+const ttl = await wsStringClient.ttl("my-key");
+await wsStringClient.expire("my-key", 3600);
 ```
 
-## Available Clients
+## Set Operations via WebSocket
 
-### String Client
+### Creating a WebSocket Set Client
 
 ```typescript
-const stringClient = client.string;
-// See String Client documentation for available methods
+import { DbxWsClient } from "@0dbx/redis";
+
+const wsClient = new DbxWsClient("ws://localhost:3000/redis_ws");
+const wsSetClient = wsClient.set;
 ```
 
-### Hash Client
+### WebSocket Set Operations
 
 ```typescript
-const hashClient = client.hash;
-// See Hash Client documentation for available methods
+// Add member via WebSocket
+await wsSetClient.addMember("tags", "redis");
+
+// Get members via WebSocket
+const members = await wsSetClient.getMembers("tags");
+
+// Remove member via WebSocket
+await wsSetClient.removeMember("tags", "redis");
+
+// Check membership via WebSocket
+const isMember = await wsSetClient.isMember("tags", "redis");
+
+// Set operations via WebSocket
+const union = await wsSetClient.union(["set1", "set2"]);
+const intersection = await wsSetClient.intersection(["set1", "set2"]);
 ```
 
-### Set Client
+## Real-Time Applications
+
+### Live Dashboard Example
 
 ```typescript
-const setClient = client.set;
-// See Set Client documentation for available methods
+class LiveDashboard {
+  private wsClient: DbxWsClient;
+  private stringClient: any;
+  private setClient: any;
+
+  constructor() {
+    this.wsClient = new DbxWsClient("ws://localhost:3000/redis_ws");
+    this.stringClient = this.wsClient.string;
+    this.setClient = this.wsClient.set;
+  }
+
+  async startMonitoring() {
+    // Monitor online users
+    await this.monitorOnlineUsers();
+
+    // Monitor system metrics
+    await this.monitorSystemMetrics();
+
+    // Monitor real-time events
+    await this.monitorEvents();
+  }
+
+  private async monitorOnlineUsers() {
+    // Get current online users
+    const onlineUsers = await this.setClient.getMembers("online:users");
+    console.log("Current online users:", onlineUsers.length);
+
+    // Monitor for changes (you would implement polling or event listening)
+    setInterval(async () => {
+      const currentUsers = await this.setClient.getMembers("online:users");
+      console.log("Online users updated:", currentUsers.length);
+    }, 5000);
+  }
+
+  private async monitorSystemMetrics() {
+    // Get system metrics
+    const cpuUsage = await this.stringClient.get("metrics:cpu");
+    const memoryUsage = await this.stringClient.get("metrics:memory");
+
+    console.log("CPU Usage:", cpuUsage);
+    console.log("Memory Usage:", memoryUsage);
+  }
+
+  private async monitorEvents() {
+    // Monitor recent events
+    const recentEvents = await this.setClient.getMembers("events:recent");
+    console.log("Recent events:", recentEvents);
+  }
+}
+
+// Usage
+const dashboard = new LiveDashboard();
+dashboard.startMonitoring();
 ```
 
-### Admin Client
+### Real-Time Chat Application
 
 ```typescript
-const adminClient = client.admin;
-// See Admin Client documentation for available methods
+class ChatApplication {
+  private wsClient: DbxWsClient;
+  private stringClient: any;
+  private setClient: any;
+
+  constructor() {
+    this.wsClient = new DbxWsClient("ws://localhost:3000/redis_ws");
+    this.stringClient = this.wsClient.string;
+    this.setClient = this.wsClient.set;
+  }
+
+  async joinRoom(userId: string, roomId: string) {
+    // Add user to room
+    await this.setClient.addMember(`room:${roomId}:users`, userId);
+
+    // Add user to online users
+    await this.setClient.addMember("online:users", userId);
+
+    // Get room messages
+    const messages = await this.getRoomMessages(roomId);
+    return messages;
+  }
+
+  async leaveRoom(userId: string, roomId: string) {
+    // Remove user from room
+    await this.setClient.removeMember(`room:${roomId}:users`, userId);
+
+    // Remove from online users if not in any other room
+    const userRooms = await this.getUserRooms(userId);
+    if (userRooms.length === 0) {
+      await this.setClient.removeMember("online:users", userId);
+    }
+  }
+
+  async sendMessage(roomId: string, userId: string, message: string) {
+    const messageId = this.generateMessageId();
+    const messageData = {
+      id: messageId,
+      userId,
+      message,
+      timestamp: new Date().toISOString(),
+    };
+
+    // Store message
+    await this.stringClient.set(
+      `message:${roomId}:${messageId}`,
+      JSON.stringify(messageData),
+      86400 // 24 hours
+    );
+
+    // Add to room messages
+    await this.setClient.addMember(`room:${roomId}:messages`, messageId);
+
+    return messageData;
+  }
+
+  async getRoomMessages(roomId: string) {
+    const messageIds = await this.setClient.getMembers(`room:${roomId}:messages`);
+    const messages = [];
+
+    for (const messageId of messageIds) {
+      try {
+        const messageData = await this.stringClient.get(`message:${roomId}:${messageId}`);
+        messages.push(JSON.parse(messageData));
+      } catch (error) {
+        // Message might have expired
+        console.warn(`Message ${messageId} not found`);
+      }
+    }
+
+    return messages.sort(
+      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+  }
+
+  async getRoomUsers(roomId: string) {
+    return await this.setClient.getMembers(`room:${roomId}:users`);
+  }
+
+  async getUserRooms(userId: string) {
+    // This would require additional implementation to track user rooms
+    const allRooms = await this.setClient.getMembers("rooms:all");
+    const userRooms = [];
+
+    for (const roomId of allRooms) {
+      const isMember = await this.setClient.isMember(`room:${roomId}:users`, userId);
+      if (isMember) {
+        userRooms.push(roomId);
+      }
+    }
+
+    return userRooms;
+  }
+
+  private generateMessageId(): string {
+    return Math.random().toString(36).substring(2) + Date.now().toString(36);
+  }
+}
+
+// Usage
+const chat = new ChatApplication();
+await chat.joinRoom("user123", "room:general");
+await chat.sendMessage("room:general", "user123", "Hello everyone!");
+const messages = await chat.getRoomMessages("room:general");
+```
+
+### Real-Time Analytics
+
+```typescript
+class RealTimeAnalytics {
+  private wsClient: DbxWsClient;
+  private stringClient: any;
+  private setClient: any;
+
+  constructor() {
+    this.wsClient = new DbxWsClient("ws://localhost:3000/redis_ws");
+    this.stringClient = this.wsClient.string;
+    this.setClient = this.wsClient.set;
+  }
+
+  async trackPageView(pageId: string, userId?: string) {
+    const timestamp = Date.now();
+
+    // Increment page view counter
+    const currentViews = (await this.stringClient.get(`page:${pageId}:views`)) || "0";
+    const newViews = parseInt(currentViews) + 1;
+    await this.stringClient.set(`page:${pageId}:views`, newViews.toString());
+
+    // Track unique visitors
+    if (userId) {
+      await this.setClient.addMember(`page:${pageId}:visitors`, userId);
+    }
+
+    // Track hourly views
+    const hour = new Date().getHours();
+    const hourlyKey = `page:${pageId}:hourly:${hour}`;
+    const hourlyViews = (await this.stringClient.get(hourlyKey)) || "0";
+    const newHourlyViews = parseInt(hourlyViews) + 1;
+    await this.stringClient.set(hourlyKey, newHourlyViews.toString(), 86400); // 24 hours
+
+    return {
+      pageId,
+      totalViews: newViews,
+      uniqueVisitors: await this.setClient.getCardinality(`page:${pageId}:visitors`),
+      hourlyViews: newHourlyViews,
+    };
+  }
+
+  async trackEvent(eventName: string, userId?: string, metadata?: any) {
+    const eventId = this.generateEventId();
+    const eventData = {
+      id: eventId,
+      name: eventName,
+      userId,
+      metadata,
+      timestamp: new Date().toISOString(),
+    };
+
+    // Store event
+    await this.stringClient.set(
+      `event:${eventId}`,
+      JSON.stringify(eventData),
+      604800 // 7 days
+    );
+
+    // Add to recent events
+    await this.setClient.addMember("events:recent", eventId);
+
+    // Track event count
+    const eventCount = (await this.stringClient.get(`event:${eventName}:count`)) || "0";
+    const newCount = parseInt(eventCount) + 1;
+    await this.stringClient.set(`event:${eventName}:count`, newCount.toString());
+
+    return eventData;
+  }
+
+  async getPageAnalytics(pageId: string) {
+    const totalViews = (await this.stringClient.get(`page:${pageId}:views`)) || "0";
+    const uniqueVisitors = await this.setClient.getCardinality(`page:${pageId}:visitors`);
+
+    // Get hourly data for the last 24 hours
+    const hourlyData = {};
+    for (let hour = 0; hour < 24; hour++) {
+      const hourlyViews = (await this.stringClient.get(`page:${pageId}:hourly:${hour}`)) || "0";
+      hourlyData[hour] = parseInt(hourlyViews);
+    }
+
+    return {
+      pageId,
+      totalViews: parseInt(totalViews),
+      uniqueVisitors,
+      hourlyData,
+    };
+  }
+
+  async getEventAnalytics(eventName: string) {
+    const eventCount = (await this.stringClient.get(`event:${eventName}:count`)) || "0";
+    return {
+      eventName,
+      count: parseInt(eventCount),
+    };
+  }
+
+  private generateEventId(): string {
+    return Math.random().toString(36).substring(2) + Date.now().toString(36);
+  }
+}
+
+// Usage
+const analytics = new RealTimeAnalytics();
+await analytics.trackPageView("homepage", "user123");
+await analytics.trackEvent("button_click", "user123", { button: "signup" });
+const pageStats = await analytics.getPageAnalytics("homepage");
+```
+
+## Performance Considerations
+
+### Connection Management
+
+```typescript
+class WebSocketManager {
+  private static instance: DbxWsClient;
+  private static stringClient: any;
+  private static setClient: any;
+
+  static getInstance(): { wsClient: DbxWsClient; stringClient: any; setClient: any } {
+    if (!WebSocketManager.instance) {
+      WebSocketManager.instance = new DbxWsClient("ws://localhost:3000/redis_ws");
+      WebSocketManager.stringClient = WebSocketManager.instance.string;
+      WebSocketManager.setClient = WebSocketManager.instance.set;
+    }
+
+    return {
+      wsClient: WebSocketManager.instance,
+      stringClient: WebSocketManager.stringClient,
+      setClient: WebSocketManager.setClient,
+    };
+  }
+}
+
+// Use throughout your application
+const { wsClient, stringClient, setClient } = WebSocketManager.getInstance();
+```
+
+### Batch Operations
+
+```typescript
+// For multiple operations, consider batching
+const operations = [
+  () => stringClient.set("key1", "value1"),
+  () => stringClient.set("key2", "value2"),
+  () => setClient.addMember("set1", "member1"),
+];
+
+// Execute in parallel
+await Promise.all(operations.map((op) => op()));
 ```
 
 ## Error Handling
 
+### WebSocket Error Handling
+
 ```typescript
-try {
-  await client.connect();
-  const value = await client.string.get("key");
-} catch (error) {
-  if (error instanceof DBXError) {
-    console.log(error.code, error.message);
+class RobustWebSocketClient {
+  private wsClient: DbxWsClient;
+  private retryAttempts = 0;
+  private maxRetries = 3;
+
+  constructor() {
+    this.wsClient = new DbxWsClient("ws://localhost:3000/redis_ws");
+  }
+
+  async executeWithRetry<T>(operation: () => Promise<T>): Promise<T> {
+    try {
+      return await operation();
+    } catch (error) {
+      if (this.retryAttempts < this.maxRetries) {
+        this.retryAttempts++;
+        console.log(`Retry attempt ${this.retryAttempts} for WebSocket operation`);
+
+        // Wait before retry
+        await new Promise((resolve) => setTimeout(resolve, 1000 * this.retryAttempts));
+
+        return this.executeWithRetry(operation);
+      } else {
+        throw error;
+      }
+    }
+  }
+
+  async safeStringOperation(operation: () => Promise<any>): Promise<any> {
+    return this.executeWithRetry(() => this.wsClient.string[operation.name]());
+  }
+
+  async safeSetOperation(operation: () => Promise<any>): Promise<any> {
+    return this.executeWithRetry(() => this.wsClient.set[operation.name]());
   }
 }
+
+// Usage
+const robustClient = new RobustWebSocketClient();
+const value = await robustClient.safeStringOperation(() =>
+  robustClient.wsClient.string.get("my-key")
+);
 ```
 
-## Best Practices
+## API Reference
 
-- Reuse WebSocket connections when possible
-- Implement reconnection logic for production
-- Handle connection errors gracefully
-- Use event listeners for connection state changes
+### WebSocket Client Methods
+
+| Method                 | Description              | Parameters    | Returns          |
+| ---------------------- | ------------------------ | ------------- | ---------------- |
+| `new DbxWsClient(url)` | Create WebSocket client  | `url: string` | `DbxWsClient`    |
+| `get_base_url()`       | Get base URL             | None          | `string`         |
+| `test_method()`        | Test connection          | None          | `string`         |
+| `string`               | Access string operations | None          | `WsStringClient` |
+| `set`                  | Access set operations    | None          | `WsSetClient`    |
+
+### WebSocket String Client Methods
+
+| Method                  | Description         | Parameters                                 | Returns            |
+| ----------------------- | ------------------- | ------------------------------------------ | ------------------ |
+| `set(key, value, ttl?)` | Set string value    | `key: string, value: string, ttl?: number` | `Promise<void>`    |
+| `get(key)`              | Get string value    | `key: string`                              | `Promise<string>`  |
+| `delete(key)`           | Delete key          | `key: string`                              | `Promise<void>`    |
+| `exists(key)`           | Check if key exists | `key: string`                              | `Promise<boolean>` |
+| `ttl(key)`              | Get remaining TTL   | `key: string`                              | `Promise<number>`  |
+| `expire(key, ttl)`      | Set TTL for key     | `key: string, ttl: number`                 | `Promise<void>`    |
+
+### WebSocket Set Client Methods
+
+| Method                           | Description                       | Parameters                                     | Returns             |
+| -------------------------------- | --------------------------------- | ---------------------------------------------- | ------------------- |
+| `addMember(key, member, ttl?)`   | Add member to set                 | `key: string, member: string, ttl?: number`    | `Promise<void>`     |
+| `addMembers(key, members, ttl?)` | Add multiple members to set       | `key: string, members: string[], ttl?: number` | `Promise<void>`     |
+| `getMembers(key)`                | Get all members of set            | `key: string`                                  | `Promise<string[]>` |
+| `getCardinality(key)`            | Get set cardinality               | `key: string`                                  | `Promise<number>`   |
+| `removeMember(key, member)`      | Remove member from set            | `key: string, member: string`                  | `Promise<void>`     |
+| `removeMembers(key, members)`    | Remove multiple members from set  | `key: string, members: string[]`               | `Promise<void>`     |
+| `isMember(key, member)`          | Check if member exists in set     | `key: string, member: string`                  | `Promise<boolean>`  |
+| `union(keys)`                    | Get union of multiple sets        | `keys: string[]`                               | `Promise<string[]>` |
+| `intersection(keys)`             | Get intersection of multiple sets | `keys: string[]`                               | `Promise<string[]>` |
+
+## Next Steps
+
+- [String Operations](/docs/sdk/typescript/string) - Learn about string operations
+- [Set Operations](/docs/sdk/typescript/set) - Learn about set operations
+- [WebSocket API Reference](/docs/api/websocket/connection) - Explore the complete WebSocket API documentation

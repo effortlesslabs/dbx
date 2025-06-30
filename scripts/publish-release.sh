@@ -255,7 +255,7 @@ else
     fi
     
     # Publish with retry logic
-    local retry_count=0
+    retry_count=0
     while [ $retry_count -lt $MAX_RETRIES ]; do
         if publish_npm_package "$TYPESCRIPT_BUILD_DIR" "$NPM_PACKAGE_ACCESS"; then
             break

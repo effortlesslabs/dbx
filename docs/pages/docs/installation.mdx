@@ -2,64 +2,54 @@
 
 This guide covers all the different ways to install and run DBX.
 
-## System Requirements
+## Prerequisites
 
-### Minimum Requirements
+- **Redis Server**: A running Redis instance (version 6.0 or higher)
+- **Rust**: For building from source (version 1.70 or higher)
+- **Docker**: For containerized deployment (optional)
+- **Node.js**: For TypeScript SDK (version 16 or higher)
 
-- **CPU**: 1 core
-- **Memory**: 64MB RAM
-- **Storage**: 10MB disk space
-- **Network**: HTTP/HTTPS access for API calls
+## Quick Start
 
-### Recommended Requirements
+### Docker (Recommended)
 
-- **CPU**: 2+ cores
-- **Memory**: 256MB+ RAM
-- **Storage**: 100MB+ disk space
-- **Network**: Low-latency connection to database
+The fastest way to get started:
 
-### Supported Platforms
+```bash
+# Run with Docker
+docker run -d --name dbx -p 3000:3000 \
+  -e REDIS_URL=redis://localhost:6379 \
+  effortlesslabs/dbx:latest
 
-- **Linux**: x86_64, ARM64, RISC-V
-- **macOS**: x86_64, ARM64 (Apple Silicon)
-- **Windows**: x86_64 (via WSL2 recommended)
-- **Docker**: All platforms
+# Or use Docker Compose
+docker-compose up -d
+```
 
 ## Installation Methods
 
-### 1. Docker (Recommended)
+### Docker Installation
 
-Docker is the easiest way to get started with DBX.
-
-#### Quick Start
+#### Pull and Run
 
 ```bash
-# Run with default settings
+# Pull the latest image
+docker pull effortlesslabs/dbx:latest
+
+# Run with basic configuration
 docker run -d --name dbx -p 3000:3000 \
-  -e DATABASE_URL=redis://localhost:6379 \
+  -e REDIS_URL=redis://localhost:6379 \
   effortlesslabs/dbx:latest
 ```
 
-#### Advanced Docker Setup
+#### Custom Configuration
 
 ```bash
-# Pull specific version
-docker pull effortlesslabs/dbx:v1.0.0
-
 # Run with custom configuration
-docker run -d --name dbx \
-  -p 8080:3000 \
-  -e DATABASE_URL=redis://user:pass@redis.com:6379 \
+docker run -d --name dbx -p 8080:3000 \
+  -e REDIS_URL=redis://user:pass@redis.com:6379 \
   -e PORT=3000 \
-  -e LOG_LEVEL=DEBUG \
   -e POOL_SIZE=20 \
-  -e TIMEOUT=10000 \
-  effortlesslabs/dbx:latest
-
-# Run with custom config file
-docker run -d --name dbx \
-  -p 3000:3000 \
-  -v $(pwd)/config.toml:/app/config.toml \
+  -e LOG_LEVEL=DEBUG \
   effortlesslabs/dbx:latest
 ```
 
@@ -69,230 +59,431 @@ Create a `docker-compose.yml` file:
 
 ```yaml
 version: "3.8"
-
 services:
-  dbx:
+  dbx-api:
     image: effortlesslabs/dbx:latest
     ports:
       - "3000:3000"
     environment:
-      - DATABASE_URL=redis://redis:6379
+      - REDIS_URL=redis://redis:6379
+      - HOST=0.0.0.0
+      - PORT=3000
+      - POOL_SIZE=10
       - LOG_LEVEL=INFO
     depends_on:
       - redis
-    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
-    volumes:
-      - redis_data:/data
-    restart: unless-stopped
-
-volumes:
-  redis_data:
 ```
 
-Run with:
+Then run:
 
 ```bash
 docker-compose up -d
 ```
 
-### 2. Binary Installation
+### Binary Installation
 
-Download pre-compiled binaries for your platform.
-
-#### Linux
+#### Download Pre-built Binary
 
 ```bash
-# Download latest release
+# Download the latest release
 curl -L https://github.com/effortlesslabs/dbx/releases/latest/download/dbx-x86_64-unknown-linux-gnu.tar.gz | tar xz
 
 # Make executable
-chmod +x dbx
-
-# Move to PATH
-sudo mv dbx /usr/local/bin/
+chmod +x dbx-redis-api
 
 # Run
-dbx --redis-url redis://localhost:6379
+./dbx-redis-api --redis-url redis://localhost:6379
 ```
 
-#### macOS
+#### Platform-Specific Binaries
 
 ```bash
-# Using Homebrew (when available)
-brew install effortlesslabs/dbx/dbx
+# Linux (x86_64)
+curl -L https://github.com/effortlesslabs/dbx/releases/latest/download/dbx-x86_64-unknown-linux-gnu.tar.gz | tar xz
 
-# Manual installation
+# macOS (x86_64)
 curl -L https://github.com/effortlesslabs/dbx/releases/latest/download/dbx-x86_64-apple-darwin.tar.gz | tar xz
-chmod +x dbx
-sudo mv dbx /usr/local/bin/
+
+# macOS (ARM64)
+curl -L https://github.com/effortlesslabs/dbx/releases/latest/download/dbx-aarch64-apple-darwin.tar.gz | tar xz
+
+# Windows (x86_64)
+curl -L https://github.com/effortlesslabs/dbx/releases/latest/download/dbx-x86_64-pc-windows-msvc.zip
 ```
 
-#### Windows
-
-```bash
-# Download Windows binary
-curl -L https://github.com/effortlesslabs/dbx/releases/latest/download/dbx-x86_64-pc-windows-gnu.zip -o dbx.zip
-
-# Extract and run
-tar -xf dbx.zip
-./dbx.exe --redis-url redis://localhost:6379
-```
-
-### 3. From Source
-
-Build DBX from source for custom modifications or unsupported platforms.
+### Build from Source
 
 #### Prerequisites
 
-- **Rust**: 1.70 or higher
-- **Cargo**: Latest version
-- **Git**: For cloning the repository
+```bash
+# Install Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source ~/.cargo/env
 
-#### Build Steps
+# Install build dependencies (Ubuntu/Debian)
+sudo apt-get update
+sudo apt-get install -y pkg-config libssl-dev
+
+# Install build dependencies (macOS)
+brew install pkg-config openssl
+```
+
+#### Clone and Build
 
 ```bash
-# Clone repository
+# Clone the repository
 git clone https://github.com/effortlesslabs/dbx.git
 cd dbx
 
-# Build in release mode
+# Build the project
 cargo build --release
 
-# Run the binary
-./target/release/dbx --redis-url redis://localhost:6379
+# Run the server
+cargo run --bin dbx-redis-api -- --redis-url redis://localhost:6379
 ```
 
-#### Cross-Compilation
+#### Development Build
 
 ```bash
-# Install target
-rustup target add x86_64-unknown-linux-gnu
+# Build for development
+cargo build
 
-# Build for specific target
-cargo build --release --target x86_64-unknown-linux-gnu
-
-# Binary will be in target/x86_64-unknown-linux-gnu/release/dbx
+# Run with debug logging
+RUST_LOG=debug cargo run --bin dbx-redis-api -- --redis-url redis://localhost:6379
 ```
 
-### 4. Package Managers
+### Package Manager Installation
 
 #### Using Cargo
 
 ```bash
-# Install from crates.io (when available)
-cargo install dbx
+# Install from crates.io (if published)
+cargo install dbx-redis-api
 
 # Run
-dbx --redis-url redis://localhost:6379
+dbx-redis-api --redis-url redis://localhost:6379
 ```
 
-## Configuration
+## TypeScript SDK Installation
 
-### Environment Variables
-
-| Variable        | Default                  | Description             |
-| --------------- | ------------------------ | ----------------------- |
-| `DATABASE_URL`  | `redis://localhost:6379` | Database connection URL |
-| `DATABASE_TYPE` | `redis`                  | Database type           |
-| `PORT`          | `3000`                   | Server port             |
-| `HOST`          | `0.0.0.0`                | Server host             |
-| `LOG_LEVEL`     | `INFO`                   | Logging level           |
-| `POOL_SIZE`     | `10`                     | Connection pool size    |
-
-### Configuration File
-
-Create a `config.toml` file:
+### NPM
 
 ```bash
-# Basic configuration using environment variables
-DATABASE_URL=redis://localhost:6379
-DATABASE_TYPE=redis
-HOST=0.0.0.0
-PORT=3000
-POOL_SIZE=10
-LOG_LEVEL=INFO
+npm install @0dbx/redis
 ```
 
-### Command Line Options
+### Yarn
 
 ```bash
-# Use the run script for easy configuration
-./scripts/run.sh --redis-url redis://localhost:6379
+yarn add @0dbx/redis
+```
 
-# With additional options
-./scripts/run.sh \
-  --redis-url redis://user:pass@redis.com:6379 \
-  --port 8080 \
-  --pool-size 20 \
-  --log-level DEBUG
+### PNPM
+
+```bash
+pnpm add @0dbx/redis
+```
+
+### Usage
+
+```typescript
+import { DbxRedisClient } from "@0dbx/redis";
+
+const client = new DbxRedisClient("http://localhost:3000");
+
+// Test connection
+const value = await client.string.get("test-key");
+console.log("Connected to DBX:", value);
+```
+
+## Platform-Specific Instructions
+
+### Linux
+
+#### Ubuntu/Debian
+
+```bash
+# Install dependencies
+sudo apt-get update
+sudo apt-get install -y curl build-essential pkg-config libssl-dev
+
+# Install Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source ~/.cargo/env
+
+# Clone and build
+git clone https://github.com/effortlesslabs/dbx.git
+cd dbx
+cargo build --release
+```
+
+#### CentOS/RHEL
+
+```bash
+# Install dependencies
+sudo yum groupinstall "Development Tools"
+sudo yum install pkg-config openssl-devel
+
+# Install Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source ~/.cargo/env
+
+# Clone and build
+git clone https://github.com/effortlesslabs/dbx.git
+cd dbx
+cargo build --release
+```
+
+### macOS
+
+#### Using Homebrew
+
+```bash
+# Install dependencies
+brew install pkg-config openssl
+
+# Install Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source ~/.cargo/env
+
+# Clone and build
+git clone https://github.com/effortlesslabs/dbx.git
+cd dbx
+cargo build --release
+```
+
+#### Using MacPorts
+
+```bash
+# Install dependencies
+sudo port install pkgconfig openssl3
+
+# Install Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source ~/.cargo/env
+
+# Clone and build
+git clone https://github.com/effortlesslabs/dbx.git
+cd dbx
+cargo build --release
+```
+
+### Windows
+
+#### Using Chocolatey
+
+```bash
+# Install dependencies
+choco install rust
+
+# Clone and build
+git clone https://github.com/effortlesslabs/dbx.git
+cd dbx
+cargo build --release
+```
+
+#### Using MSYS2
+
+```bash
+# Install MSYS2 and dependencies
+pacman -S mingw-w64-x86_64-rust mingw-w64-x86_64-pkg-config mingw-w64-x86_64-openssl
+
+# Clone and build
+git clone https://github.com/effortlesslabs/dbx.git
+cd dbx
+cargo build --release
+```
+
+## Cloud Deployment
+
+### Railway
+
+```bash
+# Create railway.toml
+cat > railway.toml << EOF
+[build]
+builder = "dockerfile"
+
+[deploy]
+startCommand = "./dbx-redis-api"
+healthcheckPath = "/redis/admin/health"
+healthcheckTimeout = 300
+restartPolicyType = "on_failure"
+EOF
+
+# Deploy
+railway up
+```
+
+### Heroku
+
+```bash
+# Create Procfile
+echo "web: ./dbx-redis-api" > Procfile
+
+# Create app.json
+cat > app.json << EOF
+{
+  "name": "dbx-api",
+  "description": "DBX Redis API Gateway",
+  "repository": "https://github.com/effortlesslabs/dbx",
+  "env": {
+    "REDIS_URL": {
+      "description": "Redis connection URL",
+      "required": true
+    }
+  }
+}
+EOF
+
+# Deploy
+heroku create
+heroku config:set REDIS_URL=your-redis-url
+git push heroku main
+```
+
+### DigitalOcean App Platform
+
+```yaml
+# .do/app.yaml
+name: dbx-api
+services:
+  - name: dbx
+    source_dir: /
+    github:
+      repo: effortlesslabs/dbx
+      branch: main
+    run_command: ./dbx-redis-api
+    environment_slug: rust
+    envs:
+      - key: REDIS_URL
+        value: ${redis.DATABASE_URL}
+```
+
+### AWS ECS
+
+```yaml
+# task-definition.json
+{
+  "family": "dbx-api",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "containerDefinitions":
+    [
+      {
+        "name": "dbx-api",
+        "image": "effortlesslabs/dbx:latest",
+        "portMappings": [{ "containerPort": 3000, "protocol": "tcp" }],
+        "environment": [{ "name": "REDIS_URL", "value": "redis://your-redis-endpoint:6379" }],
+        "healthCheck":
+          {
+            "command": ["CMD-SHELL", "curl -f http://localhost:3000/redis/admin/health || exit 1"],
+            "interval": 30,
+            "timeout": 5,
+            "retries": 3,
+          },
+      },
+    ],
+}
 ```
 
 ## Verification
 
-After installation, verify that DBX is running correctly:
+### Test Installation
 
 ```bash
-# Health check
+# Test the server
 curl http://localhost:3000/redis/admin/health
-# Expected: {"status": "ok"}
 
-# Ping test
-curl http://localhost:3000/redis/admin/ping
-# Expected: {"pong": true}
-
-# Server info
-curl http://localhost:3000/redis/admin/info
-# Expected: Server information JSON
+# Expected response
+{"status":"ok","timestamp":"2024-01-15T10:30:00Z"}
 ```
 
-## Next Steps
+### Test TypeScript SDK
 
-- **Getting Started**: Follow the quick start guide to begin using DBX
-- **Configuration**: Learn about advanced configuration options
-- **Deployment**: Deploy to production with Docker or cloud platforms  
-- **API Reference**: Explore the complete API documentation
+```typescript
+import { DbxRedisClient } from "@0dbx/redis";
+
+async function testInstallation() {
+  const client = new DbxRedisClient("http://localhost:3000");
+
+  try {
+    // Test string operations
+    await client.string.set("test-key", "hello world");
+    const value = await client.string.get("test-key");
+    console.log("✅ String operations working:", value);
+
+    // Test set operations
+    await client.set.addMember("test-set", "member1");
+    const members = await client.set.getMembers("test-set");
+    console.log("✅ Set operations working:", members);
+
+    console.log("🎉 Installation successful!");
+  } catch (error) {
+    console.error("❌ Installation failed:", error);
+  }
+}
+
+testInstallation();
+```
 
 ## Troubleshooting
 
-### Common Installation Issues
+### Common Issues
 
-**Permission Denied**
+#### Build Errors
 
 ```bash
-# Make binary executable
-chmod +x dbx
+# SSL/TLS errors
+export OPENSSL_DIR=/usr/local/opt/openssl
+export OPENSSL_LIB_DIR=/usr/local/opt/openssl/lib
 
-# Or run with sudo (not recommended)
-sudo ./dbx
+# Linker errors
+export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
 ```
 
-**Port Already in Use**
+#### Runtime Errors
 
 ```bash
-# Check what's using the port
+# Redis connection failed
+redis-cli -u redis://localhost:6379 ping
+
+# Port already in use
 lsof -i :3000
+netstat -tulpn | grep :3000
 
-# Use a different port
-dbx --port 3001
+# Permission denied
+sudo chmod +x dbx-redis-api
 ```
 
-**Database Connection Failed**
+#### Docker Issues
 
 ```bash
-# Test Redis connection
-redis-cli -h localhost -p 6379 ping
+# Container won't start
+docker logs dbx
 
-# Check connection string format
-# redis://[username:password@]host:port[/database]
+# Port conflicts
+docker run -p 8080:3000 effortlesslabs/dbx:latest
+
+# Volume mounts
+docker run -v $(pwd)/data:/app/data effortlesslabs/dbx:latest
 ```
 
 ### Getting Help
 
-- **GitHub Issues**: [Report installation problems](https://github.com/effortlesslabs/dbx/issues)
-- **Discussions**: [Community support](https://github.com/effortlesslabs/dbx/discussions)
-- **Documentation**: [Complete documentation](/)
+- **GitHub Issues**: [Report bugs and request features](https://github.com/effortlesslabs/dbx/issues)
+- **Discussions**: [Join the community](https://github.com/effortlesslabs/dbx/discussions)
+- **Documentation**: Browse the complete [documentation](/)
+
+## Next Steps
+
+- [Getting Started](/docs/getting-started) - Get up and running with DBX
+- [Configuration](/docs/configuration) - Learn about configuration options
+- [API Reference](/docs/api/rest/string) - Explore the complete API documentation

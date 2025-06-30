@@ -62,5 +62,17 @@
     "index.js",
     "index.d.ts",
     "@0dbx/*.node"
-  ]
+  ],
+  "optionalDependencies": {
+    "@0dbx/redis-win32-x64-msvc": "0.1.6",
+    "@0dbx/redis-darwin-x64": "0.1.6",
+    "@0dbx/redis-linux-x64-gnu": "0.1.6",
+    "@0dbx/redis-win32-ia32-msvc": "0.1.6",
+    "@0dbx/redis-darwin-arm64": "0.1.6",
+    "@0dbx/redis-linux-x64-musl": "0.1.6",
+    "@0dbx/redis-linux-arm64-gnu": "0.1.6",
+    "@0dbx/redis-linux-arm-gnueabihf": "0.1.6",
+    "@0dbx/redis-linux-arm64-musl": "0.1.6",
+    "@0dbx/redis-freebsd-x64": "0.1.6"
+  }
 }

@@ -24,8 +24,7 @@ services:
       - "3000:3000"
     environment:
       # Database configuration - connect to Redis service
-      - DATABASE_URL=redis://redis:6379
-      - DATABASE_TYPE=redis
+      - REDIS_URL=redis://redis:6379
 
       # Server configuration
       - HOST=0.0.0.0

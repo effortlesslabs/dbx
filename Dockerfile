@@ -64,7 +64,6 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:3000/redis/admin/ping || exit 1
 
 # Default environment variables
-ENV DATABASE_TYPE=redis
 ENV HOST=0.0.0.0
 ENV PORT=3000
 ENV POOL_SIZE=10
@@ -74,7 +73,7 @@ ENV LOG_LEVEL=INFO
 LABEL maintainer="DBX Team"
 LABEL description="High-performance Redis API Gateway with HTTP and WebSocket interfaces"
 LABEL version="0.1.6"
-LABEL org.opencontainers.image.source="https://github.com/your-org/dbx"
+LABEL org.opencontainers.image.source="https://github.com/effortlesslabs/dbx"
 
 # Run the binary
 CMD ["./dbx-redis-api"] 

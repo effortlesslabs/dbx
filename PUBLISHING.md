@@ -1,295 +1,428 @@
 # Publishing Guide
 
-This guide explains how to publish new versions of DBX, including both the Docker image and TypeScript SDK.
+This guide covers the process of publishing new versions of DBX, including the Docker image and TypeScript SDK.
 
-## Docker Image Architecture (Default)
+## Overview
 
-**By default, all Docker images are built and published as multi-architecture (linux/amd64, linux/arm64).**
+DBX consists of multiple components that need to be published:
 
-- This ensures compatibility with Railway, AWS, GCP, Azure, Apple Silicon, and more.
-- You do **not** need to specify `--platform` unless you want a custom build.
-- The default `./scripts/publish-docker.sh` will always build for both `amd64` and `arm64`.
+1. **Docker Image** - The main DBX server
+2. **TypeScript SDK** - NAPI bindings for Node.js/TypeScript
+3. **GitHub Release** - Source code and binaries
 
 ## Prerequisites
 
-Before publishing, ensure you have:
+### Required Accounts
 
-1. **Docker Hub Account**: Access to push images to Docker Hub
-2. **NPM Account**: Access to publish packages to NPM
-3. **Git Access**: Ability to push tags to the repository
-4. **Docker Buildx**: For multi-platform image builds
+- **Docker Hub**: [effortlesslabs](https://hub.docker.com/r/effortlesslabs)
+- **NPM**: [@0dbx](https://www.npmjs.com/org/0dbx)
+- **GitHub**: [effortlesslabs/dbx](https://github.com/effortlesslabs/dbx)
 
-## Required Credentials
-
-### Docker Hub
-
-- **Username**: Your Docker Hub username (default: `effortlesslabs`)
-- **Password/Token**: Docker Hub access token (preferred over password)
-
-### NPM
-
-- **Token**: NPM access token with publish permissions
-
-## Publishing Methods
-
-### Method 1: Automated GitHub Actions (Recommended)
-
-The easiest way to publish is using GitHub Actions:
-
-1. **Create a new tag**:
-
-   ```bash
-   git tag v1.0.0
-   git push origin v1.0.0
-   ```
-
-2. **Manual workflow dispatch**:
-   - Go to GitHub Actions → "Publish Release"
-   - Click "Run workflow"
-   - Fill in the required parameters:
-     - Version: `1.0.0`
-     - Docker username: `effortlesslabs` (or your username)
-     - NPM token: Your NPM token
-
-### Method 2: Quick Publishing Script
-
-Use the interactive script for immediate publishing:
+### Required Tokens
 
 ```bash
-./scripts/quick-publish.sh
+# Docker Hub token
+export DOCKER_TOKEN="your-docker-hub-token"
+
+# NPM token
+export NPM_TOKEN="your-npm-token"
+
+# GitHub token (for releases)
+export GITHUB_TOKEN="your-github-token"
 ```
-
-This script will:
-
-- Prompt for the new version
-- Ask for Docker Hub credentials
-- Ask for NPM token
-- Confirm before proceeding
-- Execute the full publishing process
-
-### Method 3: Manual Publishing Script
-
-For more control, use the manual script:
-
-```bash
-./scripts/publish-release.sh \
-  --version 1.0.0 \
-  --docker-username effortlesslabs \
-  --docker-password $DOCKER_TOKEN \
-  --npm-token $NPM_TOKEN
-```
-
-### Method 4: Docker Image Only (Multi-Arch by Default)
-
-To publish only the Docker image (multi-arch):
-
-```bash
-./scripts/publish-docker.sh --tag 1.0.0 --push
-```
-
-### Method 5: NPM Package Only
-
-To publish only the TypeScript SDK to NPM:
-
-```bash
-./scripts/publish-npm.sh --version 1.0.0 --npm-token $NPM_TOKEN
-```
-
-## Publishing Scripts Overview
-
-### `publish-release.sh` - Full Release Script
-
-- **Purpose**: Complete release process (Docker + NPM + Git tags)
-- **Features**: Version bumping, testing, building, publishing, git tagging
-- **Usage**: `./scripts/publish-release.sh --version 1.0.0 --docker-username user --docker-password token --npm-token token`
-
-### `publish-docker.sh` - Docker Only Script
-
-- **Purpose**: Docker image building and publishing only
-- **Features**: Multi-arch builds, version tagging, Docker Hub push
-- **Usage**: `./scripts/publish-docker.sh --tag 1.0.0 --push`
-
-### `publish-npm.sh` - NPM Only Script
-
-- **Purpose**: TypeScript SDK building and publishing only
-- **Features**: Clean build, testing, NPM publishing, version management
-- **Usage**: `./scripts/publish-npm.sh --version 1.0.0 --npm-token token`
-
-### `quick-publish.sh` - Interactive Wrapper
-
-- **Purpose**: User-friendly interactive publishing
-- **Features**: Prompts for credentials, confirmation, calls full release script
-- **Usage**: `./scripts/quick-publish.sh`
-
-## Publishing Process
-
-The publishing process includes the following steps:
-
-1. **Version Update**: Updates version in `Cargo.toml`, `ts/package.json`, and `Dockerfile`
-2. **Testing**: Runs all Rust and TypeScript tests
-3. **TypeScript SDK Build**: Cleans previous builds and builds the TypeScript SDK
-4. **NPM Publishing**: Publishes the TypeScript SDK to NPM
-5. **Docker Build**: Builds multi-platform Docker image (linux/amd64, linux/arm64)
-6. **Docker Push**: Pushes image to Docker Hub
-7. **Git Tag**: Creates and pushes git tag
 
 ## Version Management
 
-### Semantic Versioning
+### Version Format
 
-Follow semantic versioning (MAJOR.MINOR.PATCH):
+DBX uses semantic versioning: `MAJOR.MINOR.PATCH`
 
 - **MAJOR**: Breaking changes
-- **MINOR**: New features (backward compatible)
-- **PATCH**: Bug fixes (backward compatible)
+- **MINOR**: New features, backward compatible
+- **PATCH**: Bug fixes, backward compatible
 
-### Version Files
-
-The following files are automatically updated:
-
-- `Cargo.toml` - Workspace version
-- `ts/package.json` - TypeScript SDK version
-- `Dockerfile` - Version label
-
-## Docker Image Details
-
-### Multi-Platform Support (Default)
-
-The Docker image is built for multiple platforms by default:
-
-- `linux/amd64` - Intel/AMD 64-bit (Railway, most cloud)
-- `linux/arm64` - ARM 64-bit (Apple Silicon, Raspberry Pi, etc.)
-
-### Image Tags
-
-Each release creates multiple tags:
-
-- `effortlesslabs/0dbx_redis:1.0.0` - Specific version
-- `effortlesslabs/0dbx_redis:latest` - Latest version
-- `effortlesslabs/0dbx_redis:1.0` - Major.minor version
-- `effortlesslabs/0dbx_redis:1` - Major version
-
-### Usage
+### Version Locations
 
 ```bash
-# Pull specific version
-docker pull effortlesslabs/0dbx_redis:1.0.0
+# Main workspace version
+Cargo.toml: [workspace.package].version = "0.1.6"
 
-# Run with Redis
-docker run -d --name dbx-api -p 3000:3000 \
-  -e DATABASE_URL=redis://localhost:6379 \
-  effortlesslabs/0dbx_redis:1.0.0
+# TypeScript SDK version
+bindings/redis_ts/package.json: "version": "0.1.6"
 
-# Using docker-compose
-docker-compose up -d
+# Docker image tags
+effortlesslabs/dbx:0.1.6
+effortlesslabs/dbx:latest
 ```
 
-## TypeScript SDK Details
+## Publishing Process
 
-### Package Information
-
-- **Name**: `@0dbx/redis`
-- **Registry**: NPM
-- **Access**: Public
-
-### Installation
+### 1. Update Version
 
 ```bash
-# Install specific version
-npm install @0dbx/redis@1.0.0
+# Update version in Cargo.toml
+sed -i 's/version = "0.1.5"/version = "0.1.6"/' Cargo.toml
 
-# Install latest
-npm install @0dbx/redis
+# Update version in TypeScript package.json
+sed -i 's/"version": "0.1.5"/"version": "0.1.6"/' bindings/redis_ts/package.json
+
+# Update version in Dockerfile
+sed -i 's/LABEL version="0.1.5"/LABEL version="0.1.6"/' Dockerfile
 ```
 
-### Usage
-
-```typescript
-import { createClient } from "@0dbx/redis";
-
-const client = createClient({
-  baseUrl: "http://localhost:3000",
-  timeout: 5000,
-});
-
-// String operations
-await client.string.set("key", "value");
-const value = await client.string.get("key");
-```
-
-## Verification
-
-After publishing, verify the release:
-
-### Docker Image
+### 2. Build and Test
 
 ```bash
-# Check image exists
-docker pull effortlesslabs/0dbx_redis:1.0.0
+# Build all components
+cargo build --release
 
-# Test the image
-docker run --rm -p 3000:3000 effortlesslabs/0dbx_redis:1.0.0
+# Build TypeScript SDK
+cd bindings/redis_ts
+npm run build
+cd ../..
+
+# Run tests
+cargo test
+cd bindings/redis_ts && npm test && cd ../..
+
+# Test Docker build
+docker build -t effortlesslabs/dbx:test .
 ```
+
+### 3. Publish TypeScript SDK
+
+```bash
+# Navigate to TypeScript bindings
+cd bindings/redis_ts
+
+# Login to NPM
+npm login --scope=@0dbx
+
+# Publish package
+npm publish
+
+# Verify publication
+npm view @0dbx/redis version
+```
+
+### 4. Build and Push Docker Image
+
+```bash
+# Build multi-arch image
+docker buildx build --platform linux/amd64,linux/arm64 \
+  -t effortlesslabs/dbx:0.1.6 \
+  -t effortlesslabs/dbx:latest \
+  --push .
+
+# Build AMD64-only image (for Railway)
+docker buildx build --platform linux/amd64 \
+  -t effortlesslabs/dbx:0.1.6-amd64-only \
+  -t effortlesslabs/dbx:latest-amd64-only \
+  --push .
+```
+
+### 5. Create GitHub Release
+
+```bash
+# Create git tag
+git tag v0.1.6
+git push origin v0.1.6
+
+# Or use GitHub CLI
+gh release create v0.1.6 \
+  --title "DBX v0.1.6" \
+  --notes "Release notes here" \
+  --draft
+```
+
+## Automated Publishing
+
+### Using Scripts
+
+DBX provides several publishing scripts:
+
+```bash
+# Interactive publishing
+./scripts/quick-publish.sh
+
+# Manual publishing
+./scripts/publish-release.sh --version 0.1.6 \
+  --docker-username effortlesslabs \
+  --docker-password $DOCKER_TOKEN \
+  --npm-token $NPM_TOKEN
+
+# Quick publish (latest)
+./scripts/publish.sh
+```
+
+### GitHub Actions
+
+The easiest way to publish is using GitHub Actions:
+
+1. **Create a git tag**: `git tag v0.1.6 && git push origin v0.1.6`
+2. **Or manually trigger** the workflow from GitHub Actions
+
+## Publishing Scripts
+
+### Quick Publish Script
+
+```bash
+#!/bin/bash
+# scripts/quick-publish.sh
+
+echo "🚀 DBX Quick Publish"
+echo "=================="
+
+# Get current version
+CURRENT_VERSION=$(grep 'version = ' Cargo.toml | cut -d'"' -f2)
+echo "Current version: $CURRENT_VERSION"
+
+# Prompt for new version
+read -p "New version: " NEW_VERSION
+
+# Update versions
+sed -i "s/version = \"$CURRENT_VERSION\"/version = \"$NEW_VERSION\"/" Cargo.toml
+sed -i "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$NEW_VERSION\"/" bindings/redis_ts/package.json
+sed -i "s/LABEL version=\"$CURRENT_VERSION\"/LABEL version=\"$NEW_VERSION\"/" Dockerfile
+
+# Build and publish
+./scripts/publish-release.sh --version $NEW_VERSION
+```
+
+### Manual Publish Script
+
+```bash
+#!/bin/bash
+# scripts/publish-release.sh
+
+set -e
+
+VERSION=""
+DOCKER_USERNAME=""
+DOCKER_PASSWORD=""
+NPM_TOKEN=""
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --version)
+      VERSION="$2"
+      shift 2
+      ;;
+    --docker-username)
+      DOCKER_USERNAME="$2"
+      shift 2
+      ;;
+    --docker-password)
+      DOCKER_PASSWORD="$2"
+      shift 2
+      ;;
+    --npm-token)
+      NPM_TOKEN="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown option: $1"
+      exit 1
+      ;;
+  esac
+done
+
+if [[ -z "$VERSION" ]]; then
+  echo "Error: Version is required"
+  exit 1
+fi
+
+echo "🚀 Publishing DBX v$VERSION"
+
+# Build TypeScript SDK
+echo "📦 Building TypeScript SDK..."
+cd bindings/redis_ts
+npm run build
+npm publish --access public
+cd ../..
+
+# Build and push Docker image
+echo "🐳 Building and pushing Docker image..."
+docker buildx build --platform linux/amd64,linux/arm64 \
+  -t effortlesslabs/dbx:$VERSION \
+  -t effortlesslabs/dbx:latest \
+  --push .
+
+# Build AMD64-only image
+docker buildx build --platform linux/amd64 \
+  -t effortlesslabs/dbx:$VERSION-amd64-only \
+  -t effortlesslabs/dbx:latest-amd64-only \
+  --push .
+
+echo "✅ Published DBX v$VERSION successfully!"
+```
+
+## Package-Specific Publishing
+
+### TypeScript SDK (@0dbx/redis)
+
+```bash
+cd bindings/redis_ts
+
+# Build the package
+npm run build
+
+# Test the build
+npm test
+
+# Publish to NPM
+npm publish --access public
+
+# Verify publication
+npm view @0dbx/redis version
+```
+
+### Docker Image (effortlesslabs/dbx)
+
+```bash
+# Build multi-arch image
+docker buildx build --platform linux/amd64,linux/arm64 \
+  -t effortlesslabs/dbx:0.1.6 \
+  -t effortlesslabs/dbx:latest \
+  --push .
+
+# Build AMD64-only image (for Railway)
+docker buildx build --platform linux/amd64 \
+  -t effortlesslabs/dbx:0.1.6-amd64-only \
+  -t effortlesslabs/dbx:latest-amd64-only \
+  --push .
+```
+
+## Release Notes Template
+
+````markdown
+# DBX v0.1.6
+
+## 🚀 New Features
+
+- Feature 1
+- Feature 2
+
+## 🐛 Bug Fixes
+
+- Fix 1
+- Fix 2
+
+## 🔧 Improvements
+
+- Improvement 1
+- Improvement 2
+
+## 📦 Installation
+
+### Docker
+
+```bash
+docker pull effortlesslabs/dbx:0.1.6
+```
+````
 
 ### TypeScript SDK
 
 ```bash
-# Check package exists
-npm view dbx-sdk@1.0.0
-
-# Test installation
-npm install dbx-sdk@1.0.0
+npm install @0dbx/redis@0.1.6
 ```
 
-### Online Verification
+## 🔗 Links
 
-- **Docker Hub**: https://hub.docker.com/r/effortlesslabs/dbx
-- **NPM**: https://www.npmjs.com/package/dbx-sdk
+- [Documentation](https://docs.dbx.dev)
+- [GitHub Repository](https://github.com/effortlesslabs/dbx)
+- [Docker Hub](https://hub.docker.com/r/effortlesslabs/dbx)
+- [NPM Package](https://www.npmjs.com/package/@0dbx/redis)
+
+````
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Docker Buildx Not Available**
-
-   ```bash
-   docker buildx install
-   ```
-
-2. **Authentication Errors**
-
-   - Verify Docker Hub credentials
-   - Check NPM token permissions
-   - Ensure tokens are not expired
-
-3. **Version Already Exists**
-
-   - Check if version already exists on Docker Hub/NPM
-   - Use a different version number
-
-4. **Build Failures**
-   - Check Docker daemon is running
-   - Verify sufficient disk space
-   - Check network connectivity
-
-### Environment Variables
-
-You can set credentials as environment variables:
+#### NPM Publishing Issues
 
 ```bash
-export DOCKER_PASSWORD="your-docker-token"
-export NPM_TOKEN="your-npm-token"
-```
+# Check NPM login status
+npm whoami
 
-### Dry Run
+# Login to NPM
+npm login --scope=@0dbx
 
-Test the publishing process without actually publishing:
+# Check package.json
+cat bindings/redis_ts/package.json
+
+# Test build
+cd bindings/redis_ts && npm run build && cd ../..
+````
+
+#### Docker Publishing Issues
 
 ```bash
-./scripts/publish-release.sh \
-  --version 1.0.0 \
-  --docker-username effortlesslabs \
-  --docker-password $DOCKER_TOKEN \
-  --npm-token $NPM_TOKEN \
-  --dry-run
+# Check Docker login
+docker login
+
+# Check buildx
+docker buildx ls
+
+# Create new builder if needed
+docker buildx create --name mybuilder --use
+
+# Inspect image
+docker buildx imagetools inspect effortlesslabs/dbx:latest
 ```
+
+#### Version Mismatch Issues
+
+```bash
+# Check all version locations
+grep -r "0.1.6" Cargo.toml bindings/redis_ts/package.json Dockerfile
+
+# Update all versions
+./scripts/update-version.sh 0.1.6
+```
+
+### Rollback Process
+
+```bash
+# Rollback Docker image
+docker tag effortlesslabs/dbx:0.1.5 effortlesslabs/dbx:latest
+docker push effortlesslabs/dbx:latest
+
+# Rollback NPM package
+npm unpublish @0dbx/redis@0.1.6
+
+# Rollback git tag
+git tag -d v0.1.6
+git push origin :refs/tags/v0.1.6
+```
+
+## Best Practices
+
+### Before Publishing
+
+1. **Run all tests**: `cargo test && npm test`
+2. **Check documentation**: Ensure docs are up to date
+3. **Test Docker image**: `docker run -d --name test-dbx effortlesslabs/dbx:test`
+4. **Verify TypeScript SDK**: Test in a sample project
+
+### After Publishing
+
+1. **Verify Docker image**: Pull and test the published image
+2. **Verify NPM package**: Install and test the published package
+3. **Update documentation**: Update any version-specific docs
+4. **Announce release**: Post on GitHub, social media, etc.
+
+### Security Considerations
+
+1. **Rotate tokens regularly**: Update Docker and NPM tokens
+2. **Use secrets**: Store tokens in GitHub Secrets
+3. **Audit dependencies**: Regularly update dependencies
+4. **Scan images**: Use Docker Scout or similar tools
+
+## Next Steps
+
+- [Development Guide](DEVELOPMENT.md) - Set up development environment
+- [Contributing Guide](CONTRIBUTING.md) - How to contribute to DBX
+- [Testing Guide](TESTING_WORKFLOW.md) - Testing procedures

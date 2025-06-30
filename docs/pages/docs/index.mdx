@@ -9,7 +9,7 @@ DBX acts as a lightweight proxy that sits between your applications and Redis, p
 - **Redis-Optimized**: High-performance Redis operations with connection pooling
 - **Edge-Friendly**: Minimal ~50MB Docker image perfect for edge deployments
 - **Dual Protocol**: Both REST API and WebSocket support for different use cases
-- **Type Safety**: Full TypeScript SDK with comprehensive type definitions
+- **Type Safety**: Full TypeScript SDK with comprehensive type definitions via NAPI bindings
 - **Batch Operations**: Efficient bulk operations for better performance
 
 ## Key Features
@@ -32,7 +32,7 @@ DBX acts as a lightweight proxy that sits between your applications and Redis, p
 
 - **REST API**: Standard HTTP endpoints for all Redis operations
 - **WebSocket**: Real-time bidirectional communication
-- **TypeScript SDK**: Full-featured client library with type safety
+- **TypeScript SDK**: Full-featured client library with type safety via NAPI bindings
 - **Batch Support**: Pattern-based and bulk operations
 
 ## Architecture
@@ -71,31 +71,55 @@ Get started with DBX in minutes:
 ```bash
 # Using Docker (recommended)
 docker run -d --name dbx -p 3000:3000 \
-  -e DATABASE_URL=redis://localhost:6379 \
-  fnlog0/dbx:latest
+  -e REDIS_URL=redis://localhost:6379 \
+  effortlesslabs/dbx:latest
 
 # Or run with convenience script
 ./scripts/run.sh --redis-url redis://localhost:6379
 
 # Install TypeScript SDK
-npm install dbx-sdk
+npm install @0dbx/redis
 ```
 
 ```typescript
-import { DbxClient } from "dbx-sdk";
+import { DbxRedisClient } from "@0dbx/redis";
 
-const client = new DbxClient({
-  baseUrl: "http://localhost:3000"
-});
+const client = new DbxRedisClient("http://localhost:3000");
 
 // String operations
 await client.string.set("key", "value", 3600);
 const value = await client.string.get("key");
 
-// Hash operations
-await client.hash.setField("user:1", "name", "John");
-const name = await client.hash.getField("user:1", "name");
+// Set operations
+await client.set.addMember("tags", "redis");
+const members = await client.set.getMembers("tags");
+
+// WebSocket client
+import { DbxWsClient } from "@0dbx/redis";
+const wsClient = new DbxWsClient("ws://localhost:3000/redis_ws");
+await wsClient.string.set("key", "value");
 ```
+
+## API Endpoints
+
+### REST API
+
+- `GET /redis/string/{key}` - Get string value
+- `POST /redis/string/{key}` - Set string value
+- `DELETE /redis/string/{key}` - Delete string value
+- `GET /redis/hash/{key}/field/{field}` - Get hash field
+- `POST /redis/hash/{key}/field/{field}` - Set hash field
+- `GET /redis/set/{key}/members` - Get set members
+- `POST /redis/set/{key}/members` - Add set members
+- `GET /redis/admin/health` - Health check
+- `GET /redis/admin/ping` - Ping server
+
+### WebSocket API
+
+- `ws://localhost:3000/redis_ws/string/ws` - String operations
+- `ws://localhost:3000/redis_ws/hash/ws` - Hash operations
+- `ws://localhost:3000/redis_ws/set/ws` - Set operations
+- `ws://localhost:3000/redis_ws/admin/ws` - Admin operations
 
 ## Next Steps
 
