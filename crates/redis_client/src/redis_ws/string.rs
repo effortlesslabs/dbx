@@ -41,19 +41,26 @@ impl WebSocketClientBase for WsStringClient {
 impl StringOperations for WsStringClient {
     /// Get a string value by key
     async fn get(&mut self, key: &str) -> Result<Option<String>> {
-        let message = json!({
+        let message =
+            json!({
             "type": "get",
-            "key": key
+            "data": {
+                "key": key
+            }
         });
 
         let response = self.send_message(message).await?;
 
         // Parse the response according to the server's format
-        if let Some(value) = response.get("value") {
-            if value.is_null() {
-                Ok(None)
+        if let Some(data) = response.get("data") {
+            if let Some(value) = data.get("value") {
+                if value.is_null() {
+                    Ok(None)
+                } else {
+                    Ok(Some(value.as_str().unwrap_or("").to_string()))
+                }
             } else {
-                Ok(Some(value.as_str().unwrap_or("").to_string()))
+                Ok(None)
             }
         } else {
             Ok(None)
@@ -65,9 +72,11 @@ impl StringOperations for WsStringClient {
         let message =
             json!({
             "type": "set",
-            "key": key,
-            "value": value,
-            "ttl": ttl
+            "data": {
+                "key": key,
+                "value": value,
+                "ttl": ttl
+            }
         });
 
         let _response = self.send_message(message).await?;
@@ -76,16 +85,23 @@ impl StringOperations for WsStringClient {
 
     /// Delete a string value
     async fn delete(&mut self, key: &str) -> Result<bool> {
-        let message = json!({
+        let message =
+            json!({
             "type": "del",
-            "key": key
+            "data": {
+                "key": key
+            }
         });
 
         let response = self.send_message(message).await?;
 
         // Parse the response according to the server's format
-        if let Some(deleted) = response.get("deleted") {
-            Ok(deleted.as_bool().unwrap_or(false))
+        if let Some(data) = response.get("data") {
+            if let Some(deleted) = data.get("deleted") {
+                Ok(deleted.as_bool().unwrap_or(false))
+            } else {
+                Ok(false)
+            }
         } else {
             Ok(false)
         }
@@ -93,19 +109,26 @@ impl StringOperations for WsStringClient {
 
     /// Get string information
     async fn info(&mut self, key: &str) -> Result<Option<StringInfo>> {
-        let message = json!({
+        let message =
+            json!({
             "type": "info",
-            "key": key
+            "data": {
+                "key": key
+            }
         });
 
         let response = self.send_message(message).await?;
 
-        if let Some(info) = response.get("info") {
-            if info.is_null() {
-                Ok(None)
+        if let Some(data) = response.get("data") {
+            if let Some(info) = data.get("info") {
+                if info.is_null() {
+                    Ok(None)
+                } else {
+                    let string_info: StringInfo = serde_json::from_value(info.clone())?;
+                    Ok(Some(string_info))
+                }
             } else {
-                let string_info: StringInfo = serde_json::from_value(info.clone())?;
-                Ok(Some(string_info))
+                Ok(None)
             }
         } else {
             Ok(None)
@@ -114,25 +137,32 @@ impl StringOperations for WsStringClient {
 
     /// Batch get multiple strings
     async fn batch_get(&mut self, keys: &[String]) -> Result<Vec<Option<String>>> {
-        let message = json!({
+        let message =
+            json!({
             "type": "batch_get",
-            "keys": keys
+            "data": {
+                "keys": keys
+            }
         });
 
         let response = self.send_message(message).await?;
 
-        if let Some(values) = response.get("values") {
-            let empty_vec = Vec::new();
-            let values_array = values.as_array().unwrap_or(&empty_vec);
-            let mut result_vec = Vec::new();
-            for value in values_array {
-                if value.is_null() {
-                    result_vec.push(None);
-                } else {
-                    result_vec.push(Some(value.as_str().unwrap_or("").to_string()));
+        if let Some(data) = response.get("data") {
+            if let Some(values) = data.get("values") {
+                let empty_vec = Vec::new();
+                let values_array = values.as_array().unwrap_or(&empty_vec);
+                let mut result_vec = Vec::new();
+                for value in values_array {
+                    if value.is_null() {
+                        result_vec.push(None);
+                    } else {
+                        result_vec.push(Some(value.as_str().unwrap_or("").to_string()));
+                    }
                 }
+                Ok(result_vec)
+            } else {
+                Ok(Vec::new())
             }
-            Ok(result_vec)
         } else {
             Ok(Vec::new())
         }
@@ -143,7 +173,9 @@ impl StringOperations for WsStringClient {
         let message =
             json!({
             "type": "batch_set",
-            "operations": operations
+            "data": {
+                "operations": operations
+            }
         });
 
         let _response = self.send_message(message).await?;

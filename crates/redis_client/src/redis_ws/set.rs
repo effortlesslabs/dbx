@@ -36,23 +36,30 @@ impl WebSocketClientBase for WsSetClient {
 impl SetOperations for WsSetClient {
     /// Get all members of a set
     async fn members(&mut self, key: &str) -> Result<Vec<String>> {
-        let message = json!({
+        let message =
+            json!({
             "type": "members",
-            "key": key
+            "data": {
+                "key": key
+            }
         });
 
         let response = self.send_message(message).await?;
 
         // Parse the response according to the server's format
-        if let Some(members) = response.get("members") {
-            if let Some(members_array) = members.as_array() {
-                let mut result_vec = Vec::new();
-                for member in members_array {
-                    if let Some(member_str) = member.as_str() {
-                        result_vec.push(member_str.to_string());
+        if let Some(data) = response.get("data") {
+            if let Some(value) = data.get("value") {
+                if let Some(members_array) = value.as_array() {
+                    let mut result_vec = Vec::new();
+                    for member in members_array {
+                        if let Some(member_str) = member.as_str() {
+                            result_vec.push(member_str.to_string());
+                        }
                     }
+                    Ok(result_vec)
+                } else {
+                    Ok(Vec::new())
                 }
-                Ok(result_vec)
             } else {
                 Ok(Vec::new())
             }
@@ -66,15 +73,21 @@ impl SetOperations for WsSetClient {
         let message =
             json!({
             "type": "add",
-            "key": key,
-            "member": member
+            "data": {
+                "key": key,
+                "member": member
+            }
         });
 
         let response = self.send_message(message).await?;
 
         // Parse the response according to the server's format
-        if let Some(added) = response.get("added") {
-            Ok(added.as_u64().unwrap_or(0) as usize)
+        if let Some(data) = response.get("data") {
+            if let Some(added) = data.get("added") {
+                Ok(added.as_u64().unwrap_or(0) as usize)
+            } else {
+                Ok(0)
+            }
         } else {
             Ok(0)
         }
@@ -95,15 +108,21 @@ impl SetOperations for WsSetClient {
         let message =
             json!({
             "type": "remove",
-            "key": key,
-            "member": member
+            "data": {
+                "key": key,
+                "member": member
+            }
         });
 
         let response = self.send_message(message).await?;
 
         // Parse the response according to the server's format
-        if let Some(removed) = response.get("removed") {
-            Ok(removed.as_u64().unwrap_or(0) as usize)
+        if let Some(data) = response.get("data") {
+            if let Some(removed) = data.get("removed") {
+                Ok(removed.as_u64().unwrap_or(0) as usize)
+            } else {
+                Ok(0)
+            }
         } else {
             Ok(0)
         }
@@ -111,16 +130,23 @@ impl SetOperations for WsSetClient {
 
     /// Get the cardinality (number of members) of a set
     async fn cardinality(&mut self, key: &str) -> Result<usize> {
-        let message = json!({
+        let message =
+            json!({
             "type": "cardinality",
-            "key": key
+            "data": {
+                "key": key
+            }
         });
 
         let response = self.send_message(message).await?;
 
         // Parse the response according to the server's format
-        if let Some(cardinality) = response.get("cardinality") {
-            Ok(cardinality.as_u64().unwrap_or(0) as usize)
+        if let Some(data) = response.get("data") {
+            if let Some(cardinality) = data.get("cardinality") {
+                Ok(cardinality.as_u64().unwrap_or(0) as usize)
+            } else {
+                Ok(0)
+            }
         } else {
             Ok(0)
         }
@@ -131,15 +157,21 @@ impl SetOperations for WsSetClient {
         let message =
             json!({
             "type": "exists",
-            "key": key,
-            "member": member
+            "data": {
+                "key": key,
+                "member": member
+            }
         });
 
         let response = self.send_message(message).await?;
 
         // Parse the response according to the server's format
-        if let Some(exists) = response.get("exists") {
-            Ok(exists.as_bool().unwrap_or(false))
+        if let Some(data) = response.get("data") {
+            if let Some(exists) = data.get("exists") {
+                Ok(exists.as_bool().unwrap_or(false))
+            } else {
+                Ok(false)
+            }
         } else {
             Ok(false)
         }
@@ -147,23 +179,30 @@ impl SetOperations for WsSetClient {
 
     /// Get the intersection of multiple sets
     async fn intersect(&mut self, keys: &[String]) -> Result<Vec<String>> {
-        let message = json!({
+        let message =
+            json!({
             "type": "intersect",
-            "keys": keys
+            "data": {
+                "keys": keys
+            }
         });
 
         let response = self.send_message(message).await?;
 
         // Parse the response according to the server's format
-        if let Some(intersection) = response.get("intersection") {
-            if let Some(members) = intersection.as_array() {
-                let mut result_vec = Vec::new();
-                for member in members {
-                    if let Some(member_str) = member.as_str() {
-                        result_vec.push(member_str.to_string());
+        if let Some(data) = response.get("data") {
+            if let Some(intersection) = data.get("intersection") {
+                if let Some(members) = intersection.as_array() {
+                    let mut result_vec = Vec::new();
+                    for member in members {
+                        if let Some(member_str) = member.as_str() {
+                            result_vec.push(member_str.to_string());
+                        }
                     }
+                    Ok(result_vec)
+                } else {
+                    Ok(Vec::new())
                 }
-                Ok(result_vec)
             } else {
                 Ok(Vec::new())
             }
@@ -174,23 +213,30 @@ impl SetOperations for WsSetClient {
 
     /// Get the union of multiple sets
     async fn union(&mut self, keys: &[String]) -> Result<Vec<String>> {
-        let message = json!({
+        let message =
+            json!({
             "type": "union",
-            "keys": keys
+            "data": {
+                "keys": keys
+            }
         });
 
         let response = self.send_message(message).await?;
 
         // Parse the response according to the server's format
-        if let Some(union) = response.get("union") {
-            if let Some(members) = union.as_array() {
-                let mut result_vec = Vec::new();
-                for member in members {
-                    if let Some(member_str) = member.as_str() {
-                        result_vec.push(member_str.to_string());
+        if let Some(data) = response.get("data") {
+            if let Some(union) = data.get("union") {
+                if let Some(members) = union.as_array() {
+                    let mut result_vec = Vec::new();
+                    for member in members {
+                        if let Some(member_str) = member.as_str() {
+                            result_vec.push(member_str.to_string());
+                        }
                     }
+                    Ok(result_vec)
+                } else {
+                    Ok(Vec::new())
                 }
-                Ok(result_vec)
             } else {
                 Ok(Vec::new())
             }
@@ -201,23 +247,30 @@ impl SetOperations for WsSetClient {
 
     /// Get the difference of multiple sets
     async fn difference(&mut self, keys: &[String]) -> Result<Vec<String>> {
-        let message = json!({
+        let message =
+            json!({
             "type": "difference",
-            "keys": keys
+            "data": {
+                "keys": keys
+            }
         });
 
         let response = self.send_message(message).await?;
 
         // Parse the response according to the server's format
-        if let Some(difference) = response.get("difference") {
-            if let Some(members) = difference.as_array() {
-                let mut result_vec = Vec::new();
-                for member in members {
-                    if let Some(member_str) = member.as_str() {
-                        result_vec.push(member_str.to_string());
+        if let Some(data) = response.get("data") {
+            if let Some(difference) = data.get("difference") {
+                if let Some(members) = difference.as_array() {
+                    let mut result_vec = Vec::new();
+                    for member in members {
+                        if let Some(member_str) = member.as_str() {
+                            result_vec.push(member_str.to_string());
+                        }
                     }
+                    Ok(result_vec)
+                } else {
+                    Ok(Vec::new())
                 }
-                Ok(result_vec)
             } else {
                 Ok(Vec::new())
             }

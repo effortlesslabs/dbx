@@ -37,14 +37,14 @@ Docker is the easiest way to get started with DBX.
 # Run with default settings
 docker run -d --name dbx -p 3000:3000 \
   -e DATABASE_URL=redis://localhost:6379 \
-  fnlog0/dbx:latest
+  effortlesslabs/dbx:latest
 ```
 
 #### Advanced Docker Setup
 
 ```bash
 # Pull specific version
-docker pull fnlog0/dbx:v1.0.0
+docker pull effortlesslabs/dbx:v1.0.0
 
 # Run with custom configuration
 docker run -d --name dbx \
@@ -54,13 +54,13 @@ docker run -d --name dbx \
   -e LOG_LEVEL=DEBUG \
   -e POOL_SIZE=20 \
   -e TIMEOUT=10000 \
-  fnlog0/dbx:latest
+  effortlesslabs/dbx:latest
 
 # Run with custom config file
 docker run -d --name dbx \
   -p 3000:3000 \
   -v $(pwd)/config.toml:/app/config.toml \
-  fnlog0/dbx:latest
+  effortlesslabs/dbx:latest
 ```
 
 #### Docker Compose
@@ -72,7 +72,7 @@ version: "3.8"
 
 services:
   dbx:
-    image: fnlog0/dbx:latest
+    image: effortlesslabs/dbx:latest
     ports:
       - "3000:3000"
     environment:

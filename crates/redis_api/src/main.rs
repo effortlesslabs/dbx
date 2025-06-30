@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 use tracing_subscriber;
 
-use dbx_api::{ config::{ Config, DatabaseType }, server::Server, constants::defaults::Defaults };
+use dbx_redis_api::{ config::Config, server::Server, constants::defaults::Defaults };
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -13,10 +13,9 @@ async fn main() -> anyhow::Result<()> {
 
     // Load configuration from environment variables
     let config = Config {
-        database_type: DatabaseType::Redis,
         database_url: std::env
-            ::var("DATABASE_URL")
-            .unwrap_or_else(|_| Defaults::DATABASE_URL.to_string()),
+            ::var("REDIS_URL")
+            .unwrap_or_else(|_| Defaults::REDIS_URL.to_string()),
         host: std::env::var("HOST").unwrap_or_else(|_| Defaults::HOST.to_string()),
         port: std::env
             ::var("PORT")

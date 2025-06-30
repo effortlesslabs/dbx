@@ -14,7 +14,7 @@ services:
   # DBX API service
   dbx-api:
     # Use published image (replace with your Docker Hub username)
-    # image: fnlog0/dbx:latest
+    # image: effortlesslabs/dbx:latest
     # Or build from local Dockerfile
     build:
       context: .

@@ -66,7 +66,7 @@ while [[ $# -gt 0 ]]; do
             echo "Examples:"
             echo "  $0 --redis-url redis://localhost:6379"
             echo "  $0 --redis-url redis://user:pass@redis.com:6379 --port 8080"
-            echo "  $0 --redis-url redis://localhost:6379 --image fnlog0/dbx:latest"
+            echo "  $0 --redis-url redis://localhost:6379 --image effortlesslabs/dbx:latest"
             exit 0
             ;;
         *)

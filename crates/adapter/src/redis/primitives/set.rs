@@ -193,7 +193,7 @@ impl RedisSet {
     /// ```ignore
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::set::RedisSet;
+    /// # use dbx_adapter::redis::primitives::set::RedisSet;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_set = RedisSet::new(Arc::new(Mutex::new(conn)));
     /// let results: (usize, Vec<String>) = redis_set.with_pipeline(|pipe| {
@@ -294,7 +294,7 @@ impl RedisSet {
     /// ```ignore
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::set::RedisSet;
+    /// # use dbx_adapter::redis::primitives::set::RedisSet;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_set = RedisSet::new(Arc::new(Mutex::new(conn)));
     /// let _: () = redis_set.transaction(|pipe| {
@@ -332,7 +332,7 @@ impl RedisSet {
     /// # Example
     /// ```ignore
     /// use redis::Script;
-    /// use dbx_crates::adapter::redis::primitives::set::RedisSet;
+    /// use dbx_adapter::redis::primitives::set::RedisSet;
     ///
     /// let script = RedisSet::create_script(r#"
     ///     local members = redis.call('SMEMBERS', KEYS[1])
@@ -350,7 +350,7 @@ impl RedisSet {
     /// ```ignore
     /// # use redis::{Connection, RedisResult, Script};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::set::RedisSet;
+    /// # use dbx_adapter::redis::primitives::set::RedisSet;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_set = RedisSet::new(Arc::new(Mutex::new(conn)));
     /// let script = RedisSet::create_script("return redis.call('SCARD', KEYS[1])");
@@ -395,7 +395,7 @@ impl RedisSet {
     /// ```ignore
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::set::RedisSet;
+    /// # use dbx_adapter::redis::primitives::set::RedisSet;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_set = RedisSet::new(Arc::new(Mutex::new(conn)));
     /// let script = RedisSet::add_and_get_cardinality_script();
@@ -532,14 +532,16 @@ mod tests {
     use super::*;
     use redis::pipe;
     use std::sync::{ Arc, Mutex };
-    use crate::test_helpers::get_test_redis_url;
 
     // Create a connection for tests that's used just for compilation
     fn create_test_connection() -> Arc<Mutex<redis::Connection>> {
         // For tests, just create a client but don't actually connect
         // This allows the tests to compile without needing a Redis server
+        let redis_url = std::env
+            ::var("REDIS_URL")
+            .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
         let client = redis::Client
-            ::open(get_test_redis_url().as_str())
+            ::open(redis_url)
             .unwrap_or_else(|_| {
                 redis::Client::open("redis://localhost:6379").expect("Creating test client")
             });
@@ -679,8 +681,11 @@ mod examples {
     #[ignore = "This example is for demonstration only"]
     fn example_patterns() {
         // Create a connection for examples
+        let redis_url = std::env
+            ::var("REDIS_URL")
+            .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
         let client = redis::Client
-            ::open(get_test_redis_url().as_str())
+            ::open(redis_url)
             .unwrap_or_else(|_| {
                 redis::Client::open("redis://localhost:6379").expect("Creating example client")
             });
@@ -740,5 +745,10 @@ mod examples {
                 ("batch:set2", vec!["member2", "member3"])
             ]
         );
+
+        // Example 5: Set operations
+        let _ = redis_set.sinter(&["set1", "set2"]);
+        let _ = redis_set.sunion(&["set1", "set2"]);
+        let _ = redis_set.sdiff(&["set1", "set2"]);
     }
 }

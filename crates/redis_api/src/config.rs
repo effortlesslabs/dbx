@@ -39,8 +39,6 @@ impl std::fmt::Display for DatabaseType {
 /// Server configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
-    /// Database type
-    pub database_type: DatabaseType,
     /// Database connection URL
     pub database_url: String,
     /// Server host

@@ -22,9 +22,10 @@ impl RedisClient {
     /// Create a new Redis client from a connection string
     ///
     /// # Example
-    /// ```ignore
-    /// # use dbx_crates::adapter::redis::client::RedisClient;
-    /// let client = RedisClient::from_url("redis://127.0.0.1:6379").unwrap();
+    /// ```no_run
+    /// # use dbx_adapter::redis::client::RedisClient;
+    /// let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    /// let client = RedisClient::from_url(&redis_url).unwrap();
     /// ```
     pub fn from_url(url: &str) -> RedisResult<Self> {
         let client = Client::open(url)?;
@@ -94,9 +95,10 @@ impl RedisPool {
     /// Create a new Redis pool with the specified pool size
     ///
     /// # Example
-    /// ```ignore
-    /// # use dbx_crates::adapter::redis::client::RedisPool;
-    /// let pool = RedisPool::new("redis://127.0.0.1:6379", 10).unwrap();
+    /// ```no_run
+    /// # use dbx_adapter::redis::client::RedisPool;
+    /// let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    /// let pool = RedisPool::new(&redis_url, 10).unwrap();
     /// ```
     pub fn new(url: &str, pool_size: u32) -> RedisResult<Self> {
         let client = Client::open(url)?;

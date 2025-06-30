@@ -36,7 +36,7 @@ set -e
 # Default values
 TAG="latest"
 PUSH=false
-USERNAME="fnlog0"
+USERNAME="effortlesslabs"
 REPO="dbx"
 # Default: multi-arch for Railway and all major platforms
 PLATFORMS="linux/amd64,linux/arm64"

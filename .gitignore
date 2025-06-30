@@ -146,6 +146,7 @@ temp/
 .pnp.* 
 .zed
 @internals
+.DS_Store
 
 # Redis TS bindings
 bindings/redis_ts/index.js

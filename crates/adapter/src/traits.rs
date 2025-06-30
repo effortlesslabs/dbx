@@ -3,6 +3,8 @@
 //! This module defines the standard interfaces that all database adapters
 //! should implement to ensure consistency across different database systems.
 
+use async_trait::async_trait;
+
 /// Basic database operations that should be supported by all adapters
 pub trait DatabaseAdapter: Send + Sync {
     /// The error type returned by this adapter
@@ -12,28 +14,31 @@ pub trait DatabaseAdapter: Send + Sync {
     fn is_connected(&self) -> bool;
 }
 
-/// Trait for adapters that support ping operations
-pub trait PingAdapter: DatabaseAdapter {
+/// Async operations for database adapters
+#[async_trait]
+pub trait AsyncDatabaseAdapter: DatabaseAdapter {
     /// Check if the database connection is alive
-    fn ping(&self) -> Result<bool, Self::Error>;
-}
+    async fn ping(&self) -> Result<bool, Self::Error>;
 
-/// Trait for adapters that support connection management
-pub trait ConnectionAdapter: DatabaseAdapter {
     /// Close the database connection
-    fn close(&self) -> Result<(), Self::Error>;
+    async fn close(&self) -> Result<(), Self::Error>;
 }
 
 /// Trait for adapters that support key-value operations
-pub trait KeyValueAdapter: DatabaseAdapter {
+#[async_trait]
+pub trait KeyValueAdapter: AsyncDatabaseAdapter {
     /// Get a value by key
-    fn get<K: AsRef<str>>(&self, key: K) -> Result<Option<String>, Self::Error>;
+    async fn get<K: AsRef<str> + Send>(&self, key: K) -> Result<Option<String>, Self::Error>;
 
     /// Set a key-value pair
-    fn set<K: AsRef<str>, V: AsRef<str>>(&self, key: K, value: V) -> Result<(), Self::Error>;
+    async fn set<K: AsRef<str> + Send, V: AsRef<str> + Send>(
+        &self,
+        key: K,
+        value: V
+    ) -> Result<(), Self::Error>;
 
     /// Set a key-value pair with expiration
-    fn set_with_expiry<K: AsRef<str>, V: AsRef<str>>(
+    async fn set_with_expiry<K: AsRef<str> + Send, V: AsRef<str> + Send>(
         &self,
         key: K,
         value: V,
@@ -41,23 +46,24 @@ pub trait KeyValueAdapter: DatabaseAdapter {
     ) -> Result<(), Self::Error>;
 
     /// Delete a key
-    fn delete<K: AsRef<str>>(&self, key: K) -> Result<bool, Self::Error>;
+    async fn delete<K: AsRef<str> + Send>(&self, key: K) -> Result<bool, Self::Error>;
 
     /// Check if a key exists
-    fn exists<K: AsRef<str>>(&self, key: K) -> Result<bool, Self::Error>;
+    async fn exists<K: AsRef<str> + Send>(&self, key: K) -> Result<bool, Self::Error>;
 }
 
 /// Trait for adapters that support hash operations
-pub trait HashAdapter: DatabaseAdapter {
+#[async_trait]
+pub trait HashAdapter: AsyncDatabaseAdapter {
     /// Get a field from a hash
-    fn hget<K: AsRef<str>, F: AsRef<str>>(
+    async fn hget<K: AsRef<str> + Send, F: AsRef<str> + Send>(
         &self,
         key: K,
         field: F
     ) -> Result<Option<String>, Self::Error>;
 
     /// Set a field in a hash
-    fn hset<K: AsRef<str>, F: AsRef<str>, V: AsRef<str>>(
+    async fn hset<K: AsRef<str> + Send, F: AsRef<str> + Send, V: AsRef<str> + Send>(
         &self,
         key: K,
         field: F,
@@ -65,42 +71,58 @@ pub trait HashAdapter: DatabaseAdapter {
     ) -> Result<(), Self::Error>;
 
     /// Get all fields from a hash
-    fn hgetall<K: AsRef<str>>(
+    async fn hgetall<K: AsRef<str> + Send>(
         &self,
         key: K
     ) -> Result<std::collections::HashMap<String, String>, Self::Error>;
 
     /// Delete a field from a hash
-    fn hdel<K: AsRef<str>, F: AsRef<str>>(&self, key: K, field: F) -> Result<bool, Self::Error>;
+    async fn hdel<K: AsRef<str> + Send, F: AsRef<str> + Send>(
+        &self,
+        key: K,
+        field: F
+    ) -> Result<bool, Self::Error>;
 }
 
 /// Trait for adapters that support set operations
-pub trait SetAdapter: DatabaseAdapter {
+#[async_trait]
+pub trait SetAdapter: AsyncDatabaseAdapter {
     /// Add a member to a set
-    fn sadd<K: AsRef<str>, M: AsRef<str>>(&self, key: K, member: M) -> Result<bool, Self::Error>;
+    async fn sadd<K: AsRef<str> + Send, M: AsRef<str> + Send>(
+        &self,
+        key: K,
+        member: M
+    ) -> Result<bool, Self::Error>;
 
     /// Remove a member from a set
-    fn srem<K: AsRef<str>, M: AsRef<str>>(&self, key: K, member: M) -> Result<bool, Self::Error>;
+    async fn srem<K: AsRef<str> + Send, M: AsRef<str> + Send>(
+        &self,
+        key: K,
+        member: M
+    ) -> Result<bool, Self::Error>;
 
     /// Check if a member exists in a set
-    fn sismember<K: AsRef<str>, M: AsRef<str>>(
+    async fn sismember<K: AsRef<str> + Send, M: AsRef<str> + Send>(
         &self,
         key: K,
         member: M
     ) -> Result<bool, Self::Error>;
 
     /// Get all members of a set
-    fn smembers<K: AsRef<str>>(&self, key: K) -> Result<Vec<String>, Self::Error>;
+    async fn smembers<K: AsRef<str> + Send>(&self, key: K) -> Result<Vec<String>, Self::Error>;
 }
 
 /// Trait for adapters that support connection pooling
-pub trait PooledAdapter: DatabaseAdapter {
+#[async_trait]
+pub trait PooledAdapter: AsyncDatabaseAdapter {
     /// Get a connection from the pool
-    fn get_connection(&self) -> Result<Box<dyn DatabaseAdapter<Error = Self::Error>>, Self::Error>;
+    async fn get_connection(
+        &self
+    ) -> Result<Box<dyn AsyncDatabaseAdapter<Error = Self::Error>>, Self::Error>;
 
     /// Return a connection to the pool
-    fn return_connection(
+    async fn return_connection(
         &self,
-        connection: Box<dyn DatabaseAdapter<Error = Self::Error>>
+        connection: Box<dyn AsyncDatabaseAdapter<Error = Self::Error>>
     ) -> Result<(), Self::Error>;
 }

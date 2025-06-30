@@ -227,7 +227,7 @@ impl RedisBitmap {
     /// ```ignore
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::bitmap::RedisBitmap;
+    /// # use dbx_adapter::redis::primitives::bitmap::RedisBitmap;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_bitmap = RedisBitmap::new(Arc::new(Mutex::new(conn)));
     /// let results: (bool, u64) = redis_bitmap.with_pipeline(|pipe| {
@@ -320,7 +320,7 @@ impl RedisBitmap {
     /// ```ignore
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::bitmap::RedisBitmap;
+    /// # use dbx_adapter::redis::primitives::bitmap::RedisBitmap;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_bitmap = RedisBitmap::new(Arc::new(Mutex::new(conn)));
     /// let _: () = redis_bitmap.transaction(|pipe| {
@@ -359,7 +359,7 @@ impl RedisBitmap {
     ///
     /// ```ignore
     /// use redis::Script;
-    /// use dbx_crates::adapter::redis::primitives::bitmap::RedisBitmap;
+    /// use dbx_adapter::redis::primitives::bitmap::RedisBitmap;
     ///
     /// let script = RedisBitmap::create_script(r#"
     ///     local count = redis.call('BITCOUNT', KEYS[1])
@@ -378,7 +378,7 @@ impl RedisBitmap {
     /// ```ignore
     /// # use redis::{Connection, RedisResult, Script};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::bitmap::RedisBitmap;
+    /// # use dbx_adapter::redis::primitives::bitmap::RedisBitmap;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_bitmap = RedisBitmap::new(Arc::new(Mutex::new(conn)));
     /// let script = RedisBitmap::create_script("return redis.call('BITCOUNT', KEYS[1])");
@@ -424,7 +424,7 @@ impl RedisBitmap {
     /// ```ignore
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::bitmap::RedisBitmap;
+    /// # use dbx_adapter::redis::primitives::bitmap::RedisBitmap;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_bitmap = RedisBitmap::new(Arc::new(Mutex::new(conn)));
     /// let script = RedisBitmap::setbit_and_get_previous_script();
@@ -595,8 +595,11 @@ mod tests {
     fn create_test_connection() -> Arc<Mutex<redis::Connection>> {
         // For tests, just create a client but don't actually connect
         // This allows the tests to compile without needing a Redis server
+        let redis_url = std::env
+            ::var("REDIS_URL")
+            .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
         let client = redis::Client
-            ::open(get_test_redis_url().as_str())
+            ::open(redis_url)
             .unwrap_or_else(|_| {
                 redis::Client::open("redis://localhost:6379").expect("Creating test client")
             });
@@ -722,8 +725,11 @@ mod examples {
     #[ignore = "This example is for demonstration only"]
     fn example_patterns() {
         // Create a connection for examples
+        let redis_url = std::env
+            ::var("REDIS_URL")
+            .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
         let client = redis::Client
-            ::open(get_test_redis_url().as_str())
+            ::open(redis_url)
             .unwrap_or_else(|_| {
                 redis::Client::open("redis://localhost:6379").expect("Creating example client")
             });

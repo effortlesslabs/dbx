@@ -12,7 +12,7 @@
 # =============================================================================
 
 # Docker Hub settings
-DOCKER_USERNAME="${DOCKER_USERNAME:-fnlog0}"
+DOCKER_USERNAME="${DOCKER_USERNAME:-effortlesslabs}"
 DOCKER_REPO="${DOCKER_REPO:-dbx}"
 DOCKER_PLATFORMS="${DOCKER_PLATFORMS:-linux/amd64,linux/arm64}"
 
@@ -50,13 +50,16 @@ VERSION_REGEX="^[0-9]+\.[0-9]+\.[0-9]+$"
 # TESTING CONFIGURATION
 # =============================================================================
 
-# Test commands
-RUST_TEST_CMD="${RUST_TEST_CMD:-cargo test --all}"
+# Test commands (sequential order: adapter → api → client)
+RUST_TEST_CMD_ADAPTER="${RUST_TEST_CMD_ADAPTER:-cd crates/adapter && cargo test}"
+RUST_TEST_CMD_API="${RUST_TEST_CMD_API:-cd crates/redis_api && cargo test}"
+RUST_TEST_CMD_CLIENT="${RUST_TEST_CMD_CLIENT:-cd crates/redis_client && cargo test}"
 TYPESCRIPT_TEST_CMD="${TYPESCRIPT_TEST_CMD:-npm run test:run}"
 TYPESCRIPT_BUILD_CMD="${TYPESCRIPT_BUILD_CMD:-npm run build}"
 
-# Parallel testing (if available)
-ENABLE_PARALLEL_TESTS="${ENABLE_PARALLEL_TESTS:-true}"
+# Sequential testing (required for dependency order)
+ENABLE_SEQUENTIAL_TESTS="${ENABLE_SEQUENTIAL_TESTS:-true}"
+TEST_ORDER=("adapter" "api" "client")
 
 # =============================================================================
 # BUILD CONFIGURATION
@@ -219,8 +222,9 @@ export DOCKER_USERNAME DOCKER_REPO DOCKER_PLATFORMS
 export DOCKER_BUILDER_NAME DOCKER_DEFAULT_TAG
 export NPM_PACKAGE_NAME NPM_PACKAGE_ACCESS NPM_REGISTRY
 export VERSION_FILES VERSION_REGEX
-export RUST_TEST_CMD TYPESCRIPT_TEST_CMD TYPESCRIPT_BUILD_CMD
-export ENABLE_PARALLEL_TESTS
+export RUST_TEST_CMD_ADAPTER RUST_TEST_CMD_API RUST_TEST_CMD_CLIENT
+export TYPESCRIPT_TEST_CMD TYPESCRIPT_BUILD_CMD
+export ENABLE_SEQUENTIAL_TESTS TEST_ORDER
 export TYPESCRIPT_BUILD_DIR RUST_BUILD_DIR
 export LOG_LEVEL ENABLE_COLORED_OUTPUT ENABLE_PROGRESS_INDICATORS
 export BACKUP_SUFFIX ENABLE_AUTO_BACKUP ENABLE_AUTO_RESTORE

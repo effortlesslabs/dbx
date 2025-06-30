@@ -511,6 +511,8 @@ name = "dbx-adapter"
 version = "0.1.6"
 dependencies = [
  "async-trait",
+ "ctor",
+ "dotenv",
  "mockall",
  "redis",
  "serde",
@@ -520,7 +522,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "dbx-api"
+name = "dbx-redis-api"
 version = "0.1.6"
 dependencies = [
  "anyhow",
@@ -530,6 +532,7 @@ dependencies = [
  "chrono",
  "clap",
  "config",
+ "ctor",
  "dbx-adapter",
  "dotenv",
  "futures",
@@ -557,13 +560,29 @@ name = "dbx-redis-bindings"
 version = "0.1.6"
 dependencies = [
  "anyhow",
+ "dbx-redis-client",
  "napi",
  "napi-build",
  "napi-derive",
- "redis_client",
  "serde",
  "serde_json",
  "tokio",
+]
+
+[[package]]
+name = "dbx-redis-client"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "futures-util",
+ "rand",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-test",
+ "tokio-tungstenite 0.20.1",
+ "url",
 ]
 
 [[package]]
@@ -1792,22 +1811,6 @@ dependencies = [
  "socket2 0.4.10",
  "tokio",
  "tokio-util",
- "url",
-]
-
-[[package]]
-name = "redis_client"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "futures-util",
- "rand",
- "reqwest",
- "serde",
- "serde_json",
- "tokio",
- "tokio-test",
- "tokio-tungstenite 0.20.1",
  "url",
 ]
 

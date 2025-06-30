@@ -1,6 +1,6 @@
 //! Tests for HTTP Redis set operations
 
-use redis_client::{ HttpClient, error::Result, SetOperations };
+use dbx_redis_client::{ HttpClient, error::Result, SetOperations };
 use crate::utils;
 
 #[tokio::test]
@@ -112,14 +112,14 @@ async fn test_set_concurrent_operations() -> Result<()> {
                 let exists = set_client.exists(&key, &member).await?;
                 assert!(exists);
                 set_client.remove(&key, &member).await?;
-                Ok::<(), redis_client::error::DbxError>(())
+                Ok::<(), dbx_redis_client::error::DbxError>(())
             })
         })
         .collect();
 
     // Wait for all operations to complete
     for handle in handles {
-        handle.await.map_err(|e| redis_client::error::DbxError::Other(anyhow::anyhow!("{}", e)))??;
+        handle.await.map_err(|e| dbx_redis_client::error::DbxError::Other(anyhow::anyhow!("{}", e)))??;
     }
 
     Ok(())

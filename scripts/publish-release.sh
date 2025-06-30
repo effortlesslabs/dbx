@@ -29,7 +29,7 @@
 #
 # Options:
 #   --version <version>     Version to publish (e.g., 1.0.0)
-#   --docker-username <user> Docker Hub username (default: fnlog0)
+#   --docker-username <user> Docker Hub username (default: effortlesslabs)
 #   --docker-password <pass> Docker Hub password/token
 #   --npm-token <token>     NPM token for publishing
 #   --dry-run              Show what would be done without executing

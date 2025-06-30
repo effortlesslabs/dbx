@@ -10,6 +10,7 @@ This directory contains optimized publishing scripts for the DBX project. All sc
 - **`publish-docker.sh`** - Docker-only image building and publishing
 - **`publish-npm.sh`** - NPM-only TypeScript bindings publishing
 - **`quick-publish.sh`** - Interactive release helper
+- **`test-sequential.sh`** - Sequential testing (adapter → api → client)
 
 ### Shared Files
 
@@ -108,17 +109,18 @@ Enable debug and verbose modes for troubleshooting:
 
 ## 📋 Script Comparison
 
-| Feature          | Full Release | Docker Only | NPM Only | Quick Publish |
-| ---------------- | ------------ | ----------- | -------- | ------------- |
-| Version Updates  | ✅           | ❌          | ✅       | ✅            |
-| Rust Tests       | ✅           | ❌          | ❌       | ✅            |
-| TypeScript Tests | ✅           | ❌          | ✅       | ✅            |
-| Docker Build     | ✅           | ✅          | ❌       | ✅            |
-| NPM Publish      | ✅           | ❌          | ✅       | ✅            |
-| Git Operations   | ✅           | ❌          | ❌       | ✅            |
-| Interactive      | ❌           | ❌          | ❌       | ✅            |
-| Environment Vars | ✅           | ✅          | ✅       | ✅            |
-| Dry Run          | ✅           | ❌          | ✅       | ❌            |
+| Feature          | Full Release | Docker Only | NPM Only | Quick Publish | Test Sequential |
+| ---------------- | ------------ | ----------- | -------- | ------------- | --------------- |
+| Version Updates  | ✅           | ❌          | ✅       | ✅            | ❌              |
+| Rust Tests       | ✅           | ❌          | ❌       | ✅            | ✅              |
+| TypeScript Tests | ✅           | ❌          | ✅       | ✅            | ✅              |
+| Docker Build     | ✅           | ✅          | ❌       | ✅            | ❌              |
+| NPM Publish      | ✅           | ❌          | ✅       | ✅            | ❌              |
+| Git Operations   | ✅           | ❌          | ❌       | ✅            | ❌              |
+| Interactive      | ❌           | ❌          | ❌       | ✅            | ❌              |
+| Environment Vars | ✅           | ✅          | ✅       | ✅            | ✅              |
+| Dry Run          | ✅           | ❌          | ✅       | ❌            | ❌              |
+| Sequential Tests | ✅           | ❌          | ❌       | ✅            | ✅              |
 
 ## ⚙️ Configuration
 
@@ -128,7 +130,7 @@ All scripts support these environment variables:
 
 ```bash
 # Docker Configuration
-DOCKER_USERNAME="fnlog0"           # Docker Hub username
+DOCKER_USERNAME="effortlesslabs"           # Docker Hub username
 DOCKER_PASSWORD=""                 # Docker Hub password/token
 DOCKER_REPO="dbx"                  # Docker repository name
 DOCKER_PLATFORMS="linux/amd64,linux/arm64"  # Target platforms
@@ -143,8 +145,10 @@ TYPESCRIPT_BUILD_DIR="bindings/redis_ts"          # TypeScript build directory
 RUST_BUILD_DIR="."                 # Rust build directory
 
 # Testing Configuration
-ENABLE_PARALLEL_TESTS="true"       # Enable parallel test execution
-RUST_TEST_CMD="cargo test --all"   # Rust test command
+ENABLE_SEQUENTIAL_TESTS="true"     # Enable sequential test execution (adapter → api → client)
+RUST_TEST_CMD_ADAPTER="cd crates/adapter && cargo test"  # Adapter test command
+RUST_TEST_CMD_API="cd crates/redis_api && cargo test"    # API test command
+RUST_TEST_CMD_CLIENT="cd crates/redis_client && cargo test"  # Client test command
 TYPESCRIPT_TEST_CMD="npm run test:run"  # TypeScript test command
 
 # Error Handling
@@ -177,9 +181,12 @@ VERBOSE=false
 ### Development Workflow
 
 ```bash
-# 1. Test changes
-cargo test --all
-cd bindings/redis_ts && npm run test:run && cd ..
+# 1. Test changes (sequential order)
+./scripts/test-sequential.sh
+
+# Or test manually in order:
+cd crates/adapter && cargo test && cd ../redis_api && cargo test && cd ../redis_client && cargo test
+cd bindings/redis_ts && npm run test:run && cd ../..
 
 # 2. Quick NPM publish for testing
 ./scripts/publish-npm.sh --version 0.1.6 --npm-token $NPM_TOKEN --update-version
@@ -259,6 +266,19 @@ Get detailed information about each step:
 
 ## 📚 Advanced Usage
 
+### Sequential Testing
+
+```bash
+# Run tests in dependency order
+./scripts/test-sequential.sh
+
+# Skip TypeScript tests
+./scripts/test-sequential.sh --skip-typescript
+
+# Verbose output
+./scripts/test-sequential.sh --verbose
+```
+
 ### Custom Platforms
 
 ```bash
@@ -274,10 +294,10 @@ NPM_PACKAGE_NAME="my-custom-package" \
 ./scripts/publish-npm.sh --npm-token $NPM_TOKEN
 ```
 
-### Parallel Testing
+### Sequential Testing Configuration
 
 ```bash
-ENABLE_PARALLEL_TESTS=true \
+ENABLE_SEQUENTIAL_TESTS=true \
 ./scripts/publish-release.sh --version 1.0.0 --dry-run
 ```
 

@@ -12,9 +12,8 @@ on:
         type: string
       docker_username:
         description: "Docker Hub username"
-        required: true
-        type: string
-        default: "fnlog0"
+        required: false
+        default: "effortlesslabs"
       npm_token:
         description: "NPM token for publishing"
         required: true
@@ -22,7 +21,7 @@ on:
 
 env:
   # Docker Configuration
-  DOCKER_USERNAME: ${{ github.event.inputs.docker_username || 'fnlog0' }}
+  DOCKER_USERNAME: ${{ github.event.inputs.docker_username || 'effortlesslabs' }}
   DOCKER_REPO: dbx
   DOCKER_PLATFORMS: linux/amd64,linux/arm64
 

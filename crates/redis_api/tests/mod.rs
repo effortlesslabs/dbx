@@ -3,8 +3,18 @@ pub mod redis;
 pub mod redis_ws;
 
 use std::sync::Arc;
-use dbx_api::{ config::{ Config, DatabaseType }, server::Server, constants::defaults::Defaults };
+use dbx_redis_api::{
+    config::{ Config, DatabaseType },
+    server::Server,
+    constants::defaults::Defaults,
+};
 use std::net::SocketAddr;
+
+// Load environment variables from .env file for tests
+#[ctor::ctor]
+fn init() {
+    dotenv::dotenv().ok();
+}
 
 pub struct TestServer {
     pub server: Server,
@@ -14,17 +24,16 @@ pub struct TestServer {
 impl TestServer {
     pub async fn new() -> anyhow::Result<Self> {
         let config = Config {
-            database_type: DatabaseType::Redis,
             database_url: std::env
-                ::var("DATABASE_URL")
-                .unwrap_or_else(|_| Defaults::TEST_DATABASE_URL.to_string()),
-            host: std::env::var("HOST").unwrap_or_else(|_| Defaults::TEST_HOST.to_string()),
+                ::var("REDIS_URL")
+                .unwrap_or_else(|_| Defaults::REDIS_URL.to_string()),
+            host: std::env::var("HOST").unwrap_or_else(|_| Defaults::HOST.to_string()),
             port: 0, // Use port 0 for random available port
             pool_size: std::env
                 ::var("POOL_SIZE")
-                .unwrap_or_else(|_| Defaults::TEST_POOL_SIZE.to_string())
+                .unwrap_or_else(|_| Defaults::POOL_SIZE.to_string())
                 .parse()
-                .unwrap_or(Defaults::TEST_POOL_SIZE),
+                .unwrap_or(Defaults::POOL_SIZE),
         };
 
         let server = Server::new(config).await?;

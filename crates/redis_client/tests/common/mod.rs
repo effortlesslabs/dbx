@@ -1,7 +1,7 @@
 //! Tests for common functionality
 
-use redis_client::common::*;
-use redis_client::error::Result;
+use dbx_redis_client::common::*;
+use dbx_redis_client::error::Result;
 
 #[tokio::test]
 async fn test_string_types_serialization() -> Result<()> {

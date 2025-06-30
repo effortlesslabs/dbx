@@ -204,7 +204,7 @@ impl RedisHash {
     /// ```ignore
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::hash::RedisHash;
+    /// # use dbx_adapter::redis::primitives::hash::RedisHash;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_hash = RedisHash::new(Arc::new(Mutex::new(conn)));
     /// let results: (bool, Option<String>) = redis_hash.with_pipeline(|pipe| {
@@ -322,7 +322,7 @@ impl RedisHash {
     /// ```ignore
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::hash::RedisHash;
+    /// # use dbx_adapter::redis::primitives::hash::RedisHash;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_hash = RedisHash::new(Arc::new(Mutex::new(conn)));
     /// let results: (bool, Option<String>) = redis_hash.with_transaction(|pipe| {
@@ -378,7 +378,7 @@ impl RedisHash {
     /// # Example
     /// ```ignore
     /// use redis::Script;
-    /// use dbx_crates::adapter::redis::primitives::hash::RedisHash;
+    /// use dbx_adapter::redis::primitives::hash::RedisHash;
     ///
     /// let script = RedisHash::create_script(r#"
     ///     local fields = redis.call('HGETALL', KEYS[1])
@@ -396,7 +396,7 @@ impl RedisHash {
     /// ```ignore
     /// # use redis::{Connection, RedisResult, Script};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::hash::RedisHash;
+    /// # use dbx_adapter::redis::primitives::hash::RedisHash;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_hash = RedisHash::new(Arc::new(Mutex::new(conn)));
     /// let script = RedisHash::create_script("return redis.call('HLEN', KEYS[1])");
@@ -425,7 +425,7 @@ impl RedisHash {
     /// ```ignore
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::hash::RedisHash;
+    /// # use dbx_adapter::redis::primitives::hash::RedisHash;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_hash = RedisHash::new(Arc::new(Mutex::new(conn)));
     /// let script = RedisHash::get_set_script();

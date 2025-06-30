@@ -319,7 +319,7 @@ impl RedisSortedSet {
     /// ```ignore
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::sorted_set::RedisSortedSet;
+    /// # use dbx_adapter::redis::primitives::sorted_set::RedisSortedSet;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_sorted_set = RedisSortedSet::new(Arc::new(Mutex::new(conn)));
     /// let results: (usize, Vec<String>) = redis_sorted_set.with_pipeline(|pipe| {
@@ -433,7 +433,7 @@ impl RedisSortedSet {
     /// ```ignore
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::sorted_set::RedisSortedSet;
+    /// # use dbx_adapter::redis::primitives::sorted_set::RedisSortedSet;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_sorted_set = RedisSortedSet::new(Arc::new(Mutex::new(conn)));
     /// let _: () = redis_sorted_set.transaction(|pipe| {
@@ -471,7 +471,7 @@ impl RedisSortedSet {
     /// # Example
     /// ```ignore
     /// use redis::Script;
-    /// use dbx_crates::adapter::redis::primitives::sorted_set::RedisSortedSet;
+    /// use dbx_adapter::redis::primitives::sorted_set::RedisSortedSet;
     ///
     /// let script = RedisSortedSet::create_script(r#"
     ///     local score = redis.call('ZSCORE', KEYS[1], ARGV[1])
@@ -493,7 +493,7 @@ impl RedisSortedSet {
     /// ```ignore
     /// # use redis::{Connection, RedisResult, Script};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::sorted_set::RedisSortedSet;
+    /// # use dbx_adapter::redis::primitives::sorted_set::RedisSortedSet;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_sorted_set = RedisSortedSet::new(Arc::new(Mutex::new(conn)));
     /// let script = RedisSortedSet::create_script("return redis.call('ZCARD', KEYS[1])");
@@ -538,7 +538,7 @@ impl RedisSortedSet {
     /// ```ignore
     /// # use redis::{Connection, RedisResult};
     /// # use std::sync::{Arc, Mutex};
-    /// # use dbx_crates::adapter::redis::primitives::sorted_set::RedisSortedSet;
+    /// # use dbx_adapter::redis::primitives::sorted_set::RedisSortedSet;
     /// # fn example(conn: Connection) -> RedisResult<()> {
     /// let redis_sorted_set = RedisSortedSet::new(Arc::new(Mutex::new(conn)));
     /// let script = RedisSortedSet::add_and_get_rank_script();
@@ -721,8 +721,11 @@ mod tests {
     fn create_test_connection() -> Arc<Mutex<redis::Connection>> {
         // For tests, just create a client but don't actually connect
         // This allows the tests to compile without needing a Redis server
+        let redis_url = std::env
+            ::var("REDIS_URL")
+            .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
         let client = redis::Client
-            ::open(get_test_redis_url().as_str())
+            ::open(redis_url)
             .unwrap_or_else(|_| {
                 redis::Client::open("redis://localhost:6379").expect("Creating test client")
             });
@@ -884,8 +887,11 @@ mod examples {
     #[ignore = "This example is for demonstration only"]
     fn example_patterns() {
         // Create a connection for examples
+        let redis_url = std::env
+            ::var("REDIS_URL")
+            .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
         let client = redis::Client
-            ::open(get_test_redis_url().as_str())
+            ::open(redis_url)
             .unwrap_or_else(|_| {
                 redis::Client::open("redis://localhost:6379").expect("Creating example client")
             });
