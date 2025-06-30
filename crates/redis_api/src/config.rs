@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::{ Deserialize, Serialize };
 use std::str::FromStr;
 
 /// Supported database types
@@ -20,7 +20,7 @@ impl FromStr for DatabaseType {
             // "postgres" => Ok(DatabaseType::Postgres),
             // "mongodb" => Ok(DatabaseType::MongoDB),
             // "mysql" => Ok(DatabaseType::MySQL),
-            _ => Err(format!("Unsupported database type: {}", s)),
+            _ => Err(format!("Unsupported database type: {s}")),
         }
     }
 }
