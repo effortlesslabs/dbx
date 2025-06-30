@@ -79,8 +79,7 @@ async fn handle_redis_ws_hash_socket(socket: WebSocket, pool: Arc<RedisPool>) {
                         let _ = sender
                             .send(axum::extract::ws::Message::Text(
                                 serde_json::to_string(&HashWsMessage::Error(format!(
-                                    "Redis error: {}",
-                                    e
+                                    "Redis error: {e}"
                                 )))
                                 .unwrap(),
                             ))
@@ -115,7 +114,7 @@ async fn handle_redis_ws_hash_socket(socket: WebSocket, pool: Arc<RedisPool>) {
                                 field: Some(field),
                                 value: Some(value),
                             },
-                            Err(e) => HashWsMessage::Error(format!("Set error: {}", e)),
+                            Err(e) => HashWsMessage::Error(format!("Set error: {e}")),
                         };
                         let _ = sender
                             .send(axum::extract::ws::Message::Text(
@@ -161,7 +160,7 @@ async fn handle_redis_ws_hash_socket(socket: WebSocket, pool: Arc<RedisPool>) {
                                 field: None,
                                 value: Some("Batch set success".to_string()),
                             },
-                            Err(e) => HashWsMessage::Error(format!("Batch set error: {}", e)),
+                            Err(e) => HashWsMessage::Error(format!("Batch set error: {e}")),
                         };
                         let _ = sender
                             .send(axum::extract::ws::Message::Text(

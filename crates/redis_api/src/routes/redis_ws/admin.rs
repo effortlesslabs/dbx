@@ -337,7 +337,7 @@ async fn handle_redis_ws_admin_socket(socket: WebSocket, pool: Arc<RedisPool>) {
                         let res = flush_all_databases(conn_arc.clone());
                         let msg = match res {
                             Ok(_) => AdminWsMessage::FlushAllResult,
-                            Err(e) => AdminWsMessage::Error(format!("FlushAll error: {}", e)),
+                            Err(e) => AdminWsMessage::Error(format!("FlushAll error: {e}")),
                         };
                         let _ = sender
                             .send(axum::extract::ws::Message::Text(
