@@ -15,8 +15,8 @@ async fn main() -> anyhow::Result<()> {
     let config = Config {
         database_type: DatabaseType::Redis,
         database_url: std::env
-            ::var("DATABASE_URL")
-            .unwrap_or_else(|_| Defaults::DATABASE_URL.to_string()),
+            ::var("REDIS_URL")
+            .unwrap_or_else(|_| Defaults::REDIS_URL.to_string()),
         host: std::env::var("HOST").unwrap_or_else(|_| Defaults::HOST.to_string()),
         port: std::env
             ::var("PORT")
