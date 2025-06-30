@@ -34,9 +34,9 @@ impl HttpClientBase for HttpStringClient {
 impl StringOperations for HttpStringClient {
     /// Get a string value by key
     async fn get(&mut self, key: &str) -> Result<Option<String>> {
-        let url = self.base_url.join(&format!("redis/string/{}", key))?;
+        let url = self.base_url.join(&format!("redis/string/{key}"))?;
         let response = self.client.get(url).send().await?;
-        http::handle_response(response, &format!("get string for key: {}", key)).await
+        http::handle_response(response, &format!("get string for key: {key}")).await
     }
 
     /// Set a string value
@@ -53,16 +53,16 @@ impl StringOperations for HttpStringClient {
 
     /// Delete a string value
     async fn delete(&mut self, key: &str) -> Result<bool> {
-        let url = self.base_url.join(&format!("redis/string/{}", key))?;
+        let url = self.base_url.join(&format!("redis/string/{key}"))?;
         let response = self.client.delete(url).send().await?;
-        http::handle_response(response, &format!("delete string for key: {}", key)).await
+        http::handle_response(response, &format!("delete string for key: {key}")).await
     }
 
     /// Get string information
     async fn info(&mut self, key: &str) -> Result<Option<StringInfo>> {
-        let url = self.base_url.join(&format!("redis/string/{}/info", key))?;
+        let url = self.base_url.join(&format!("redis/string/{key}/info"))?;
         let response = self.client.get(url).send().await?;
-        http::handle_response(response, &format!("get string info for key: {}", key)).await
+        http::handle_response(response, &format!("get string info for key: {key}")).await
     }
 
     /// Batch get multiple strings

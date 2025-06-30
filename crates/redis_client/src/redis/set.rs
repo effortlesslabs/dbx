@@ -33,58 +33,66 @@ impl HttpClientBase for HttpSetClient {
 impl SetOperations for HttpSetClient {
     /// Add a member to a set
     async fn add(&mut self, key: &str, member: &str) -> Result<usize> {
-        let url = self.base_url.join(&format!("redis/set/{}", key))?;
+        let url = self.base_url.join(&format!("redis/set/{key}", key = key))?;
         let request = SetMemberRequest {
             member: member.to_string(),
         };
 
         let response = self.client.post(url).json(&request).send().await?;
-        http::handle_response(response, &format!("add member to set: {}", key)).await
+        http::handle_response(response, &format!("add member to set: {key}")).await
     }
 
     /// Add multiple members to a set
     async fn add_many(&mut self, key: &str, members: &[&str]) -> Result<usize> {
-        let url = self.base_url.join(&format!("redis/set/{}/many", key))?;
+        let url = self
+            .base_url
+            .join(&format!("redis/set/{key}/many", key = key))?;
         let request = SetMembersRequest {
             members: members.iter().map(|&s| s.to_string()).collect(),
         };
 
         let response = self.client.post(url).json(&request).send().await?;
-        http::handle_response(response, &format!("add members to set: {}", key)).await
+        http::handle_response(response, &format!("add members to set: {key}")).await
     }
 
     /// Remove a member from a set
     async fn remove(&mut self, key: &str, member: &str) -> Result<usize> {
-        let url = self
-            .base_url
-            .join(&format!("redis/set/{}/{}", key, member))?;
+        let url = self.base_url.join(&format!(
+            "redis/set/{key}/{member}",
+            key = key,
+            member = member
+        ))?;
         let response = self.client.delete(url).send().await?;
-        http::handle_response(response, &format!("remove member from set: {}", key)).await
+        http::handle_response(response, &format!("remove member from set: {key}")).await
     }
 
     /// Get all members of a set
     async fn members(&mut self, key: &str) -> Result<Vec<String>> {
-        let url = self.base_url.join(&format!("redis/set/{}/members", key))?;
+        let url = self
+            .base_url
+            .join(&format!("redis/set/{key}/members", key = key))?;
         let response = self.client.get(url).send().await?;
-        http::handle_response(response, &format!("get members of set: {}", key)).await
+        http::handle_response(response, &format!("get members of set: {key}")).await
     }
 
     /// Get the cardinality (size) of a set
     async fn cardinality(&mut self, key: &str) -> Result<usize> {
         let url = self
             .base_url
-            .join(&format!("redis/set/{}/cardinality", key))?;
+            .join(&format!("redis/set/{key}/cardinality", key = key))?;
         let response = self.client.get(url).send().await?;
-        http::handle_response(response, &format!("get cardinality of set: {}", key)).await
+        http::handle_response(response, &format!("get cardinality of set: {key}")).await
     }
 
     /// Check if a member exists in a set
     async fn exists(&mut self, key: &str, member: &str) -> Result<bool> {
-        let url = self
-            .base_url
-            .join(&format!("redis/set/{}/{}/exists", key, member))?;
+        let url = self.base_url.join(&format!(
+            "redis/set/{key}/{member}/exists",
+            key = key,
+            member = member
+        ))?;
         let response = self.client.get(url).send().await?;
-        http::handle_response(response, &format!("check member existence in set: {}", key)).await
+        http::handle_response(response, &format!("check member existence in set: {key}")).await
     }
 
     /// Intersect multiple sets
@@ -122,9 +130,9 @@ impl SetOperations for HttpSetClient {
 
     /// Delete a set by key
     async fn delete(&mut self, key: &str) -> Result<bool> {
-        let url = self.base_url.join(&format!("redis/set/{}", key))?;
+        let url = self.base_url.join(&format!("redis/set/{key}", key = key))?;
         let response = self.client.delete(url).send().await?;
-        http::handle_response(response, &format!("delete set: {}", key)).await
+        http::handle_response(response, &format!("delete set: {key}")).await
     }
 }
 

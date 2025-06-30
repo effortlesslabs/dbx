@@ -17,10 +17,10 @@ pub enum DbxError {
 impl fmt::Display for DbxError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            DbxError::Api { status, message } => write!(f, "API error ({}): {}", status, message),
-            DbxError::InvalidUrl(e) => write!(f, "Invalid URL: {}", e),
-            DbxError::Json(e) => write!(f, "JSON error: {}", e),
-            DbxError::Other(e) => write!(f, "Other error: {}", e),
+            DbxError::Api { status, message } => write!(f, "API error ({status}): {message}"),
+            DbxError::InvalidUrl(e) => write!(f, "Invalid URL: {e}"),
+            DbxError::Json(e) => write!(f, "JSON error: {e}"),
+            DbxError::Other(e) => write!(f, "Other error: {e}"),
         }
     }
 }
