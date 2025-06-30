@@ -14,7 +14,8 @@ use serde::{ Serialize, Deserialize };
 ///
 /// ```rust
 /// use dbx_crates::adapter::redis::Redis;
-/// let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+/// let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+/// let redis = Redis::from_url(&redis_url).unwrap();
 /// let admin = redis.admin();
 ///
 /// // Check server health
@@ -40,7 +41,8 @@ impl AdminOperations {
     ///
     /// ```rust
     /// use dbx_crates::adapter::redis::Redis;
-    /// let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+    /// let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    /// let redis = Redis::from_url(&redis_url).unwrap();
     /// let admin = redis.admin();
     /// ```
     pub fn new(conn: Arc<Mutex<Connection>>) -> Self {
@@ -60,7 +62,8 @@ impl AdminOperations {
     ///
     /// ```rust
     /// use dbx_crates::adapter::redis::Redis;
-    /// let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+    /// let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    /// let redis = Redis::from_url(&redis_url).unwrap();
     /// let admin = redis.admin();
     /// admin.flushdb().unwrap();
     /// ```
@@ -82,7 +85,8 @@ impl AdminOperations {
     ///
     /// ```rust
     /// use dbx_crates::adapter::redis::Redis;
-    /// let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+    /// let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    /// let redis = Redis::from_url(&redis_url).unwrap();
     /// let admin = redis.admin();
     /// admin.flushall().unwrap();
     /// ```
@@ -104,7 +108,8 @@ impl AdminOperations {
     ///
     /// ```rust
     /// use dbx_crates::adapter::redis::Redis;
-    /// let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+    /// let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    /// let redis = Redis::from_url(&redis_url).unwrap();
     /// let admin = redis.admin();
     /// let info = admin.info().unwrap();
     /// assert!(info.contains("redis_version"));
@@ -128,7 +133,8 @@ impl AdminOperations {
     ///
     /// ```rust
     /// use dbx_crates::adapter::redis::Redis;
-    /// let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+    /// let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    /// let redis = Redis::from_url(&redis_url).unwrap();
     /// let admin = redis.admin();
     /// let server_info = admin.info_section("server").unwrap();
     /// assert!(server_info.contains("redis_version"));
@@ -151,7 +157,8 @@ impl AdminOperations {
     ///
     /// ```rust
     /// use dbx_crates::adapter::redis::Redis;
-    /// let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+    /// let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    /// let redis = Redis::from_url(&redis_url).unwrap();
     /// let admin = redis.admin();
     /// let response = admin.ping().unwrap();
     /// assert_eq!(response, "PONG");
@@ -179,7 +186,8 @@ impl AdminOperations {
     ///
     /// ```rust
     /// use dbx_crates::adapter::redis::Redis;
-    /// let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+    /// let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    /// let redis = Redis::from_url(&redis_url).unwrap();
     /// let admin = redis.admin();
     /// admin.config_set("timeout", "300").unwrap();
     /// ```
@@ -202,7 +210,8 @@ impl AdminOperations {
     ///
     /// ```rust
     /// use dbx_crates::adapter::redis::Redis;
-    /// let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+    /// let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    /// let redis = Redis::from_url(&redis_url).unwrap();
     /// let admin = redis.admin();
     /// let timeout = admin.config_get("timeout").unwrap();
     /// ```
@@ -228,7 +237,8 @@ impl AdminOperations {
     ///
     /// ```rust
     /// use dbx_crates::adapter::redis::Redis;
-    /// let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+    /// let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    /// let redis = Redis::from_url(&redis_url).unwrap();
     /// let admin = redis.admin();
     /// let config = admin.config_get_all().unwrap();
     /// assert!(config.contains_key("timeout"));
@@ -256,7 +266,8 @@ impl AdminOperations {
     ///
     /// ```rust
     /// use dbx_crates::adapter::redis::Redis;
-    /// let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+    /// let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    /// let redis = Redis::from_url(&redis_url).unwrap();
     /// let admin = redis.admin();
     /// admin.config_resetstat().unwrap();
     /// ```
@@ -287,7 +298,8 @@ impl AdminOperations {
     ///
     /// ```rust
     /// use dbx_crates::adapter::redis::Redis;
-    /// let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+    /// let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    /// let redis = Redis::from_url(&redis_url).unwrap();
     /// let admin = redis.admin();
     /// let count = admin.dbsize().unwrap();
     /// println!("Database contains {} keys", count);
@@ -307,7 +319,8 @@ impl AdminOperations {
     ///
     /// ```rust
     /// use dbx_crates::adapter::redis::Redis;
-    /// let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+    /// let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    /// let redis = Redis::from_url(&redis_url).unwrap();
     /// let admin = redis.admin();
     /// let (time, microseconds) = admin.time().unwrap();
     /// println!("Server time: {} (microseconds: {})", time, microseconds);
@@ -327,7 +340,8 @@ impl AdminOperations {
     ///
     /// ```rust
     /// use dbx_crates::adapter::redis::Redis;
-    /// let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+    /// let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    /// let redis = Redis::from_url(&redis_url).unwrap();
     /// let admin = redis.admin();
     /// let version = admin.version().unwrap();
     /// println!("Redis version: {}", version);
@@ -353,7 +367,8 @@ impl AdminOperations {
     ///
     /// ```rust
     /// use dbx_crates::adapter::redis::Redis;
-    /// let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+    /// let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    /// let redis = Redis::from_url(&redis_url).unwrap();
     /// let admin = redis.admin();
     /// let memory = admin.memory_stats().unwrap();
     /// println!("Used memory: {} bytes", memory.get("used_memory").unwrap_or(&"unknown".to_string()));
@@ -380,7 +395,8 @@ impl AdminOperations {
     ///
     /// ```rust
     /// use dbx_crates::adapter::redis::Redis;
-    /// let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+    /// let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    /// let redis = Redis::from_url(&redis_url).unwrap();
     /// let admin = redis.admin();
     /// let clients = admin.client_stats().unwrap();
     /// println!("Connected clients: {}", clients.get("connected_clients").unwrap_or(&"unknown".to_string()));
@@ -407,7 +423,8 @@ impl AdminOperations {
     ///
     /// ```rust
     /// use dbx_crates::adapter::redis::Redis;
-    /// let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+    /// let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    /// let redis = Redis::from_url(&redis_url).unwrap();
     /// let admin = redis.admin();
     /// let stats = admin.server_stats().unwrap();
     /// println!("Total commands processed: {}", stats.get("total_commands_processed").unwrap_or(&"unknown".to_string()));
@@ -437,7 +454,8 @@ impl AdminOperations {
     ///
     /// ```rust
     /// use dbx_crates::adapter::redis::Redis;
-    /// let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+    /// let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    /// let redis = Redis::from_url(&redis_url).unwrap();
     /// let admin = redis.admin();
     /// let health = admin.health_check().unwrap();
     /// println!("Redis server is healthy: {}", health.is_healthy);
@@ -472,7 +490,8 @@ impl AdminOperations {
     ///
     /// ```rust
     /// use dbx_crates::adapter::redis::Redis;
-    /// let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+    /// let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    /// let redis = Redis::from_url(&redis_url).unwrap();
     /// let admin = redis.admin();
     /// let status = admin.server_status().unwrap();
     /// println!("Server uptime: {} seconds", status.uptime_seconds);
@@ -607,18 +626,24 @@ impl ServerStatus {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::redis::Redis;
+
+    // Helper function to get Redis URL from environment or use default
+    fn get_redis_url() -> String {
+        std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string())
+    }
 
     #[test]
     fn test_admin_operations_creation() {
-        let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+        let redis = Redis::from_url(&get_redis_url()).unwrap();
         let admin = redis.admin();
         assert!(admin.conn.lock().is_ok());
     }
 
     #[test]
     fn test_ping_operation() {
-        let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+        let redis = Redis::from_url(&get_redis_url()).unwrap();
         let admin = redis.admin();
         let response = admin.ping().unwrap();
         assert_eq!(response, "PONG");
@@ -626,7 +651,7 @@ mod tests {
 
     #[test]
     fn test_info_operation() {
-        let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+        let redis = Redis::from_url(&get_redis_url()).unwrap();
         let admin = redis.admin();
         let info = admin.info().unwrap();
         assert!(info.contains("redis_version"));
@@ -635,7 +660,7 @@ mod tests {
 
     #[test]
     fn test_info_section_operation() {
-        let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+        let redis = Redis::from_url(&get_redis_url()).unwrap();
         let admin = redis.admin();
         let server_info = admin.info_section("server").unwrap();
         assert!(server_info.contains("redis_version"));
@@ -644,7 +669,7 @@ mod tests {
 
     #[test]
     fn test_dbsize_operation() {
-        let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+        let redis = Redis::from_url(&get_redis_url()).unwrap();
         let admin = redis.admin();
         let size = admin.dbsize().unwrap();
         assert!(size >= 0);
@@ -652,7 +677,7 @@ mod tests {
 
     #[test]
     fn test_time_operation() {
-        let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+        let redis = Redis::from_url(&get_redis_url()).unwrap();
         let admin = redis.admin();
         let (time, microseconds) = admin.time().unwrap();
         assert!(time > 0);
@@ -661,7 +686,7 @@ mod tests {
 
     #[test]
     fn test_version_operation() {
-        let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+        let redis = Redis::from_url(&get_redis_url()).unwrap();
         let admin = redis.admin();
         let version = admin.version().unwrap();
         assert!(!version.is_empty());
@@ -670,7 +695,7 @@ mod tests {
 
     #[test]
     fn test_memory_stats_operation() {
-        let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+        let redis = Redis::from_url(&get_redis_url()).unwrap();
         let admin = redis.admin();
         let memory = admin.memory_stats().unwrap();
         assert!(memory.contains_key("used_memory"));
@@ -679,7 +704,7 @@ mod tests {
 
     #[test]
     fn test_client_stats_operation() {
-        let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+        let redis = Redis::from_url(&get_redis_url()).unwrap();
         let admin = redis.admin();
         let clients = admin.client_stats().unwrap();
         assert!(clients.contains_key("connected_clients"));
@@ -688,7 +713,7 @@ mod tests {
 
     #[test]
     fn test_server_stats_operation() {
-        let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+        let redis = Redis::from_url(&get_redis_url()).unwrap();
         let admin = redis.admin();
         let stats = admin.server_stats().unwrap();
         assert!(stats.contains_key("total_commands_processed"));
@@ -697,7 +722,7 @@ mod tests {
 
     #[test]
     fn test_health_check_operation() {
-        let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+        let redis = Redis::from_url(&get_redis_url()).unwrap();
         let admin = redis.admin();
         let health = admin.health_check().unwrap();
         assert!(health.is_healthy);
@@ -708,7 +733,7 @@ mod tests {
 
     #[test]
     fn test_server_status_operation() {
-        let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+        let redis = Redis::from_url(&get_redis_url()).unwrap();
         let admin = redis.admin();
         let status = admin.server_status().unwrap();
         assert!(status.timestamp > 0);
@@ -722,7 +747,7 @@ mod tests {
 
     #[test]
     fn test_server_status_derived_values() {
-        let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+        let redis = Redis::from_url(&get_redis_url()).unwrap();
         let admin = redis.admin();
         let status = admin.server_status().unwrap();
 
@@ -738,7 +763,7 @@ mod tests {
 
     #[test]
     fn test_config_operations() {
-        let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+        let redis = Redis::from_url(&get_redis_url()).unwrap();
         let admin = redis.admin();
 
         // Test config_get for a known parameter
@@ -753,7 +778,7 @@ mod tests {
 
     #[test]
     fn test_config_resetstat_operation() {
-        let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+        let redis = Redis::from_url(&get_redis_url()).unwrap();
         let admin = redis.admin();
         // This should not panic
         admin.config_resetstat().unwrap();
@@ -761,7 +786,7 @@ mod tests {
 
     #[test]
     fn test_config_rewrite_operation() {
-        let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+        let redis = Redis::from_url(&get_redis_url()).unwrap();
         let admin = redis.admin();
         // This might fail if Redis doesn't have write permissions
         // Just test that it doesn't panic
@@ -770,32 +795,71 @@ mod tests {
 
     #[test]
     fn test_flush_operations() {
-        let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+        let redis = Redis::from_url(&get_redis_url()).unwrap();
         let admin = redis.admin();
 
-        // Add some test data
-        redis.string().set("test:admin:key1", "value1").unwrap();
-        redis.string().set("test:admin:key2", "value2").unwrap();
+        // Get initial database size
+        let initial_size = admin.dbsize().unwrap();
 
-        // Verify data exists
-        assert_eq!(admin.dbsize().unwrap(), 2);
+        // Add some test data with unique keys to avoid conflicts
+        let timestamp = std::time::SystemTime
+            ::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis();
 
-        // Test flushdb
+        let key1 = format!("test:admin:key1:{}", timestamp);
+        let key2 = format!("test:admin:key2:{}", timestamp);
+        let key3 = format!("test:admin:key3:{}", timestamp);
+
+        redis.string().set(&key1, "value1").unwrap();
+        redis.string().set(&key2, "value2").unwrap();
+
+        // Verify data was added (size should increase by 2)
+        let size_after_add = admin.dbsize().unwrap();
+        assert_eq!(
+            size_after_add,
+            initial_size + 2,
+            "Expected database size to increase by 2 from {} to {}, but got {}",
+            initial_size,
+            initial_size + 2,
+            size_after_add
+        );
+
+        // Test flushdb - should clear current database
         admin.flushdb().unwrap();
-        assert_eq!(admin.dbsize().unwrap(), 0);
+        let size_after_flushdb = admin.dbsize().unwrap();
+        assert_eq!(
+            size_after_flushdb,
+            0,
+            "Expected database size to be 0 after flushdb, but got {}",
+            size_after_flushdb
+        );
 
         // Add data again for flushall test
-        redis.string().set("test:admin:key3", "value3").unwrap();
-        assert_eq!(admin.dbsize().unwrap(), 1);
+        redis.string().set(&key3, "value3").unwrap();
+        let size_after_add_again = admin.dbsize().unwrap();
+        assert_eq!(
+            size_after_add_again,
+            1,
+            "Expected database size to be 1 after adding one key, but got {}",
+            size_after_add_again
+        );
 
-        // Test flushall
+        // Test flushall - should clear all databases
         admin.flushall().unwrap();
-        assert_eq!(admin.dbsize().unwrap(), 0);
+        let size_after_flushall = admin.dbsize().unwrap();
+        assert_eq!(
+            size_after_flushall,
+            0,
+            "Expected database size to be 0 after flushall, but got {}",
+            size_after_flushall
+        );
     }
 
     #[tokio::test]
     async fn test_async_admin_operations() {
-        let redis = Redis::from_url("redis://127.0.0.1:6379").unwrap();
+        let redis = Redis::from_url(&get_redis_url()).unwrap();
         let admin = redis.admin();
 
         // Test basic async operations

@@ -13,6 +13,13 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 /// Library name
 pub const NAME: &str = env!("CARGO_PKG_NAME");
 
+// Load environment variables from .env file for tests
+#[cfg(test)]
+#[ctor::ctor]
+fn init() {
+    dotenv::dotenv().ok();
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

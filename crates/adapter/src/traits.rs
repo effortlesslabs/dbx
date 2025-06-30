@@ -6,24 +6,27 @@
 use async_trait::async_trait;
 
 /// Basic database operations that should be supported by all adapters
-#[async_trait]
 pub trait DatabaseAdapter: Send + Sync {
     /// The error type returned by this adapter
     type Error: std::error::Error + Send + Sync;
-
-    /// Check if the database connection is alive
-    async fn ping(&self) -> Result<bool, Self::Error>;
-
-    /// Close the database connection
-    async fn close(&self) -> Result<(), Self::Error>;
 
     /// Get the connection status
     fn is_connected(&self) -> bool;
 }
 
+/// Async operations for database adapters
+#[async_trait]
+pub trait AsyncDatabaseAdapter: DatabaseAdapter {
+    /// Check if the database connection is alive
+    async fn ping(&self) -> Result<bool, Self::Error>;
+
+    /// Close the database connection
+    async fn close(&self) -> Result<(), Self::Error>;
+}
+
 /// Trait for adapters that support key-value operations
 #[async_trait]
-pub trait KeyValueAdapter: DatabaseAdapter {
+pub trait KeyValueAdapter: AsyncDatabaseAdapter {
     /// Get a value by key
     async fn get<K: AsRef<str> + Send>(&self, key: K) -> Result<Option<String>, Self::Error>;
 
@@ -51,7 +54,7 @@ pub trait KeyValueAdapter: DatabaseAdapter {
 
 /// Trait for adapters that support hash operations
 #[async_trait]
-pub trait HashAdapter: DatabaseAdapter {
+pub trait HashAdapter: AsyncDatabaseAdapter {
     /// Get a field from a hash
     async fn hget<K: AsRef<str> + Send, F: AsRef<str> + Send>(
         &self,
@@ -83,7 +86,7 @@ pub trait HashAdapter: DatabaseAdapter {
 
 /// Trait for adapters that support set operations
 #[async_trait]
-pub trait SetAdapter: DatabaseAdapter {
+pub trait SetAdapter: AsyncDatabaseAdapter {
     /// Add a member to a set
     async fn sadd<K: AsRef<str> + Send, M: AsRef<str> + Send>(
         &self,
@@ -111,15 +114,15 @@ pub trait SetAdapter: DatabaseAdapter {
 
 /// Trait for adapters that support connection pooling
 #[async_trait]
-pub trait PooledAdapter: DatabaseAdapter {
+pub trait PooledAdapter: AsyncDatabaseAdapter {
     /// Get a connection from the pool
     async fn get_connection(
         &self
-    ) -> Result<Box<dyn DatabaseAdapter<Error = Self::Error>>, Self::Error>;
+    ) -> Result<Box<dyn AsyncDatabaseAdapter<Error = Self::Error>>, Self::Error>;
 
     /// Return a connection to the pool
     async fn return_connection(
         &self,
-        connection: Box<dyn DatabaseAdapter<Error = Self::Error>>
+        connection: Box<dyn AsyncDatabaseAdapter<Error = Self::Error>>
     ) -> Result<(), Self::Error>;
 }

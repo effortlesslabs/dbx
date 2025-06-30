@@ -589,8 +589,11 @@ mod tests {
     fn create_test_connection() -> Arc<Mutex<redis::Connection>> {
         // For tests, just create a client but don't actually connect
         // This allows the tests to compile without needing a Redis server
+        let redis_url = std::env
+            ::var("REDIS_URL")
+            .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
         let client = redis::Client
-            ::open("redis://127.0.0.1/")
+            ::open(redis_url)
             .unwrap_or_else(|_| {
                 redis::Client::open("redis://localhost:6379").expect("Creating test client")
             });
@@ -715,8 +718,11 @@ mod examples {
     #[ignore = "This example is for demonstration only"]
     fn example_patterns() {
         // Create a connection for examples
+        let redis_url = std::env
+            ::var("REDIS_URL")
+            .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
         let client = redis::Client
-            ::open("redis://127.0.0.1:6379")
+            ::open(redis_url)
             .unwrap_or_else(|_| {
                 redis::Client::open("redis://localhost:6379").expect("Creating example client")
             });
