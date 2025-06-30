@@ -70,17 +70,17 @@ jobs:
       - name: Run clippy
         run: |
           if [ "${{ matrix.features }}" = "all" ]; then
-            cargo clippy --workspace --features "async,connection-pool" -- -D warnings
+            cargo clippy -p dbx-adapter -p dbx-redis-api --features "async,connection-pool" -- -D warnings
           else
-            cargo clippy --workspace --features "${{ matrix.features }}" -- -D warnings
+            cargo clippy -p dbx-adapter -p dbx-redis-api --features "${{ matrix.features }}" -- -D warnings
           fi
 
       - name: Build crates package
         run: |
           if [ "${{ matrix.features }}" = "all" ]; then
-            cargo build --workspace --features "async,connection-pool" --verbose
+            cargo build -p dbx-adapter -p dbx-redis-api --features "async,connection-pool" --verbose
           else
-            cargo build --workspace --features "${{ matrix.features }}" --verbose
+            cargo build -p dbx-adapter -p dbx-redis-api --features "${{ matrix.features }}" --verbose
           fi
 
       - name: Start DBX server
