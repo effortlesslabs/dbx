@@ -6,6 +6,12 @@ use std::sync::Arc;
 use dbx_api::{ config::{ Config, DatabaseType }, server::Server, constants::defaults::Defaults };
 use std::net::SocketAddr;
 
+// Load environment variables from .env file for tests
+#[ctor::ctor]
+fn init() {
+    dotenv::dotenv().ok();
+}
+
 pub struct TestServer {
     pub server: Server,
     pub addr: SocketAddr,

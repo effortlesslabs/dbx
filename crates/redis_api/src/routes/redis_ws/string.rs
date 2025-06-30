@@ -24,45 +24,105 @@ use dbx_adapter::redis::client::RedisPool;
 #[serde(tag = "type")]
 pub enum StringWsMessage {
     #[serde(rename = "get")] Get {
-        key: String,
+        #[serde(rename = "data")]
+        data: GetData,
     },
     #[serde(rename = "set")] Set {
-        key: String,
-        value: String,
-        ttl: Option<u64>,
+        #[serde(rename = "data")]
+        data: SetData,
     },
     #[serde(rename = "del")] Del {
-        key: String,
+        #[serde(rename = "data")]
+        data: DelData,
     },
     #[serde(rename = "info")] Info {
-        key: String,
+        #[serde(rename = "data")]
+        data: InfoData,
     },
     #[serde(rename = "batch_get")] BatchGet {
-        keys: Vec<String>,
+        #[serde(rename = "data")]
+        data: BatchGetData,
     },
     #[serde(rename = "batch_set")] BatchSet {
-        operations: Vec<StringOperation>,
+        #[serde(rename = "data")]
+        data: BatchSetData,
     },
     #[serde(rename = "result")] Result {
-        key: String,
-        value: Option<String>,
+        #[serde(rename = "data")]
+        data: ResultData,
     },
     #[serde(rename = "batch_result")] BatchResult {
-        keys: Vec<String>,
-        values: Vec<Option<String>>,
+        #[serde(rename = "data")]
+        data: BatchResultData,
     },
     #[serde(rename = "info_result")] InfoResult {
-        info: Option<StringInfo>,
+        #[serde(rename = "data")]
+        data: InfoResultData,
     },
     #[serde(rename = "deleted")] Deleted {
-        key: String,
-        deleted: bool,
+        #[serde(rename = "data")]
+        data: DeletedData,
     },
     #[serde(rename = "error")] Error(String),
     #[serde(rename = "ping")]
     Ping,
     #[serde(rename = "pong")]
     Pong,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct GetData {
+    pub key: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SetData {
+    pub key: String,
+    pub value: String,
+    pub ttl: Option<u64>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DelData {
+    pub key: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct InfoData {
+    pub key: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct BatchGetData {
+    pub keys: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct BatchSetData {
+    pub operations: Vec<StringOperation>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ResultData {
+    pub key: String,
+    pub value: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct BatchResultData {
+    pub keys: Vec<String>,
+    pub values: Vec<Option<String>>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct InfoResultData {
+    pub info: Option<StringInfo>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DeletedData {
+    pub key: String,
+    pub deleted: bool,
 }
 
 async fn redis_ws_string_handler(
@@ -99,30 +159,37 @@ async fn handle_redis_ws_string_socket(socket: WebSocket, pool: Arc<RedisPool>) 
                     let conn_arc = Arc::new(std::sync::Mutex::new(conn));
 
                     match message {
-                        StringWsMessage::Get { key } => {
-                            let value = get_string(conn_arc.clone(), &key).ok().flatten();
+                        StringWsMessage::Get { data } => {
+                            let value = get_string(conn_arc.clone(), &data.key).ok().flatten();
                             let _ = sender.send(
                                 axum::extract::ws::Message::Text(
                                     serde_json
-                                        ::to_string(&(StringWsMessage::Result { key, value }))
+                                        ::to_string(
+                                            &(StringWsMessage::Result {
+                                                data: ResultData { key: data.key, value },
+                                            })
+                                        )
                                         .unwrap()
                                 )
                             ).await;
                         }
-                        StringWsMessage::Set { key, value, ttl } => {
-                            let res = if let Some(ttl) = ttl {
-                                set_string(conn_arc.clone(), &key, &value).and_then(|_|
+                        StringWsMessage::Set { data } => {
+                            let res = if let Some(ttl) = data.ttl {
+                                set_string(conn_arc.clone(), &data.key, &data.value).and_then(|_|
                                     redis
                                         ::cmd("EXPIRE")
-                                        .arg(&key)
+                                        .arg(&data.key)
                                         .arg(ttl)
                                         .query(&mut *conn_arc.lock().unwrap())
                                 )
                             } else {
-                                set_string(conn_arc.clone(), &key, &value)
+                                set_string(conn_arc.clone(), &data.key, &data.value)
                             };
                             let msg = match res {
-                                Ok(_) => StringWsMessage::Result { key, value: Some(value) },
+                                Ok(_) =>
+                                    StringWsMessage::Result {
+                                        data: ResultData { key: data.key, value: Some(data.value) },
+                                    },
                                 Err(e) => StringWsMessage::Error(format!("Set error: {}", e)),
                             };
                             let _ = sender.send(
@@ -131,53 +198,67 @@ async fn handle_redis_ws_string_socket(socket: WebSocket, pool: Arc<RedisPool>) 
                                 )
                             ).await;
                         }
-                        StringWsMessage::Del { key } => {
-                            let deleted = delete_string(conn_arc.clone(), &key).unwrap_or(false);
-                            let _ = sender.send(
-                                axum::extract::ws::Message::Text(
-                                    serde_json
-                                        ::to_string(&(StringWsMessage::Deleted { key, deleted }))
-                                        .unwrap()
-                                )
-                            ).await;
-                        }
-                        StringWsMessage::Info { key } => {
-                            let info = get_string_info(conn_arc.clone(), &key).ok().flatten();
-                            let _ = sender.send(
-                                axum::extract::ws::Message::Text(
-                                    serde_json
-                                        ::to_string(&(StringWsMessage::InfoResult { info }))
-                                        .unwrap()
-                                )
-                            ).await;
-                        }
-                        StringWsMessage::BatchGet { keys } => {
-                            let values = get_multiple_strings(
-                                conn_arc.clone(),
-                                &keys
-                            ).unwrap_or_default();
+                        StringWsMessage::Del { data } => {
+                            let deleted = delete_string(conn_arc.clone(), &data.key).unwrap_or(
+                                false
+                            );
                             let _ = sender.send(
                                 axum::extract::ws::Message::Text(
                                     serde_json
                                         ::to_string(
-                                            &(StringWsMessage::BatchResult { keys, values })
+                                            &(StringWsMessage::Deleted {
+                                                data: DeletedData { key: data.key, deleted },
+                                            })
                                         )
                                         .unwrap()
                                 )
                             ).await;
                         }
-                        StringWsMessage::BatchSet { operations } => {
-                            let res = set_multiple_strings(conn_arc.clone(), &operations);
+                        StringWsMessage::Info { data } => {
+                            let info = get_string_info(conn_arc.clone(), &data.key).ok().flatten();
+                            let _ = sender.send(
+                                axum::extract::ws::Message::Text(
+                                    serde_json
+                                        ::to_string(
+                                            &(StringWsMessage::InfoResult {
+                                                data: InfoResultData { info },
+                                            })
+                                        )
+                                        .unwrap()
+                                )
+                            ).await;
+                        }
+                        StringWsMessage::BatchGet { data } => {
+                            let values = get_multiple_strings(
+                                conn_arc.clone(),
+                                &data.keys
+                            ).unwrap_or_default();
+                            let _ = sender.send(
+                                axum::extract::ws::Message::Text(
+                                    serde_json
+                                        ::to_string(
+                                            &(StringWsMessage::BatchResult {
+                                                data: BatchResultData { keys: data.keys, values },
+                                            })
+                                        )
+                                        .unwrap()
+                                )
+                            ).await;
+                        }
+                        StringWsMessage::BatchSet { data } => {
+                            let res = set_multiple_strings(conn_arc.clone(), &data.operations);
                             let msg = match res {
                                 Ok(_) =>
                                     StringWsMessage::Result {
-                                        key: "batch".to_string(),
-                                        value: Some(
-                                            format!(
-                                                "Successfully set {} operations",
-                                                operations.len()
-                                            )
-                                        ),
+                                        data: ResultData {
+                                            key: "batch".to_string(),
+                                            value: Some(
+                                                format!(
+                                                    "Successfully set {} operations",
+                                                    data.operations.len()
+                                                )
+                                            ),
+                                        },
                                     },
                                 Err(e) => StringWsMessage::Error(format!("Batch set error: {}", e)),
                             };

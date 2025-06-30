@@ -24,75 +24,177 @@ use dbx_adapter::redis::client::RedisPool;
 #[serde(tag = "type")]
 pub enum SetWsMessage {
     #[serde(rename = "add")] Add {
-        key: String,
-        member: String,
+        #[serde(rename = "data")]
+        data: AddData,
     },
     #[serde(rename = "remove")] Remove {
-        key: String,
-        member: String,
+        #[serde(rename = "data")]
+        data: RemoveData,
     },
     #[serde(rename = "members")] Members {
-        key: String,
+        #[serde(rename = "data")]
+        data: MembersData,
     },
     #[serde(rename = "exists")] Exists {
-        key: String,
-        member: String,
+        #[serde(rename = "data")]
+        data: ExistsData,
     },
     #[serde(rename = "cardinality")] Cardinality {
-        key: String,
+        #[serde(rename = "data")]
+        data: CardinalityData,
     },
     #[serde(rename = "intersect")] Intersect {
-        keys: Vec<String>,
+        #[serde(rename = "data")]
+        data: IntersectData,
     },
     #[serde(rename = "union")] Union {
-        keys: Vec<String>,
+        #[serde(rename = "data")]
+        data: UnionData,
     },
     #[serde(rename = "difference")] Difference {
-        keys: Vec<String>,
+        #[serde(rename = "data")]
+        data: DifferenceData,
     },
     // Response types
     #[serde(rename = "added")] Added {
-        key: String,
-        member: String,
-        added: usize,
+        #[serde(rename = "data")]
+        data: AddedData,
     },
     #[serde(rename = "removed")] Removed {
-        key: String,
-        member: String,
-        removed: usize,
+        #[serde(rename = "data")]
+        data: RemovedData,
     },
     #[serde(rename = "members_result")] MembersResult {
-        key: String,
-        members: Vec<String>,
+        #[serde(rename = "data")]
+        data: MembersResultData,
     },
     #[serde(rename = "exists_result")] ExistsResult {
-        key: String,
-        member: String,
-        exists: bool,
+        #[serde(rename = "data")]
+        data: ExistsResultData,
     },
     #[serde(rename = "cardinality_result")] CardinalityResult {
-        key: String,
-        cardinality: usize,
+        #[serde(rename = "data")]
+        data: CardinalityResultData,
     },
     #[serde(rename = "intersect_result")] IntersectResult {
-        keys: Vec<String>,
-        intersection: Vec<String>,
+        #[serde(rename = "data")]
+        data: IntersectResultData,
     },
     #[serde(rename = "union_result")] UnionResult {
-        keys: Vec<String>,
-        union: Vec<String>,
+        #[serde(rename = "data")]
+        data: UnionResultData,
     },
     #[serde(rename = "difference_result")] DifferenceResult {
-        keys: Vec<String>,
-        difference: Vec<String>,
+        #[serde(rename = "data")]
+        data: DifferenceResultData,
     },
     #[serde(rename = "result")] Result {
-        key: String,
-        value: Option<serde_json::Value>,
+        #[serde(rename = "data")]
+        data: ResultData,
     },
     #[serde(rename = "error")] Error(String),
     #[serde(rename = "ping")] Ping,
     #[serde(rename = "pong")] Pong,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AddData {
+    pub key: String,
+    pub member: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct RemoveData {
+    pub key: String,
+    pub member: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct MembersData {
+    pub key: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ExistsData {
+    pub key: String,
+    pub member: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CardinalityData {
+    pub key: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct IntersectData {
+    pub keys: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct UnionData {
+    pub keys: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DifferenceData {
+    pub keys: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AddedData {
+    pub key: String,
+    pub member: String,
+    pub added: usize,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct RemovedData {
+    pub key: String,
+    pub member: String,
+    pub removed: usize,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct MembersResultData {
+    pub key: String,
+    pub members: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ExistsResultData {
+    pub key: String,
+    pub member: String,
+    pub exists: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CardinalityResultData {
+    pub key: String,
+    pub cardinality: usize,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct IntersectResultData {
+    pub keys: Vec<String>,
+    pub intersection: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct UnionResultData {
+    pub keys: Vec<String>,
+    pub union: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DifferenceResultData {
+    pub keys: Vec<String>,
+    pub difference: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ResultData {
+    pub key: String,
+    pub value: Option<serde_json::Value>,
 }
 
 async fn redis_ws_set_handler(
@@ -130,75 +232,114 @@ async fn handle_redis_ws_set_socket(socket: WebSocket, pool: Arc<RedisPool>) {
                     let conn_arc = Arc::new(std::sync::Mutex::new(conn));
 
                     match message {
-                        SetWsMessage::Add { key, member } => {
-                            let added = add_to_set(conn_arc.clone(), &key, &[&member]).unwrap_or(0);
-                            let _ = sender.send(
-                                axum::extract::ws::Message::Text(
-                                    serde_json
-                                        ::to_string(&(SetWsMessage::Added { key, member, added }))
-                                        .unwrap()
-                                )
-                            ).await;
-                        }
-                        SetWsMessage::Remove { key, member } => {
-                            let removed = remove_from_set(
+                        SetWsMessage::Add { data } => {
+                            let added = add_to_set(
                                 conn_arc.clone(),
-                                &key,
-                                &[&member]
+                                &data.key,
+                                &[&data.member]
                             ).unwrap_or(0);
                             let _ = sender.send(
                                 axum::extract::ws::Message::Text(
                                     serde_json
                                         ::to_string(
-                                            &(SetWsMessage::Removed { key, member, removed })
+                                            &(SetWsMessage::Added {
+                                                data: AddedData {
+                                                    key: data.key,
+                                                    member: data.member,
+                                                    added,
+                                                },
+                                            })
                                         )
                                         .unwrap()
                                 )
                             ).await;
                         }
-                        SetWsMessage::Members { key } => {
+                        SetWsMessage::Remove { data } => {
+                            let removed = remove_from_set(
+                                conn_arc.clone(),
+                                &data.key,
+                                &[&data.member]
+                            ).unwrap_or(0);
+                            let _ = sender.send(
+                                axum::extract::ws::Message::Text(
+                                    serde_json
+                                        ::to_string(
+                                            &(SetWsMessage::Removed {
+                                                data: RemovedData {
+                                                    key: data.key,
+                                                    member: data.member,
+                                                    removed,
+                                                },
+                                            })
+                                        )
+                                        .unwrap()
+                                )
+                            ).await;
+                        }
+                        SetWsMessage::Members { data } => {
                             let members = get_set_members(
                                 conn_arc.clone(),
-                                &key
+                                &data.key
                             ).unwrap_or_default();
                             let _ = sender.send(
                                 axum::extract::ws::Message::Text(
                                     serde_json
-                                        ::to_string(&(SetWsMessage::MembersResult { key, members }))
-                                        .unwrap()
-                                )
-                            ).await;
-                        }
-                        SetWsMessage::Exists { key, member } => {
-                            let exists = set_exists(conn_arc.clone(), &key, &member).unwrap_or(
-                                false
-                            );
-                            let _ = sender.send(
-                                axum::extract::ws::Message::Text(
-                                    serde_json
                                         ::to_string(
-                                            &(SetWsMessage::ExistsResult { key, member, exists })
+                                            &(SetWsMessage::Result {
+                                                data: ResultData {
+                                                    key: data.key,
+                                                    value: Some(serde_json::json!(members)),
+                                                },
+                                            })
                                         )
                                         .unwrap()
                                 )
                             ).await;
                         }
-                        SetWsMessage::Cardinality { key } => {
-                            let cardinality = get_set_cardinality(conn_arc.clone(), &key).unwrap_or(
-                                0
-                            );
+                        SetWsMessage::Exists { data } => {
+                            let exists = set_exists(
+                                conn_arc.clone(),
+                                &data.key,
+                                &data.member
+                            ).unwrap_or(false);
                             let _ = sender.send(
                                 axum::extract::ws::Message::Text(
                                     serde_json
                                         ::to_string(
-                                            &(SetWsMessage::CardinalityResult { key, cardinality })
+                                            &(SetWsMessage::ExistsResult {
+                                                data: ExistsResultData {
+                                                    key: data.key,
+                                                    member: data.member,
+                                                    exists,
+                                                },
+                                            })
                                         )
                                         .unwrap()
                                 )
                             ).await;
                         }
-                        SetWsMessage::Intersect { keys } => {
-                            let key_refs: Vec<&str> = keys
+                        SetWsMessage::Cardinality { data } => {
+                            let cardinality = get_set_cardinality(
+                                conn_arc.clone(),
+                                &data.key
+                            ).unwrap_or(0);
+                            let _ = sender.send(
+                                axum::extract::ws::Message::Text(
+                                    serde_json
+                                        ::to_string(
+                                            &(SetWsMessage::CardinalityResult {
+                                                data: CardinalityResultData {
+                                                    key: data.key,
+                                                    cardinality,
+                                                },
+                                            })
+                                        )
+                                        .unwrap()
+                                )
+                            ).await;
+                        }
+                        SetWsMessage::Intersect { data } => {
+                            let key_refs: Vec<&str> = data.keys
                                 .iter()
                                 .map(|k| k.as_str())
                                 .collect();
@@ -210,14 +351,19 @@ async fn handle_redis_ws_set_socket(socket: WebSocket, pool: Arc<RedisPool>) {
                                 axum::extract::ws::Message::Text(
                                     serde_json
                                         ::to_string(
-                                            &(SetWsMessage::IntersectResult { keys, intersection })
+                                            &(SetWsMessage::IntersectResult {
+                                                data: IntersectResultData {
+                                                    keys: data.keys,
+                                                    intersection,
+                                                },
+                                            })
                                         )
                                         .unwrap()
                                 )
                             ).await;
                         }
-                        SetWsMessage::Union { keys } => {
-                            let key_refs: Vec<&str> = keys
+                        SetWsMessage::Union { data } => {
+                            let key_refs: Vec<&str> = data.keys
                                 .iter()
                                 .map(|k| k.as_str())
                                 .collect();
@@ -225,13 +371,17 @@ async fn handle_redis_ws_set_socket(socket: WebSocket, pool: Arc<RedisPool>) {
                             let _ = sender.send(
                                 axum::extract::ws::Message::Text(
                                     serde_json
-                                        ::to_string(&(SetWsMessage::UnionResult { keys, union }))
+                                        ::to_string(
+                                            &(SetWsMessage::UnionResult {
+                                                data: UnionResultData { keys: data.keys, union },
+                                            })
+                                        )
                                         .unwrap()
                                 )
                             ).await;
                         }
-                        SetWsMessage::Difference { keys } => {
-                            let key_refs: Vec<&str> = keys
+                        SetWsMessage::Difference { data } => {
+                            let key_refs: Vec<&str> = data.keys
                                 .iter()
                                 .map(|k| k.as_str())
                                 .collect();
@@ -243,7 +393,12 @@ async fn handle_redis_ws_set_socket(socket: WebSocket, pool: Arc<RedisPool>) {
                                 axum::extract::ws::Message::Text(
                                     serde_json
                                         ::to_string(
-                                            &(SetWsMessage::DifferenceResult { keys, difference })
+                                            &(SetWsMessage::DifferenceResult {
+                                                data: DifferenceResultData {
+                                                    keys: data.keys,
+                                                    difference,
+                                                },
+                                            })
                                         )
                                         .unwrap()
                                 )
