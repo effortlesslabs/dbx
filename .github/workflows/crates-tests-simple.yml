@@ -1,4 +1,4 @@
-name: DBX Crates Tests
+name: DBX Crates Tests (Simple)
 
 on:
   push:
@@ -7,23 +7,23 @@ on:
       - "crates/**"
       - "Cargo.toml"
       - "Cargo.lock"
-      - ".github/workflows/crates-tests.yml"
-      - "scripts/test-with-server.sh"
+      - ".github/workflows/crates-tests-simple.yml"
+      - "scripts/test-simple.sh"
   pull_request:
     branches: [master]
     paths:
       - "crates/**"
       - "Cargo.toml"
       - "Cargo.lock"
-      - ".github/workflows/crates-tests.yml"
-      - "scripts/test-with-server.sh"
+      - ".github/workflows/crates-tests-simple.yml"
+      - "scripts/test-simple.sh"
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  crates-test:
-    name: DBX Crates Test Suite
+  crates-test-simple:
+    name: DBX Crates Test Suite (Simple)
     runs-on: ubuntu-latest
 
     strategy:
@@ -83,24 +83,51 @@ jobs:
             cargo build -p dbx-crates --features "${{ matrix.features }}" --verbose
           fi
 
-      - name: Make script executable
-        run: chmod +x scripts/test-with-server.sh
-
-      - name: Run tests with server
+      - name: Start DBX server
         run: |
-          # Create .env file for testing
-          cat > .env << EOF
-          REDIS_URL=redis://localhost:6379
-          HOST=0.0.0.0
-          PORT=3000
-          POOL_SIZE=10
-          LOG_LEVEL=INFO
-          EOF
+          # Build the server
+          cargo build -p redis_api --release
 
-          # Run tests using the script
-          ./scripts/test-with-server.sh --verbose
+          # Start the server in background
+          nohup cargo run -p redis_api --release > server.log 2>&1 &
+          echo $! > server.pid
+
+          # Wait for server to start
+          sleep 10
+
+          # Check if server is running
+          if curl -s http://localhost:3000/redis/admin/ping > /dev/null; then
+            echo "✅ Server is running"
+          else
+            echo "❌ Server failed to start"
+            cat server.log
+            exit 1
+          fi
         env:
           REDIS_URL: redis://localhost:6379
+          HOST: 0.0.0.0
+          PORT: 3000
+          POOL_SIZE: 10
+          LOG_LEVEL: INFO
+
+      - name: Make script executable
+        run: chmod +x scripts/test-simple.sh
+
+      - name: Run tests with simple script
+        run: |
+          # Run tests using the simple script
+          ./scripts/test-simple.sh --verbose
+        env:
+          REDIS_URL: redis://localhost:6379
+          DBX_BASE_URL: http://localhost:3000
+
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f server.pid ]; then
+            kill $(cat server.pid) 2>/dev/null || true
+            rm server.pid
+          fi
 
   crates-basic-check:
     name: Crates Basic Checks

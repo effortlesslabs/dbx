@@ -27,7 +27,7 @@ RUN cargo build --release
 RUN rm src/main.rs
 
 # Build the application
-RUN cargo build --release --bin dbx-api
+RUN cargo build --release --bin dbx-redis-api
 
 # Create a new stage with a minimal runtime image (supports multi-platform)
 FROM --platform=$TARGETPLATFORM debian:bookworm-slim
@@ -45,7 +45,7 @@ RUN useradd -r -s /bin/false dbx
 WORKDIR /app
 
 # Copy the binary from the builder stage
-COPY --from=builder /usr/src/dbx/target/release/dbx-api /app/dbx-api
+COPY --from=builder /usr/src/dbx/target/release/dbx-redis-api /app/dbx-redis-api
 
 # Copy the static files
 COPY static/ ./static/
@@ -77,4 +77,4 @@ LABEL version="0.1.6"
 LABEL org.opencontainers.image.source="https://github.com/your-org/dbx"
 
 # Run the binary
-CMD ["./dbx-api"] 
+CMD ["./dbx-redis-api"] 

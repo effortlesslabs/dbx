@@ -132,7 +132,9 @@ async fn test_websocket_string_concurrent_operations() -> Result<()> {
 
     // Wait for all operations to complete
     for handle in handles {
-        handle.await.map_err(|e| dbx_redis_client::error::DbxError::Other(anyhow::anyhow!("{}", e)))??;
+        handle.await.map_err(|e|
+            dbx_redis_client::error::DbxError::Other(anyhow::anyhow!("{}", e))
+        )??;
     }
 
     Ok(())
